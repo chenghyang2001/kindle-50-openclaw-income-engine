@@ -1,0 +1,10 @@
+# Claude Code session 狀態（不入版控）
+.claude/session-state.md
+
+# 當機/垃圾檔
+*.stackdump
+core
+*.core
+*.dmp
+Thumbs.db
+.DS_Store
