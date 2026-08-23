@@ -149,7 +149,11 @@ class InheritedContext:
 
     @property
     def tenant_slug(self) -> str:
-        """租戶代號（#30 白牌多租戶隔離沿用同一欄位）。"""
+        """租戶代號：本模組的單一租戶識別碼，用於產出與稽核日誌的來源標記。
+
+        與 demo30 的兩層 namespace（reseller / sub-client）不相容，兩者不可互換；
+        差異見 demo30 README 第 4a 節。
+        """
         return str(self.payload.get("tenant_slug", ""))
 
     @property

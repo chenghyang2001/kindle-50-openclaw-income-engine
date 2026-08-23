@@ -7,14 +7,18 @@
 # Sub-agent 端重複維護品牌資料——重複就是品牌衝突的來源。
 #
 # 為什麼整個檔案要能「整組抽換」：
-# 這份 brand_context 是 #30 白牌 AI 營運部門的共同技術底座。經銷商替
-# 每個下游客戶掛一份自己的 brand_context.yml（多租戶隔離），蜂群程式碼
-# 一行都不用改。因此本檔案禁止出現任何與程式邏輯耦合的欄位。
+# 換一個客戶就換一份 brand_context.yml，蜂群程式碼與提示詞一行都不用改。
+# 因此本檔案禁止出現任何與程式邏輯耦合的欄位。
+#
+# 註：demo30（白牌 AI 營運部門）的多租戶識別採兩層 namespace
+# （reseller / sub-client，由該模組的 tenancy.py 處理），與本檔 schema 不相容，
+# 兩份 brand_context.yml 已分歧、不可互換 —— 詳見 demo30 README 第 4a 節。
 # ============================================================================
 
 context_version: 1              # 每次 Orchestrator 更新會 +1，並級聯至所有 Sub-agent
 updated_at: "2026-09-06"
-tenant_slug: "torresmark"       # 多租戶隔離用的租戶代號（#30 白牌沿用同一欄位）
+tenant_slug: "torresmark"       # 單一租戶識別碼，用於 sub-agent 產出與稽核日誌的來源標記
+                                # （非 demo30 的兩層 namespace，兩者不可互換，見檔頭註）
 
 brand:
   name: "Torresmark 手沖咖啡工作室"

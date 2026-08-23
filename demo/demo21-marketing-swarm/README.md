@@ -273,9 +273,9 @@ python main.py --live --notify telegram
 
 ---
 
-## 9. 白牌抽換：#30 的共同技術底座
+## 9. 白牌抽換：整份 brand_context.yml 可換
 
-`brand_context.yml` 是**整組可抽換**的單位，這正是 #30 白牌 AI 營運部門的基礎：
+`brand_context.yml` 是**整組可抽換**的單位 —— 換一個客戶就換一份檔案：
 
 ```yaml
 white_label:
@@ -290,7 +290,12 @@ white_label:
 
 `enabled: true` 時，Orchestrator 把 `overrides` 深層合併進品牌上下文 →
 版本 +1 → 立刻級聯給五個子智能體。**程式碼、提示詞一行都不用改。**
-多租戶隔離沿用同一個 `tenant_slug` 欄位（`[RESELLER_SLUG]/[SUB_CLIENT_SLUG]`）。
+本模組的 `tenant_slug` 是**單層**的單一租戶識別碼，只用於產出與稽核日誌的來源標記。
+
+> 註：demo30（白牌 AI 營運部門）的多租戶識別採**兩層 namespace**
+> （reseller / sub-client，由該模組的 `tenancy.py` 處理），與本欄位不相容。
+> 兩份 `brand_context.yml` 的 schema 已分歧、**不可互換** —— 差異與警告見
+> demo30 README 第 4a 節，請勿把兩邊的租戶欄位「統一」。
 
 ---
 

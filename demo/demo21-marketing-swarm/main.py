@@ -181,7 +181,7 @@ def _build_swarm(
 def _apply_white_label(
     orchestrator: Orchestrator, white_label: dict[str, Any], audit: AuditLog
 ) -> dict[str, Any]:
-    """套用白牌覆寫（#30 的共同技術底座）。
+    """套用白牌覆寫：整份 brand_context 抽換。
 
     覆寫走 update_brand_context -> 版本 +1 -> 立刻級聯，
     因此「整組抽換品牌」不需要動任何 Sub-agent 的程式碼或提示詞。
@@ -198,7 +198,7 @@ def _apply_white_label(
     audit.record(
         action="white_label_applied",
         target=f"tenant/{context.tenant_slug}",
-        rationale="#30 多租戶隔離：整份 brand_context 抽換後級聯至五個 Sub-agent",
+        rationale="白牌覆寫：整份 brand_context 抽換後級聯至五個 Sub-agent",
         details={"context_version": context.version, "keys": sorted(patch)},
     )
     return {
