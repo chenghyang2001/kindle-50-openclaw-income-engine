@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import json
 import sys
+from datetime import timedelta, timezone as dt_timezone
 from pathlib import Path
 
+import pytest
 import yaml
 
 MODULE_DIR = Path(__file__).resolve().parent
@@ -51,6 +53,20 @@ def _ids(entries: list) -> set[str]:
     return {str(item["prospect_id"]) for item in entries}
 
 
+def _freeze_timezone(monkeypatch: pytest.MonkeyPatch) -> None:
+    """把時區解析換成固定 UTC+8，讓測試不受本機有無 tzdata 影響。
+
+    `resolve_timezone()` 在缺 IANA 時區資料庫的機器（Windows 預設即是）上會
+    找不到 Asia/Taipei，降級並發出一則 AMBER——這與被測的業務邏輯完全無關，
+    卻會污染 `amber_count`。時區不是這個測試要驗的東西，直接把變因移除。
+    """
+    monkeypatch.setattr(
+        demo10,
+        "resolve_timezone",
+        lambda name, fallback_offset_hours=8: (dt_timezone(timedelta(hours=8)), None),
+    )
+
+
 def test_happy_path() -> None:
     """標準 mock 輸入：6 位潛在客戶 -> 3 封待審草稿 + 3 筆中止。"""
     result = _run()
@@ -88,8 +104,14 @@ def test_happy_path() -> None:
     assert halt_reasons["P-1006"] == HALT_STAGE_CLOSED
 
 
-def test_edge_case_empty_prospect_list(tmp_path: Path) -> None:
+def test_edge_case_empty_prospect_list(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """邊界：CRM 沒有任何待跟進客戶時要安靜跑完，不可拋例外。"""
+    # 時區解析與「清單是否為空」無關，先凍結成固定偏移，避免環境雜訊
+    _freeze_timezone(monkeypatch)
+
     empty_path = tmp_path / "prospects_empty.json"
     empty_path.write_text("[]", encoding="utf-8")
 
@@ -104,7 +126,9 @@ def test_edge_case_empty_prospect_list(tmp_path: Path) -> None:
     assert result["drafted"] == []
     assert result["halted"] == []
     # 空清單不是異常，不該產生任何 AMBER 警示
+    # （時區已凍結，此處若非 0 必定來自業務邏輯，不會是缺 tzdata 造成的假失敗）
     assert result["amber_count"] == 0
+    assert result["warnings"] == []
     assert result["stop_on_reply"] is True
     # 摘要仍要能組出來（不可因為空清單而崩在字串格式化）
     assert result["module_name"] in demo10._summarise(result)

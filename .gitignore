@@ -26,5 +26,6 @@ token.json
 demo/**/.usage.jsonl
 demo/**/.seen.json
 demo/**/.state.json
+demo/**/state/
 demo/**/mock/posted.json
 demo/dist/
