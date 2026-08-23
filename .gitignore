@@ -8,3 +8,23 @@ core
 *.dmp
 Thumbs.db
 .DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+*.egg-info/
+
+# 機密與環境變數
+.env
+credentials.json
+token.json
+
+# demo 執行期產物
+demo/**/.usage.jsonl
+demo/**/.seen.json
+demo/**/.state.json
+demo/**/mock/posted.json
+demo/dist/
