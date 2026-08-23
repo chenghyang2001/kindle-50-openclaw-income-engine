@@ -1,0 +1,16 @@
+# OpenClaw 十模組 Demo — 依賴清單
+#
+# 刻意維持在兩個套件：交付包要能丟到客戶機器上直接跑，
+# 每多一個依賴就多一個安裝失敗的支援電話。
+# HTTP 一律用標準庫 urllib.request（不用 requests）。
+#
+# 安裝：python -m pip install -r requirements.txt
+
+PyYAML>=6.0        # config.yaml 載入
+pytest>=8.0        # 各 demo 的 test_main.py
+
+# Windows 必裝：作業系統沒有內建 IANA 時區資料庫，
+# 缺少時 zoneinfo.ZoneInfo("Asia/Taipei") 會拋 ZoneInfoNotFoundError。
+# Linux/macOS 可從系統 /usr/share/zoneinfo 讀取，不裝也能跑。
+# demo07 有固定時差的降級路徑當安全網，但正式環境請安裝本套件。
+tzdata>=2024.1; sys_platform == "win32"

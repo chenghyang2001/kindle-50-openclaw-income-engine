@@ -1,0 +1,83 @@
+{
+  "description": "demo06 離線測試發票（5 張）。raw_text 是郵件閘道從 PDF 轉出的純文字，本模組不解析 PDF，故不附真實 PDF 檔。expected 的金額一律用字串保存以避免 JSON 浮點誤差。",
+  "invoices": [
+    {
+      "filename": "aws-march-2026.pdf",
+      "raw_text": "INVOICE\nVendor: Amazon Web Services EMEA SARL\nInvoice Number: AWS-2026-03-0412\nDate: 2026-03-01\nDescription: Cloud hosting - March 2026\nSubtotal: 420.00 GBP\nVAT (20%): 84.00 GBP\nTotal: 504.00 GBP\nPayment Terms: Net 30\n",
+      "expected": {
+        "vendor": "Amazon Web Services EMEA SARL",
+        "invoice_date": "2026-03-01",
+        "subtotal": "420.00",
+        "tax_amount": "84.00",
+        "total_amount": "504.00",
+        "currency": "GBP",
+        "needs_review": false,
+        "account_code": "6210",
+        "standard_name": "2026-03-01_Amazon-Web-Services-EMEA-SARL_504.00GBP.pdf"
+      }
+    },
+    {
+      "filename": "staples-2026-03-12.pdf",
+      "raw_text": "INVOICE\nVendor: Staples UK Ltd\nInvoice Number: SUK-88213\nDate: 12/03/2026\nDescription: Office stationery and printer toner\nSubtotal: 64.50 GBP\nVAT (20%): 12.90 GBP\nTotal: 77.40 GBP\n",
+      "expected": {
+        "vendor": "Staples UK Ltd",
+        "invoice_date": "2026-03-12",
+        "subtotal": "64.50",
+        "tax_amount": "12.90",
+        "total_amount": "77.40",
+        "currency": "GBP",
+        "needs_review": false,
+        "account_code": "6100",
+        "standard_name": "2026-03-12_Staples-UK-Ltd_77.40GBP.pdf"
+      }
+    },
+    {
+      "filename": "uber-2026-03-08.pdf",
+      "raw_text": "TAX INVOICE\nVendor: Uber Britannia Ltd\nInvoice Number: UBR-4471902\nDate: 2026-03-08\nDescription: Taxi - client site visit (Leeds)\nSubtotal: 18.00 GBP\nVAT (20%): 3.60 GBP\nTotal: 21.60 GBP\n",
+      "expected": {
+        "vendor": "Uber Britannia Ltd",
+        "invoice_date": "2026-03-08",
+        "subtotal": "18.00",
+        "tax_amount": "3.60",
+        "total_amount": "21.60",
+        "currency": "GBP",
+        "needs_review": false,
+        "account_code": "6300",
+        "standard_name": "2026-03-08_Uber-Britannia-Ltd_21.60GBP.pdf"
+      }
+    },
+    {
+      "filename": "adobe-2026-03-05-usd.pdf",
+      "raw_text": "INVOICE (USD)\nVendor: Adobe Systems Software Ireland Ltd\nInvoice Number: ADB-2026-77120\nDate: 2026-03-05\nDescription: Creative Cloud subscription - single seat\nSubtotal: 59.99 USD\nSales Tax (0%): 0.00 USD\nTotal: 59.99 USD\n",
+      "expected": {
+        "vendor": "Adobe Systems Software Ireland Ltd",
+        "invoice_date": "2026-03-05",
+        "subtotal": "59.99",
+        "tax_amount": "0.00",
+        "total_amount": "59.99",
+        "currency": "USD",
+        "is_foreign_currency": true,
+        "needs_review": false,
+        "account_code": "6210",
+        "standard_name": "2026-03-05_Adobe-Systems-Software-Ireland-Ltd_59.99USD.pdf"
+      }
+    },
+    {
+      "filename": "scan-blurry-print-copy.pdf",
+      "raw_text": "1NV0ICE  [scan quality: low / OCR confidence 0.42]\nVend0r: ####  Pr1nt & C0py Ltd\nDate: --/--/----\nDescript10n: pr1nting serv1ces (illegible)\nVAT: 310.00 GBP\nTotal: 1,240.O0 GBP\n",
+      "expected": {
+        "vendor": null,
+        "invoice_date": null,
+        "subtotal": null,
+        "tax_amount": "310.00",
+        "total_amount": null,
+        "currency": "GBP",
+        "needs_review": true,
+        "issue_count": 3,
+        "account_code": "6999",
+        "standard_name": null,
+        "note": "模糊掃描：廠商與日期無法辨識，金額 1,240.O0 的 0 被誤認成字母 O 導致解析失敗。必須人工覆核，禁止入帳。"
+      }
+    }
+  ]
+}

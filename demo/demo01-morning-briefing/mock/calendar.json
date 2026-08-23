@@ -1,0 +1,61 @@
+{
+  "generated_for": "2026-08-24",
+  "timezone": "Asia/Taipei",
+  "events": [
+    {
+      "id": "evt-001",
+      "start": "09:00",
+      "end": "09:45",
+      "title": "Northwind 續約條款確認",
+      "attendees": ["sarah.lin@northwind.com", "legal@northwind.com"],
+      "location": "Google Meet",
+      "importance": "high",
+      "prep_minutes": 20,
+      "prep_note": "帶上修訂後的 SLA 第 4 條與去年用量報表"
+    },
+    {
+      "id": "evt-002",
+      "start": "11:00",
+      "end": "11:30",
+      "title": "Q3 現金流檢視（與會計師）",
+      "attendees": ["cpa@ledgerworks.tw"],
+      "location": "電話",
+      "importance": "high",
+      "prep_minutes": 10,
+      "prep_note": "先確認 8 月三筆未收款是否入帳"
+    },
+    {
+      "id": "evt-003",
+      "start": "14:00",
+      "end": "15:00",
+      "title": "Helix 客戶導入啟動會",
+      "attendees": ["marcus.webb@helix-legal.co.uk", "ops@helix-legal.co.uk"],
+      "location": "Zoom",
+      "importance": "medium",
+      "prep_minutes": 15,
+      "prep_note": "確認導入時程表已寄出並取得對方回覆"
+    },
+    {
+      "id": "evt-004",
+      "start": "16:30",
+      "end": "17:00",
+      "title": "供應商報價比較（內部）",
+      "attendees": [],
+      "location": "辦公室",
+      "importance": "low",
+      "prep_minutes": 0,
+      "prep_note": ""
+    },
+    {
+      "id": "evt-005",
+      "start": "19:30",
+      "end": "21:00",
+      "title": "產業社群晚餐",
+      "attendees": ["group@founders-tw.org"],
+      "location": "台北市信義區",
+      "importance": "low",
+      "prep_minutes": 0,
+      "prep_note": ""
+    }
+  ]
+}

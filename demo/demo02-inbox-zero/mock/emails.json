@@ -1,0 +1,362 @@
+[
+  {
+    "from": "Notion <no-reply@notion.so>",
+    "subject": "Weekly workspace digest",
+    "body": "Your team edited 34 pages this week. The most active database was Client Pipeline.",
+    "received_at": "2026-08-23T09:00:00+08:00"
+  },
+  {
+    "from": "GitHub <notifications@github.com>",
+    "subject": "[northwind/api] 3 new pull requests",
+    "body": "Three pull requests are waiting for review in the api repository.",
+    "received_at": "2026-08-23T09:07:00+08:00"
+  },
+  {
+    "from": "Stripe <receipts@stripe.com>",
+    "subject": "Your August statement is ready",
+    "body": "Your monthly statement is available in the Dashboard. Net volume was 42,180 USD.",
+    "received_at": "2026-08-23T09:14:00+08:00"
+  },
+  {
+    "from": "Google Calendar <calendar-notification@google.com>",
+    "subject": "Reminder: Ops sync tomorrow 09:30",
+    "body": "Ops sync with the warehouse team, 09:30 to 10:00, Meet link in the event.",
+    "received_at": "2026-08-23T10:21:00+08:00"
+  },
+  {
+    "from": "Xero <noreply@post.xero.com>",
+    "subject": "Bank feed refreshed",
+    "body": "Your business account feed was refreshed and 12 transactions were imported.",
+    "received_at": "2026-08-23T10:28:00+08:00"
+  },
+  {
+    "from": "Slack <feedback@slack.com>",
+    "subject": "You have 6 unread mentions",
+    "body": "You were mentioned in #ops and #design while you were away.",
+    "received_at": "2026-08-23T10:35:00+08:00"
+  },
+  {
+    "from": "Cloudflare <noreply@notify.cloudflare.com>",
+    "subject": "Certificate renewed automatically",
+    "body": "The certificate for northwind-retail.com was renewed and deployed to the edge.",
+    "received_at": "2026-08-23T11:42:00+08:00"
+  },
+  {
+    "from": "HMRC <noreply@advice.hmrc.gov.uk>",
+    "subject": "Guidance update: payroll thresholds",
+    "body": "Updated guidance on payroll thresholds for the new tax year has been published.",
+    "received_at": "2026-08-23T11:49:00+08:00"
+  },
+  {
+    "from": "The Daily Brief <hello@thedailybrief.news>",
+    "subject": "Monday briefing: logistics costs cool off",
+    "body": "Container spot rates fell for a third week. Warehousing demand stayed flat.",
+    "received_at": "2026-08-23T11:56:00+08:00"
+  },
+  {
+    "from": "Figma <no-reply@figma.com>",
+    "subject": "Sofia commented on Storefront v4",
+    "body": "Sofia left 2 comments on the Storefront v4 file.",
+    "received_at": "2026-08-23T12:03:00+08:00"
+  },
+  {
+    "from": "LinkedIn <messages-noreply@linkedin.com>",
+    "subject": "Your post reached 2,140 people",
+    "body": "Your post about warehouse automation reached 2,140 people this week.",
+    "received_at": "2026-08-23T12:10:00+08:00"
+  },
+  {
+    "from": "Zoom <no-reply@zoom.us>",
+    "subject": "Cloud recording is available",
+    "body": "The recording of Ops Sync is available in your cloud storage for 30 days.",
+    "received_at": "2026-08-23T12:17:00+08:00"
+  },
+  {
+    "from": "Growth Team <hello@leadrocket.biz>",
+    "subject": "Special offer: 500 verified leads",
+    "body": "Limited time special offer on verified leads. Click here to claim, guaranteed delivery. Unsubscribe below.",
+    "received_at": "2026-08-23T13:00:00+08:00"
+  },
+  {
+    "from": "Crypto Desk <alerts@coinsurge-pro.net>",
+    "subject": "Crypto signals that print money",
+    "body": "Our crypto signals are guaranteed to beat the market. Act now, risk-free trial. Click here.",
+    "received_at": "2026-08-23T13:11:00+08:00"
+  },
+  {
+    "from": "SEO Experts <team@rank1st-agency.info>",
+    "subject": "Your website is invisible on search",
+    "body": "We ran a free trial audit. Act now for a special offer on our retainer. Click here to book.",
+    "received_at": "2026-08-23T13:22:00+08:00"
+  },
+  {
+    "from": "Dropbox <no-reply@dropbox.com>",
+    "subject": "Amara shared a folder with you",
+    "body": "Amara Okonkwo shared the folder Store Rollout Photos with you.",
+    "received_at": "2026-08-23T13:24:00+08:00"
+  },
+  {
+    "from": "Companies House <noreply@companieshouse.gov.uk>",
+    "subject": "Filing accepted",
+    "body": "Your confirmation statement has been accepted and is now on the public record.",
+    "received_at": "2026-08-23T13:31:00+08:00"
+  },
+  {
+    "from": "Shopify <no-reply@shopify.com>",
+    "subject": "Daily sales summary",
+    "body": "Yesterday: 87 orders, 6,412 GBP, average order value 73.70 GBP.",
+    "received_at": "2026-08-23T13:38:00+08:00"
+  },
+  {
+    "from": "Legal Ops <legal@vanterra-group.com>",
+    "subject": "Contract renewal - 30 day notice",
+    "body": "This is the formal 30-day notice window on the master services agreement. If you intend to renew on the current terms, a short written confirmation is enough. If you want to renegotiate the SLA, we should book a call this week.",
+    "received_at": "2026-08-23T14:12:00+08:00"
+  },
+  {
+    "from": "Prize Centre <winner@luckydraw-global.com>",
+    "subject": "Congratulations you have been selected",
+    "body": "Congratulations, you are our monthly winner. Click here to claim, limited time only. Unsubscribe to stop.",
+    "received_at": "2026-08-23T14:33:00+08:00"
+  },
+  {
+    "from": "Office Supplies <deals@bulkprint-direct.biz>",
+    "subject": "Toner clearance this week",
+    "body": "Limited time clearance, special offer on toner. Click here, guaranteed lowest price.",
+    "received_at": "2026-08-23T14:44:00+08:00"
+  },
+  {
+    "from": "Apple <no_reply@email.apple.com>",
+    "subject": "Your subscription receipt",
+    "body": "Receipt for iCloud storage 2TB, 6.99 GBP, charged to the card ending 4417.",
+    "received_at": "2026-08-23T14:45:00+08:00"
+  },
+  {
+    "from": "1Password <notifications@1password.com>",
+    "subject": "New device added to your account",
+    "body": "A new device named Studio-Mac was added to your account from London.",
+    "received_at": "2026-08-23T14:52:00+08:00"
+  },
+  {
+    "from": "Recruiter Bot <talent@hyperhire-network.info>",
+    "subject": "50 developers ready to start",
+    "body": "Risk-free trial of our hiring pool. Act now, special offer expires tonight. Click here.",
+    "received_at": "2026-08-23T14:55:00+08:00"
+  },
+  {
+    "from": "Royal Mail <noreply@royalmail.com>",
+    "subject": "Delivery confirmed",
+    "body": "Your tracked item RM884210 was delivered and signed for at 11:20.",
+    "received_at": "2026-08-23T14:59:00+08:00"
+  },
+  {
+    "from": "陳思君 <yijun.chen@taipei-fabrics.com.tw>",
+    "subject": "緊急：出貨延遲需要您確認",
+    "body": "您好，本週五的一批布料因為染廠排程延後一天，最快下週一才能出貨。如果您還是需要週五到貨，我們可以先出一半數量，剩下的下週補上。麻煩您回覆確認。",
+    "received_at": "2026-08-23T15:05:00+08:00"
+  },
+  {
+    "from": "Anthropic <noreply@anthropic.com>",
+    "subject": "Usage summary for August",
+    "body": "Your workspace used 4.2M input tokens and 0.9M output tokens this month.",
+    "received_at": "2026-08-23T15:06:00+08:00"
+  },
+  {
+    "from": "Loan Desk <apply@fastcapital-uk.net>",
+    "subject": "Pre-approved funding for your business",
+    "body": "Guaranteed approval, no obligation quote. Act now, limited time rate. Click here to apply.",
+    "received_at": "2026-08-23T15:06:00+08:00"
+  },
+  {
+    "from": "Ops Team <ops@northwind-retail.co>",
+    "subject": "Minutes: Tuesday stand-up",
+    "body": "Minutes attached. Two blockers were logged against the packing line.",
+    "received_at": "2026-08-23T15:13:00+08:00"
+  },
+  {
+    "from": "Webinar Team <invites@growthsummit-live.com>",
+    "subject": "Last chance to register",
+    "body": "Limited time bonus pack, risk-free. Click here to register. Unsubscribe if not interested.",
+    "received_at": "2026-08-23T15:17:00+08:00"
+  },
+  {
+    "from": "Eventbrite <noreply@order.eventbrite.com>",
+    "subject": "Your ticket for Retail Ops Meetup",
+    "body": "Your ticket is confirmed for 12 September, doors at 18:00.",
+    "received_at": "2026-08-23T15:20:00+08:00"
+  },
+  {
+    "from": "Design Studio <hello@logoblitz-express.biz>",
+    "subject": "Rebrand your company in 48 hours",
+    "body": "Special offer this week only. Guaranteed revisions, risk-free. Click here for samples.",
+    "received_at": "2026-08-23T15:28:00+08:00"
+  },
+  {
+    "from": "Print Shop <orders@megabanner-print.biz>",
+    "subject": "Trade show banners half price",
+    "body": "Limited time trade show promotion, guaranteed next day. Click here. Unsubscribe to opt out.",
+    "received_at": "2026-08-23T16:01:00+08:00"
+  },
+  {
+    "from": "Accounts <billing@lumen-studio.com>",
+    "subject": "Invoice #LS-2291 attached",
+    "body": "Please find attached invoice LS-2291 for the August retainer, due in 14 days. Let me know if you need it split across two cost centres like last quarter.",
+    "received_at": "2026-08-23T16:20:00+08:00"
+  },
+  {
+    "from": "Wise <noreply@wise.com>",
+    "subject": "Exchange rate alert you set",
+    "body": "GBP to EUR reached the rate you asked to watch.",
+    "received_at": "2026-08-23T16:27:00+08:00"
+  },
+  {
+    "from": "Notion <no-reply@notion.so>",
+    "subject": "Someone shared a page with you",
+    "body": "Daniel shared the page Q4 Capacity Model with your workspace.",
+    "received_at": "2026-08-23T16:34:00+08:00"
+  },
+  {
+    "from": "VPN Deals <promo@shieldnet-secure.info>",
+    "subject": "90 percent off lifetime plan",
+    "body": "Limited time lifetime deal, guaranteed privacy. Click here. Unsubscribe at the bottom.",
+    "received_at": "2026-08-23T16:39:00+08:00"
+  },
+  {
+    "from": "Trello <do-not-reply@trello.com>",
+    "subject": "Card moved to Review",
+    "body": "The card Packing Line SOP was moved from Doing to Review by Joseph.",
+    "received_at": "2026-08-23T16:41:00+08:00"
+  },
+  {
+    "from": "Data Broker <sales@contactvault-global.net>",
+    "subject": "12 million B2B contacts",
+    "body": "Free trial of our database. Act now for a special offer. Click here to download the sample.",
+    "received_at": "2026-08-23T16:50:00+08:00"
+  },
+  {
+    "from": "Adobe <mail@mail.adobe.com>",
+    "subject": "Your document was signed",
+    "body": "All parties have signed the document Warehouse Addendum.",
+    "received_at": "2026-08-23T17:02:00+08:00"
+  },
+  {
+    "from": "Wellness Co <care@vitalboost-supplement.com>",
+    "subject": "Energy formula trusted by founders",
+    "body": "Risk-free trial bottle, guaranteed results. Act now, limited time shipping offer.",
+    "received_at": "2026-08-23T17:12:00+08:00"
+  },
+  {
+    "from": "Ad Network <partners@clickstream-media.info>",
+    "subject": "We can 3x your ad returns",
+    "body": "Guaranteed uplift or your money back, risk-free. Act now. Click here to see the deck.",
+    "received_at": "2026-08-23T17:23:00+08:00"
+  },
+  {
+    "from": "Course Sales <learn@sixfigure-blueprint.net>",
+    "subject": "The system that changed my life",
+    "body": "Limited time enrolment, risk-free guarantee. Click here. Unsubscribe if you are not serious.",
+    "received_at": "2026-08-23T17:34:00+08:00"
+  },
+  {
+    "from": "Joseph Okafor <j.okafor@stellar-logistics.net>",
+    "subject": "Warehouse capacity for October",
+    "body": "We can hold 640 pallets from 1 Oct, which is 90 short of your forecast. I can reserve overflow space at the Enfield site but I need a yes by Friday.",
+    "received_at": "2026-08-23T17:47:00+08:00"
+  },
+  {
+    "from": "Sentry <noreply@sentry.io>",
+    "subject": "Weekly error report",
+    "body": "Errors fell 18 percent week over week. The top issue was a timeout in the sync job.",
+    "received_at": "2026-08-23T17:48:00+08:00"
+  },
+  {
+    "from": "BBC News <newsletter@bbc.co.uk>",
+    "subject": "Your morning headlines",
+    "body": "Top stories this morning across business and technology.",
+    "received_at": "2026-08-23T17:55:00+08:00"
+  },
+  {
+    "from": "Travel Club <deals@voyagerewards-plus.com>",
+    "subject": "Your holiday allocation expires",
+    "body": "Limited time allocation, act now. Guaranteed upgrade. Click here. Unsubscribe below.",
+    "received_at": "2026-08-23T18:07:00+08:00"
+  },
+  {
+    "from": "Pension Provider <service@nestpensions.org.uk>",
+    "subject": "Statement available",
+    "body": "Your annual statement is ready to view in your online account.",
+    "received_at": "2026-08-23T18:09:00+08:00"
+  },
+  {
+    "from": "Ops Team <ops@northwind-retail.co>",
+    "subject": "Rota published for next week",
+    "body": "The rota for the week of 1 September has been published to the shared drive.",
+    "received_at": "2026-08-23T18:16:00+08:00"
+  },
+  {
+    "from": "Zapier <noreply@zapier.com>",
+    "subject": "Your Zap ran 1,204 times",
+    "body": "Your automation ran 1,204 times this month with no held tasks.",
+    "received_at": "2026-08-23T18:23:00+08:00"
+  },
+  {
+    "from": "Priya Nair <priya.nair@brightfold.io>",
+    "subject": "Campaign brief feedback",
+    "body": "I read the brief twice. The positioning is much sharper than the last round. One worry: the hero claim is hard to prove without the case study numbers. Can we swap in the retention figure instead?",
+    "received_at": "2026-08-23T18:32:00+08:00"
+  },
+  {
+    "from": "Insurance Quotes <quotes@coverfast-compare.biz>",
+    "subject": "Cut your business cover by 40 percent",
+    "body": "No obligation quote, guaranteed savings. Act now, limited time. Click here.",
+    "received_at": "2026-08-23T18:45:00+08:00"
+  },
+  {
+    "from": "App Developers <hello@appforge-offshore.info>",
+    "subject": "Build your app for 4,999",
+    "body": "Special offer for new clients, risk-free milestone terms. Click here for portfolio.",
+    "received_at": "2026-08-23T18:56:00+08:00"
+  },
+  {
+    "from": "Payment Alert <security@paypa1-verify.net>",
+    "subject": "Unusual activity detected on your account",
+    "body": "Act now to keep your account. Click here to verify. Guaranteed restoration within minutes.",
+    "received_at": "2026-08-23T19:18:00+08:00"
+  },
+  {
+    "from": "Marketing AI <bot@autopostpro-suite.biz>",
+    "subject": "Post to 9 platforms on autopilot",
+    "body": "Free trial, no obligation. Limited time launch price. Click here to start.",
+    "received_at": "2026-08-23T19:29:00+08:00"
+  },
+  {
+    "from": "Office Space <leasing@flexdesk-central.info>",
+    "subject": "Desks available in your area",
+    "body": "Special offer on 12 month terms, risk-free break clause. Act now. Click here.",
+    "received_at": "2026-08-23T19:40:00+08:00"
+  },
+  {
+    "from": "Sofia Marchetti <s.marchetti@meridian-capital.com>",
+    "subject": "Follow-up on the term sheet",
+    "body": "Thanks for the call on Monday. Our partners are aligned on the headline numbers. Two open points remain, the board seat and the option pool. Could you send a short note on how you would like to handle both?",
+    "received_at": "2026-08-23T19:58:00+08:00"
+  },
+  {
+    "from": "Daniel Hsu <daniel.hsu@harborline.co.uk>",
+    "subject": "Shipment schedule change for next week",
+    "body": "Our carrier moved the Tuesday sailing to Thursday. That pushes your pallets to the 29th. Do you want us to split the load and air-freight the first 200 units?",
+    "received_at": "2026-08-23T20:41:00+08:00"
+  },
+  {
+    "from": "Billing Notice <no-reply@invoice-settle-now.info>",
+    "subject": "URGENT: your unpaid invoice is overdue",
+    "body": "Act now to avoid suspension. Click here to settle, guaranteed instant clearance. Limited time waiver on the late fee. Unsubscribe to stop these notices.",
+    "received_at": "2026-08-23T20:51:00+08:00"
+  },
+  {
+    "from": "Amara Okonkwo <a.okonkwo@northwind-retail.com>",
+    "subject": "Q3 rollout dates - need your sign-off",
+    "body": "Hi, the ops team pencilled in 14 Sept for the first store batch. Can you confirm that works on your side before I lock the vendor slots? Happy to move it a week if your install crew is stretched.",
+    "received_at": "2026-08-23T21:14:00+08:00"
+  }
+]

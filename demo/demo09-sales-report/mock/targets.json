@@ -1,0 +1,17 @@
+{
+  "as_of": "2026-08-24",
+  "currency": "USD",
+  "_comment": "商業系統回傳的目標快照。config.yaml 的 targets 區塊可覆寫 daily/monthly，月累計與 7 日歷史一律以此檔為準。",
+  "daily_revenue": "4200.00",
+  "monthly_revenue": "92000.00",
+  "month_to_date_revenue": "58400.00",
+  "trailing_7_day_revenue": [
+    "4310.00",
+    "3980.00",
+    "4520.00",
+    "4105.00",
+    "3870.00",
+    "4640.00",
+    "4225.00"
+  ]
+}

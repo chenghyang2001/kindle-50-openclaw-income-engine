@@ -1,0 +1,58 @@
+# demo03 — 會議紀錄與行動提取（第 03/04 章）
+# 路徑一律相對於本模組目錄，執行期由 main.py 以 Path(__file__) 推算，禁止硬編碼絕對路徑。
+
+module:
+  id: "03"
+  name: "會議紀錄與行動提取"
+  deploy_minutes: 60
+  recovered_hours_per_month: 11
+  client_setup_price: 350
+  client_monthly_price: 85
+
+runtime:
+  autonomy: draft # read_only | draft | supervised_auto
+  approved_senders: []
+  days_in_draft: 0
+  notify_channel: console
+
+llm:
+  model: claude-sonnet-5
+  max_tokens: 2000
+  # CONTEXT_NOTE：第 04 章實測可減少 40% 不相關輸出
+  context_note: "這是內部營運會議，收件者是與會者本人。只輸出可執行的事實，不要客套話與推測。"
+
+webhook:
+  host: "127.0.0.1"
+  port: 8093
+  path: "/meeting-transcript"
+  # 單筆逐字稿上限 1 MB：超過通常代表整場錄音被誤傳，寧可 413 也不要吃爆記憶體
+  max_body_bytes: 1048576
+  # 等待會議平台回呼的秒數；逾時視為「取不到逐字稿」走紅色警報
+  wait_seconds: 300
+
+extraction:
+  # 鐵律：只提取明確陳述的承諾（I will / Can you / 我來 / 請你），模糊推論一律丟棄
+  require_explicit_commitment: true
+  # 信心低於此值的項目照樣輸出，但會標警示並記 amber，交人工判斷
+  confidence_floor: 0.6
+  # 重疊發言比例超過此值即視為 messy 逐字稿（即使 quality_hint 寫 clear）
+  overlap_messy_threshold: 0.15
+  quality_profiles:
+    clear:
+      accuracy_min: 0.85
+      accuracy_max: 0.92
+      confidence_factor: 1.0
+    messy:
+      accuracy_min: 0.6
+      accuracy_max: 0.75
+      confidence_factor: 0.8
+
+output:
+  # 書中承諾：會議結束後 5 分鐘內行動清單進信箱
+  send_within_minutes: 5
+  # 專案管理 / CRM 推播端點（未設環境變數時 config_loader 會保留原樣字串）
+  crm_endpoint: "${CRM_WEBHOOK_URL}"
+
+mock:
+  # --mock 預設讀這份；用 --transcript 可指向 messy / no_owner 版本
+  transcript: "mock/transcript_clear.json"

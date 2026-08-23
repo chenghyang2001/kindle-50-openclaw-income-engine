@@ -1,0 +1,47 @@
+{
+  "platform": "trustpilot",
+  "business_unit": "brightleafliving.com",
+  "fetched_at": "2026-08-24T08:00:00+08:00",
+  "reviews": [
+    {
+      "review_id": "tp-20260824-101",
+      "author": "Hannah Lindqvist",
+      "rating": 5,
+      "title": "Exactly as described",
+      "text": "Ordered the oak sideboard, arrived in four days, assembly instructions were actually readable. No complaints at all.",
+      "posted_at": "2026-08-24T06:22:00+08:00",
+      "url": "https://www.trustpilot.com/reviews/tp-20260824-101",
+      "language": "en"
+    },
+    {
+      "review_id": "tp-20260823-102",
+      "author": "郭俊霖",
+      "rating": 4,
+      "title": "品質好，物流可以再快",
+      "text": "傢俱本身沒話說，接縫處理得很細。唯一小缺點是物流業者只給一天前通知，臨時要調整上班時間有點麻煩。",
+      "posted_at": "2026-08-23T18:55:00+08:00",
+      "url": "https://www.trustpilot.com/reviews/tp-20260823-102",
+      "language": "zh-TW"
+    },
+    {
+      "review_id": "tp-20260823-103",
+      "author": "Daniel O'Connor",
+      "rating": 3,
+      "title": "Fine, nothing special",
+      "text": "Product is decent for the money but the website photos make the finish look warmer than it actually is. Not a dealbreaker, just be aware.",
+      "posted_at": "2026-08-23T14:09:00+08:00",
+      "url": "https://www.trustpilot.com/reviews/tp-20260823-103",
+      "language": "en"
+    },
+    {
+      "review_id": "tp-20260822-104",
+      "author": "許雅雯",
+      "rating": 5,
+      "title": "客服回應很快",
+      "text": "詢問保固範圍，客服十分鐘內就回覆並附上條款連結，不用來回追問，體驗很好。",
+      "posted_at": "2026-08-22T20:31:00+08:00",
+      "url": "https://www.trustpilot.com/reviews/tp-20260822-104",
+      "language": "zh-TW"
+    }
+  ]
+}

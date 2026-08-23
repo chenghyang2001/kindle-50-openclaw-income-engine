@@ -1,0 +1,78 @@
+{
+  "generated_for": "2026-08-24",
+  "feeds": ["mock://industry", "mock://finance"],
+  "items": [
+    {
+      "id": "news-001",
+      "source": "產業快訊",
+      "title": "法遵科技併購案帶動企業自動化預算上修",
+      "url": "https://example.com/news/001",
+      "published": "05:40",
+      "topic": "客戶產業",
+      "impact": "high"
+    },
+    {
+      "id": "news-002",
+      "source": "財經日報",
+      "title": "央行維持利率不變，中小企業貸款成本持平",
+      "url": "https://example.com/news/002",
+      "published": "05:10",
+      "topic": "總體經濟",
+      "impact": "medium"
+    },
+    {
+      "id": "news-003",
+      "source": "科技前線",
+      "title": "主要雲端供應商調整亞太區儲存計價",
+      "url": "https://example.com/news/003",
+      "published": "04:55",
+      "topic": "成本",
+      "impact": "high"
+    },
+    {
+      "id": "news-004",
+      "source": "產業快訊",
+      "title": "競品推出同類簡報服務，定價低於市場行情",
+      "url": "https://example.com/news/004",
+      "published": "04:20",
+      "topic": "競爭",
+      "impact": "high"
+    },
+    {
+      "id": "news-005",
+      "source": "財經日報",
+      "title": "第三季企業徵才意願小幅回升",
+      "url": "https://example.com/news/005",
+      "published": "03:50",
+      "topic": "人力",
+      "impact": "low"
+    },
+    {
+      "id": "news-006",
+      "source": "科技前線",
+      "title": "資料保護新規進入公告期，六個月後生效",
+      "url": "https://example.com/news/006",
+      "published": "03:15",
+      "topic": "法遵",
+      "impact": "medium"
+    },
+    {
+      "id": "news-007",
+      "source": "產業快訊",
+      "title": "本地電商平台開放第三方自動化串接",
+      "url": "https://example.com/news/007",
+      "published": "02:40",
+      "topic": "通路",
+      "impact": "low"
+    },
+    {
+      "id": "news-008",
+      "source": "財經日報",
+      "title": "新台幣兌美元小幅走貶，外幣收入換匯有利",
+      "url": "https://example.com/news/008",
+      "published": "02:05",
+      "topic": "匯率",
+      "impact": "medium"
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+# 模組 #10 — 客戶跟進序列自動化
+# 書中數據：部署 <90 分鐘｜回收 12 hrs/mo（$960）｜售價 $350 setup + $90/mo
+
+module:
+  id: "10"
+  name: "客戶跟進序列自動化"
+  deploy_minutes: 90
+  recovered_hours_per_month: 12
+  client_setup_price: 350
+  client_monthly_price: 90
+
+runtime:
+  autonomy: draft            # read_only | draft | supervised_auto
+  approved_senders: []       # supervised_auto 必填白名單（email 或 "@domain"）
+  days_in_draft: 0           # 未滿 14 天就開 supervised_auto 會收到 AMBER 警告
+  notify_channel: console
+
+# 三段跟進序列。day 為「提案寄出後第幾天」，非絕對日期。
+sequence:
+  - day: 3
+    type: gentle_check
+    prompt: prompts/day03_gentle.md
+  - day: 7
+    type: case_study
+    prompt: prompts/day07_case_study.md
+  - day: 14
+    type: final_check
+    prompt: prompts/day14_final.md
+
+safety:
+  # 客戶一有回覆立即中止整個序列。
+  # 這是本模組唯一「不可停用」的設定：即使改成 false，程式仍會強制視為 true，
+  # 並透過 Diagnostics.amber 發出警告。誤發後續跟進對客戶關係的傷害不可逆。
+  stop_on_reply: true
+  timezone: "Asia/Taipei"
+  # Windows / 精簡容器可能缺 IANA 時區資料庫（zoneinfo 需要 tzdata），
+  # 此時退回固定 UTC 偏移，並發 AMBER 警告，不讓整支程式掛掉。
+  timezone_fallback_offset_hours: 8
+
+crm:
+  # 觸發序列的 CRM 階段；其餘階段（won / lost / replied）一律不推進
+  active_stage: proposal_sent
+
+mock:
+  prospects: mock/prospects.json
+  case_studies: mock/case_studies.json
+  # mock 模式的基準時間，讓 --mock 每次執行結果完全可重現（不受今天日期影響）
+  today: "2026-08-24T09:00:00+08:00"
+
+metrics:
+  baseline_conversion_rate: 0.18
+  target_conversion_rate: 0.25

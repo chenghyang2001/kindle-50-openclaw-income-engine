@@ -1,0 +1,68 @@
+{
+  "transcript_id": "mtg-2026-08-24-contract-sync",
+  "title": "Contract Sync (no owners named)",
+  "platform": "zoom",
+  "started_at": "2026-08-24T16:00:00+08:00",
+  "ended_at": "2026-08-24T16:14:00+08:00",
+  "quality_hint": "clear",
+  "note": "承諾明確但全程沒有指名負責人：驗證 owner 必須是 null，絕不猜測",
+  "attendees": [
+    {
+      "name": "David Okonkwo",
+      "email": "david@triforge.example",
+      "role": "chair"
+    },
+    {
+      "name": "Priya Raman",
+      "email": "priya@triforge.example",
+      "role": "delivery"
+    },
+    {
+      "name": "Marcus Feld",
+      "email": "marcus@vendor-lab.example",
+      "role": "vendor"
+    },
+    {
+      "name": "Sofia Lindqvist",
+      "email": "sofia@triforge.example",
+      "role": "ops"
+    }
+  ],
+  "utterances": [
+    {
+      "index": 1,
+      "speaker": "David Okonkwo",
+      "text": "Short one today, just the contract items."
+    },
+    {
+      "index": 2,
+      "speaker": "David Okonkwo",
+      "text": "We'll get the contract reviewed before the end of the week."
+    },
+    {
+      "index": 3,
+      "speaker": "Priya Raman",
+      "text": "Can you handle the invoice reconciliation, please?"
+    },
+    {
+      "index": 4,
+      "speaker": "Sofia Lindqvist",
+      "text": "Someone needs to chase the vendor for the updated SOW."
+    },
+    {
+      "index": 5,
+      "speaker": "Marcus Feld",
+      "text": "我們會在下週前把資安問卷補齊。"
+    },
+    {
+      "index": 6,
+      "speaker": "David Okonkwo",
+      "text": "Decision: the renewal stays on annual terms."
+    },
+    {
+      "index": 7,
+      "speaker": "David Okonkwo",
+      "text": "Alright, that's the lot."
+    }
+  ]
+}

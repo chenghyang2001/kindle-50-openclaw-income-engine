@@ -1,0 +1,70 @@
+# demo02 — 收件匣清零代理
+# 第 03/04 章：23:00 分類 VIP/FYI/Spam，為 VIP 起草回覆，早上 10-15 分審批。
+
+module:
+  id: "02"
+  name: "收件匣清零代理"
+  deploy_minutes: 90
+  recovered_hours_per_month: 33
+  client_setup_price: 400
+  client_monthly_price: 100
+
+runtime:
+  # 自主權階梯預設 DRAFT：建草稿但絕不自動送出。
+  # 要改成 supervised_auto，approved_senders 必須非空，且 days_in_draft >= 14。
+  autonomy: draft
+  approved_senders: []
+  days_in_draft: 0
+  notify_channel: console
+
+# 第 04 章稱這是「此自動化中最具影響力的設定」。
+# 三層由寬到窄：整個網域 -> 特定個人 -> 主旨關鍵字。
+vip_senders:
+  domains:
+    - "@northwind-retail.com"
+    - "@harborline.co.uk"
+    - "@meridian-capital.com"
+  individuals:
+    - "priya.nair@brightfold.io"
+    - "j.okafor@stellar-logistics.net"
+  subject_keywords:
+    - "invoice"
+    - "urgent"
+    - "contract renewal"
+    - "發票"
+    - "緊急"
+
+inbox:
+  # 相對於本設定檔所在目錄解析，避免硬編碼絕對路徑。
+  mock_emails: "mock/emails.json"
+  # 語氣校準樣本：3-5 封使用者過去親手寫的信。
+  # 第 04 章：五分鐘設定，消除 60%「這聽起來不像我」客訴。
+  tone_examples: "mock/tone_examples.json"
+  # 前兩週強制 false。即使這裡填 true，days_in_draft < 14 時系統會警告並覆寫回 false。
+  auto_unsubscribe: false
+  # live 模式的 Gmail 查詢條件（走已登入的 gws CLI，不自行實作 OAuth）。
+  live_query: "is:unread newer_than:1d"
+  live_max_results: 60
+
+classification:
+  # 規則引擎（classifier.py）永遠是第一線判斷：決定性、可稽核、零成本。
+  # 開啟後，信心值低於門檻的信件會在 --live 模式下請 LLM 覆核（mock 模式不呼叫）。
+  use_llm_second_opinion: false
+  low_confidence_threshold: 0.55
+  # 分類為 SPAM 但命中 VIP 訊號的信件超過這個數量，就升起琥珀色警示。
+  misclassification_alert_threshold: 1
+
+review:
+  # 早上審批時間估算：固定開銷 + 每封 VIP 草稿的閱讀時間。
+  base_minutes: 3.0
+  minutes_per_vip_draft: 1.5
+
+llm:
+  model: "claude-sonnet-5"
+  max_tokens: 800
+  # 第 04 章：附加 CONTEXT_NOTE 可減少 40% 不相關輸出。
+  context_note: "收件人是一家 12 人零售供應鏈公司的創辦人，客戶多為英國與台灣的零售與物流業者。"
+
+prompts:
+  classify: "prompts/classify.md"
+  draft_reply: "prompts/draft_reply.md"

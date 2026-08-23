@@ -1,0 +1,39 @@
+{
+  "source": "stripe",
+  "as_of": "2026-08-24",
+  "currency": "USD",
+  "_comment": "只有 succeeded 才算收款；fees 是當日金流手續費，從毛額扣除後才是實際入帳。",
+  "charges": [
+    {
+      "charge_id": "ch_3Qa1",
+      "status": "succeeded",
+      "amount": "80.00",
+      "description": "月費訂閱 Pro"
+    },
+    {
+      "charge_id": "ch_3Qa2",
+      "status": "succeeded",
+      "amount": "80.00",
+      "description": "月費訂閱 Pro"
+    },
+    {
+      "charge_id": "ch_3Qa3",
+      "status": "succeeded",
+      "amount": "120.00",
+      "description": "月費訂閱 Team"
+    },
+    {
+      "charge_id": "ch_3Qa4",
+      "status": "succeeded",
+      "amount": "99.00",
+      "description": "一次性導入費"
+    },
+    {
+      "charge_id": "ch_3Qa5",
+      "status": "failed",
+      "amount": "80.00",
+      "description": "月費訂閱 Pro（卡片過期）"
+    }
+  ],
+  "fees": "21.00"
+}

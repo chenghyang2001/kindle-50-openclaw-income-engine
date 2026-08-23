@@ -1,0 +1,17 @@
+{
+  "source": "shopify",
+  "as_of": "2026-08-24",
+  "currency": "USD",
+  "_comment": "orders 含一筆 refunded（不計營收）；refunds 是當日退款，可能對應前幾天的訂單。",
+  "orders": [
+    { "order_id": "#1187", "status": "paid", "total": "129.00", "items": 2 },
+    { "order_id": "#1188", "status": "paid", "total": "249.00", "items": 1 },
+    { "order_id": "#1189", "status": "paid", "total": "89.00", "items": 1 },
+    { "order_id": "#1190", "status": "paid", "total": "159.00", "items": 3 },
+    { "order_id": "#1191", "status": "paid", "total": "74.00", "items": 1 },
+    { "order_id": "#1192", "status": "paid", "total": "199.00", "items": 2 },
+    { "order_id": "#1193", "status": "paid", "total": "141.00", "items": 2 },
+    { "order_id": "#1194", "status": "refunded", "total": "118.00", "items": 1 }
+  ],
+  "refunds": [{ "order_id": "#1150", "amount": "98.00", "reason": "尺寸不合" }]
+}

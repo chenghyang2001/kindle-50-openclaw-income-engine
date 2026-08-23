@@ -1,0 +1,66 @@
+# demo08 — 競品價格監控警報
+# 書中數據：部署 <60min｜回收 11 hrs/mo（$770）｜售價 $280 setup + $70/mo
+
+module:
+  id: "08"
+  name: "競品價格監控警報"
+  deploy_minutes: 60
+  recovered_hours_per_month: 11
+  client_setup_price: 280
+  client_monthly_price: 70
+
+runtime:
+  # 本模組只讀取公開網頁並回報給老闆自己，預設維持 draft：
+  # 警報要送出前先由人工過目，避免誤判的價格數字直接推到客戶或團隊頻道。
+  autonomy: draft
+  approved_senders: []
+  days_in_draft: 0
+  notify_channel: console
+  # 警報收件人。搭配 supervised_auto + approved_senders 才會自動送出，
+  # 未命中白名單一律降級為 draft（不會靜默送出）。
+  alert_recipient: "owner@yourcompany.example"
+
+monitor:
+  # 每日晨間執行時間（交給 cron / 排程器，本程式只負責單次執行並回報）
+  run_at: "07:00"
+  # 變動幅度達到此百分比（含）即觸發警報
+  threshold_percent: 5
+  # 抓取間隔秒數；實際執行時會取 max(本值, 1.0)，避免打太快被封 IP
+  request_interval_seconds: 1
+  request_timeout_seconds: 15
+  currency: "USD"
+  # 相對於本 demo 目錄的路徑（程式內以 Path(__file__).parent 解析，不硬編碼）
+  state_file: "state/baselines.json"
+  mock_pages_dir: "mock/pages"
+  # 真實抓取時的 User-Agent；聯絡信箱走環境變數展開，缺少時保留原樣
+  user_agent: "OpenClawPriceMonitor/1.0 (+contact: ${MONITOR_CONTACT_EMAIL})"
+
+# 監控目標。selector 支援的語法子集（由標準庫 html.parser 實作，非完整 CSS）：
+#   tag / .class / #id / [attr=value]，可組合，例：span.price、div[data-testid=product-price]
+# baseline_price 一律用字串，避免 YAML 轉成 float 後失去精度。
+# mock_file 可省略；省略時由網址主機名推導（competitor-a.example.com -> competitor_a.html）。
+targets:
+  - name: "Competitor A — Linen Bedding Set"
+    url: "https://competitor-a.example.com/products/linen-bedding-set"
+    selector: "span.price"
+    baseline_price: "129.00"
+  - name: "Competitor B — Ceramic Table Lamp"
+    url: "https://competitor-b.example.com/products/ceramic-table-lamp"
+    selector: "span.price"
+    baseline_price: "89.50"
+  - name: "Competitor C — Oak Side Table"
+    url: "https://competitor-c.example.com/products/oak-side-table"
+    selector: "span#current-price"
+    baseline_price: "240.00"
+  - name: "Competitor D — Wool Throw Blanket"
+    url: "https://competitor-d.example.com/products/wool-throw-blanket"
+    selector: "div[data-testid=product-price]"
+    baseline_price: "60.00"
+  - name: "Competitor E — Rattan Armchair"
+    url: "https://competitor-e.example.com/products/rattan-armchair"
+    selector: "span.price"
+    baseline_price: "45.00"
+  - name: "Competitor F — Marble Coffee Table"
+    url: "https://competitor-f.example.com/products/marble-coffee-table"
+    selector: "span.price"
+    baseline_price: "75.00"

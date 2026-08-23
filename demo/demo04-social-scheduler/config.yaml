@@ -1,0 +1,97 @@
+# 模組 #4：社群媒體內容排程
+# 一份 10 分鐘簡報 -> 全平台一週內容 -> 人工審閱 20 分 -> 跨平台排程
+module:
+  id: "04"
+  name: "社群媒體內容排程"
+  deploy_minutes: 90
+  recovered_hours_per_month: 26
+  client_setup_price: 350
+  client_monthly_price: 90
+
+runtime:
+  # 預設 draft：排程前必須人工過目。這是本模組防止「品牌災難」的關鍵設計，
+  # 社群貼文一旦發出就是公開的，撤回成本遠高於多花 20 分鐘審閱。
+  autonomy: draft
+  approved_senders: []
+  days_in_draft: 0
+  notify_channel: console
+
+content:
+  brief_minutes: 10            # 企業主提交簡報所需時間（書中數據）
+  review_minutes: 20           # 人工審閱與修改所需時間（書中數據）
+  brief_file: "mock/brief.json"
+  brand_voice_file: "mock/brand_voice.json"
+  min_tone_examples: 3         # 少於此數量會發 amber（對應契約的 tone_mismatch）
+  max_regeneration_attempts: 2 # 超過平台字元上限時的重新生成次數，仍超長才截斷
+
+# 每個平台都有獨立的語氣 profile。同一則主題在不同平台必須是「重寫」而非「轉貼」，
+# 這是本模組相對於「一稿多投」排程工具的核心差異。
+platforms:
+  - id: linkedin
+    display_name: LinkedIn
+    prompt_file: "prompts/linkedin.md"
+    tone: "專業、長文、產業洞察導向；用第一人稱經營者視角，先給觀點再給證據"
+    char_limit: 3000
+    posts_per_week: 5
+    emoji_allowed: false
+    hashtag_max: 3
+    schedule_slots:
+      - "MON 08:30"
+      - "TUE 12:10"
+      - "WED 08:30"
+      - "THU 17:40"
+      - "FRI 08:30"
+      - "TUE 17:40"
+      - "THU 08:30"
+
+  - id: instagram
+    display_name: Instagram
+    prompt_file: "prompts/instagram.md"
+    tone: "輕鬆、視覺導向、善用 emoji；短句換行，第一行就要讓人停下滑動"
+    char_limit: 2200
+    posts_per_week: 6
+    emoji_allowed: true
+    hashtag_max: 8
+    schedule_slots:
+      - "MON 12:30"
+      - "TUE 20:00"
+      - "WED 12:30"
+      - "THU 20:00"
+      - "FRI 18:30"
+      - "SAT 10:00"
+      - "SUN 20:00"
+
+  - id: x
+    display_name: X
+    prompt_file: "prompts/x.md"
+    # 280 是平台硬上限，不是風格建議：超過就會被拒收，因此 generator 會先重新生成再截斷
+    tone: "簡短、犀利、一則講一個重點；不鋪陳、不客套"
+    char_limit: 280
+    posts_per_week: 7
+    emoji_allowed: false
+    hashtag_max: 2
+    schedule_slots:
+      - "MON 09:10"
+      - "TUE 09:10"
+      - "WED 09:10"
+      - "THU 09:10"
+      - "FRI 09:10"
+      - "SAT 11:20"
+      - "SUN 19:40"
+
+  - id: facebook
+    display_name: Facebook
+    prompt_file: "prompts/facebook.md"
+    tone: "親切、社群感；像跟熟客聊天，結尾用問句邀請留言"
+    char_limit: 2000
+    posts_per_week: 5
+    emoji_allowed: true
+    hashtag_max: 3
+    schedule_slots:
+      - "MON 19:00"
+      - "WED 19:00"
+      - "FRI 19:00"
+      - "SAT 14:00"
+      - "SUN 11:00"
+      - "TUE 19:00"
+      - "THU 19:00"

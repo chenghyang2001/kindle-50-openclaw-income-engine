@@ -1,0 +1,80 @@
+{
+  "note": "三段離線重播對話。turns 只放『客戶說了什麼 + 意圖』，代理程式的回覆由 main.py 依狀態機即時生成。conflict_injection 代表在我方寫入日曆之前，有另一位客戶先搶下同一時段（用來觸發樂觀鎖）。",
+  "conversations": [
+    {
+      "id": "CV-1001",
+      "customer": "Ivy Chen（沐光選物）",
+      "handle": "@ivy_muguang",
+      "channel": "telegram",
+      "scenario": "normal_booking",
+      "topic": "批發合作洽談",
+      "turns": [
+        {
+          "intent": "inquiry",
+          "text": "你好，我們是台中的選物店，想談批發合作，這週有空聊 30-45 分鐘嗎？"
+        },
+        {
+          "intent": "select_slot",
+          "slot_index": 1,
+          "text": "第 2 個時段對我最方便，就約那個吧。"
+        }
+      ]
+    },
+    {
+      "id": "CV-1002",
+      "customer": "Marcus Liu（青禾生活）",
+      "handle": "@marcus_qinghe",
+      "channel": "telegram",
+      "scenario": "reschedule",
+      "topic": "秋季補貨與帳期",
+      "turns": [
+        {
+          "intent": "inquiry",
+          "text": "想約時間討論秋季補貨跟帳期，麻煩給我方便的時間。"
+        },
+        {
+          "intent": "select_slot",
+          "slot_index": 0,
+          "text": "第 1 個時段可以，就這個。"
+        },
+        {
+          "intent": "reschedule",
+          "text": "抱歉，臨時要陪主管去看店，原本約的時間要改期，可以嗎？"
+        },
+        {
+          "intent": "select_slot",
+          "slot_index": 0,
+          "text": "新的第 1 個時段沒問題，這次一定到。"
+        }
+      ]
+    },
+    {
+      "id": "CV-1003",
+      "customer": "Nina Wu（拾光雜貨）",
+      "handle": "@nina_shiguang",
+      "channel": "telegram",
+      "scenario": "slot_conflict",
+      "topic": "門市陳列與樣品",
+      "turns": [
+        {
+          "intent": "inquiry",
+          "text": "請問可以約時間看樣品跟討論門市陳列嗎？"
+        },
+        {
+          "intent": "select_slot",
+          "slot_index": 1,
+          "text": "我選第 2 個。",
+          "conflict_injection": {
+            "customer": "（同時段搶先者）好日子選品 郭小姐",
+            "title": "電話洽談"
+          }
+        },
+        {
+          "intent": "select_slot",
+          "slot_index": 0,
+          "text": "了解，那我改選新清單的第 1 個時段。"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+# demo06 發票處理與費用分類 —— 設定檔
+# 所有數字依第 03 章書中數據，改動前請先確認客戶合約。
+
+module:
+  id: "06"
+  name: "發票處理與費用分類"
+  deploy_minutes: 90              # 書中：部署 < 90 分鐘
+  recovered_hours_per_month: 8    # 書中：每月回收 8 小時
+  recovered_value_per_month: 640  # 8 hrs × $80/hr
+  client_setup_price: 350
+  client_monthly_price: 85
+
+runtime:
+  # 入帳是不可逆動作：唯有 supervised_auto 且收件人在白名單內才會真的發布。
+  autonomy: supervised_auto
+  approved_senders:
+    - "accounting@webb-partners.example"
+  days_in_draft: 21               # 已超過書中鐵律的 14 天觀察期
+  notify_channel: console
+
+extraction:
+  default_currency: "GBP"         # 本位幣；其餘幣別會被標為外幣並發 AMBER
+  required_fields:                # 缺任一欄位即 needs_review，不得入帳
+    - vendor
+    - invoice_date
+    - total_amount
+    - tax_amount
+  allowed_tax_rates: [0.0, 0.05, 0.20]   # UK：零稅率 / 減徵 5% / 標準 20%
+  tax_tolerance: "0.02"           # 小計＋稅額 vs 總額的絕對容差（金額單位）
+  tax_rate_tolerance: "0.005"     # 隱含稅率容差（±0.5 個百分點）
+  filename_template: "{date}_{vendor}_{amount}{currency}.pdf"
+  prompt_path: "prompts/extract_invoice.md"
+
+accounting:
+  system: xero                    # xero | quickbooks
+  system_recipient: "accounting@webb-partners.example"   # 對應 approved_senders
+  mock_output: "mock/posted.json"
+  default_account:
+    code: "6999"
+    name: "待分類支出"
+  # 由上而下依序比對，第一個命中的規則勝出 —— 順序即優先權。
+  # 關鍵字比對用「子字串」，故避免使用 aws 這類過短的字（會誤中 laws）。
+  rules:
+    - keywords: ["amazon web services", "adobe", "microsoft", "hosting", "subscription", "software"]
+      code: "6210"
+      name: "軟體與訂閱"
+    - keywords: ["staples", "office", "stationery", "toner", "printer", "paper"]
+      code: "6100"
+      name: "辦公用品"
+    - keywords: ["uber", "taxi", "rail", "flight", "hotel", "travel"]
+      code: "6300"
+      name: "差旅與交通"
+    - keywords: ["consult", "legal", "accountant", "audit"]
+      code: "6400"
+      name: "專業服務"
+    - keywords: ["google ads", "facebook", "marketing", "advertis"]
+      code: "6500"
+      name: "行銷與廣告"
+
+inbox:
+  # live 模式讀這個目錄下的 *.txt（PDF 由郵件閘道預先轉成文字，本模組不解析 PDF）。
+  text_dir: ""
+
+llm:
+  context_note: "你正在處理英國小型會計事務所的應付帳款發票，金額以英鎊為主，標準 VAT 為 20%。"
+
+notify:
+  # 通道憑證一律走環境變數，此處不得出現任何 token。
+  subject_prefix: "[demo06]"
+
+mock:
+  invoices_path: "mock/invoices.json"

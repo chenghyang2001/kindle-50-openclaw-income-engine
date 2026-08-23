@@ -1,0 +1,66 @@
+# demo09 — 每日銷售與進度報表
+#
+# 金額一律用「字串」寫（"4200.00" 而非 4200.00）：YAML 的裸數字會被解析成 float，
+# 進到月累計時二進位誤差會被放大，對帳的人會看到 61449.999999999996。
+# 讀進 Python 後統一走 Decimal(str(...))。
+
+module:
+  id: "09"
+  name: "每日銷售與進度報表"
+  deploy_minutes: 60
+  recovered_hours_per_month: 11
+  client_setup_price: 300
+  client_monthly_price: 80
+
+runtime:
+  # 報表會對外發送，依第 04 章自主權階梯鐵律，預設一律 draft。
+  # 連續穩定運行滿 14 天且客戶簽核後，才把 autonomy 改成 supervised_auto
+  # 並把團隊網域填進 approved_senders。
+  autonomy: draft
+  approved_senders: []
+  days_in_draft: 0
+  notify_channel: console
+
+report:
+  # 07:00 準時送達：團隊進辦公室前就讀完，早會直接討論而不是現場組資料。
+  deliver_at: "07:00"
+  timezone: "Asia/Taipei"
+  currency: "USD"
+  recipients:
+    - "sales@example.com"
+    - "ops@example.com"
+
+# 三個資料源互不重疊：CRM = 業務直簽、Shopify = 電商、Stripe = 訂閱收款，
+# 因此可以直接相加。任一個掛掉都只降級為「部分資料」，不會讓整份報表失敗。
+sources:
+  - id: crm
+    display_name: "CRM"
+    mock_file: "mock/crm.json"
+  - id: shopify
+    display_name: "Shopify"
+    mock_file: "mock/shopify.json"
+  - id: stripe
+    display_name: "Stripe"
+    mock_file: "mock/stripe.json"
+
+targets:
+  # 月累計與 7 日歷史來自 mock_file；下面兩個值會覆寫檔案內的目標，
+  # 讓客戶調目標時只需要動這份受版控的設定檔。
+  mock_file: "mock/targets.json"
+  daily_revenue: "4200.00"
+  monthly_revenue: "92000.00"
+
+thresholds:
+  # 書中異常標記規則：達成率跌破 80% 或衝破 150%（後者多半是重複計算或測試訂單），
+  # 以及當日營收較 7 日均值偏離超過 30%。
+  attainment_low_pct: 80
+  attainment_high_pct: 150
+  daily_deviation_pct: 30
+
+prompts:
+  report: "prompts/report.md"
+
+live:
+  # --live 時缺少這些環境變數要明確報錯退出，不可靜默退回 mock。
+  required_env:
+    - ANTHROPIC_API_KEY

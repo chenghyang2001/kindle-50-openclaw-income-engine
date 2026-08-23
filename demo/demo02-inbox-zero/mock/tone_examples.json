@@ -1,0 +1,26 @@
+[
+  {
+    "label": "客戶確認排程（英文，簡短直接）",
+    "to": "a.okonkwo@northwind-retail.com",
+    "subject": "Re: Store 4 install window",
+    "body": "Amara - 14th works. I'll have two engineers on site from 07:00.\n\nOne ask: can your team clear the back corridor the night before? Last time we lost an hour moving stock.\n\nSpeak Friday."
+  },
+  {
+    "label": "婉拒但留門（英文，禮貌但不迂迴）",
+    "to": "s.marchetti@meridian-capital.com",
+    "subject": "Re: Intro to the Berlin fund",
+    "body": "Sofia - thanks for thinking of us. We're not raising this quarter, so I'd rather not take their time now.\n\nAsk me again in January and the answer may well be different.\n\nBest,\nPeter"
+  },
+  {
+    "label": "壞消息告知（英文，先講結論再講補救）",
+    "to": "j.okafor@stellar-logistics.net",
+    "subject": "Re: October forecast",
+    "body": "Joseph - we're going to miss the 730 pallet figure. Realistic number is 640.\n\nI'd rather tell you now than in three weeks. If the Enfield overflow is still available, reserve it and I'll cover the deposit.\n\nPeter"
+  },
+  {
+    "label": "繁體中文供應商回覆（口語、不客套）",
+    "to": "yijun.chen@taipei-fabrics.com.tw",
+    "subject": "Re: 出貨安排",
+    "body": "怡君你好，\n\n先出一半沒問題，剩下的下週一併補上就好，不用趕。\n\n只有一件事要麻煩你：這批的色差樣請跟貨一起寄，我們品管要對。\n\n謝謝，政憲"
+  }
+]

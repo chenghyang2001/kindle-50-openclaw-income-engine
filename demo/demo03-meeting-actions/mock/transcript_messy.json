@@ -1,0 +1,88 @@
+{
+  "transcript_id": "mtg-2026-08-24-standup-crosstalk",
+  "title": "Ops Standup (crosstalk)",
+  "platform": "google_meet",
+  "started_at": "2026-08-24T14:00:00+08:00",
+  "ended_at": "2026-08-24T14:18:00+08:00",
+  "quality_hint": "messy",
+  "note": "多人重疊、口語化、句子被打斷：對應 README 品質矩陣的 60-75% 區間",
+  "attendees": [
+    {
+      "name": "David Okonkwo",
+      "email": "david@triforge.example",
+      "role": "chair"
+    },
+    {
+      "name": "Priya Raman",
+      "email": "priya@triforge.example",
+      "role": "delivery"
+    },
+    {
+      "name": "Marcus Feld",
+      "email": "marcus@vendor-lab.example",
+      "role": "vendor"
+    },
+    {
+      "name": "Sofia Lindqvist",
+      "email": "sofia@triforge.example",
+      "role": "ops"
+    }
+  ],
+  "utterances": [
+    {
+      "index": 1,
+      "speaker": "David Okonkwo",
+      "text": "okay so— sorry, go ahead—",
+      "overlap": true
+    },
+    {
+      "index": 2,
+      "speaker": "Sofia Lindqvist",
+      "text": "no no you first, I just— it's about the deck—",
+      "overlap": true
+    },
+    {
+      "index": 3,
+      "speaker": "Priya Raman",
+      "text": "yeah— I'll take the vendor call tomorrow, sure."
+    },
+    {
+      "index": 4,
+      "speaker": "David Okonkwo",
+      "text": "sorry— can you, uh, send me the numbers?",
+      "overlap": true
+    },
+    {
+      "index": 5,
+      "speaker": "Marcus Feld",
+      "text": "we should probably loop in legal on that one",
+      "overlap": true
+    },
+    {
+      "index": 6,
+      "speaker": "Sofia Lindqvist",
+      "text": "someone has to fix the deck before Thursday"
+    },
+    {
+      "index": 7,
+      "speaker": "David Okonkwo",
+      "text": "我們會再確認一次時程。"
+    },
+    {
+      "index": 8,
+      "speaker": "Priya Raman",
+      "text": "right right— and the, um, the other thing—",
+      "overlap": true
+    },
+    {
+      "index": 9,
+      "speaker": "Marcus Feld",
+      "text": "可能下週再看看好了。"
+    },
+    {
+      "index": 10,
+      "speaker": "David Okonkwo",
+      "text": "cool, let's wrap."
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+# demo05 客戶評價監控與回覆草擬 — 設定檔
+# 所有路徑都相對於本檔所在目錄，禁止硬編碼絕對路徑。
+
+module:
+  id: "05"
+  name: "客戶評價監控與回覆草擬"
+  deploy_minutes: 60
+  recovered_hours_per_month: 11
+  client_setup_price: 300
+  client_monthly_price: 80
+
+runtime:
+  # 公開回覆一旦送出無法撤回，本模組永遠停在 draft（理由見 README「為何不建議 SUPERVISED_AUTO」）
+  autonomy: draft
+  approved_senders: []
+  days_in_draft: 0
+  notify_channel: console
+
+monitor:
+  # 書中規格：每 6 小時掃一次，1-2 星在 30 分鐘內升級推播
+  poll_interval_hours: 6
+  escalation_threshold_stars: 2
+  escalation_minutes: 30
+  # live 模式每次抓取前的最小間隔秒數（rate limit 防護，程式端會強制不得低於 1.0）
+  fetch_delay_seconds: 1.0
+  # 去重狀態檔名；實際路徑由程式以 Path(__file__).parent 推算
+  seen_state_file: ".seen.json"
+  # 單次彙整通知最多列出的一般評價則數，超過只給統計避免通知爆量
+  digest_max_items: 10
+
+  platforms:
+    - id: google
+      name: "Google 商家檔案"
+      enabled: true
+      mock_file: "mock/reviews_google.json"
+      api_url: "https://mybusinessbusinessinformation.googleapis.com/v1/locations/LOCATION_ID/reviews"
+      token_env: "GOOGLE_BUSINESS_API_KEY"
+
+    - id: trustpilot
+      name: "Trustpilot"
+      enabled: true
+      mock_file: "mock/reviews_trustpilot.json"
+      api_url: "https://api.trustpilot.com/v1/business-units/BUSINESS_UNIT_ID/reviews"
+      token_env: "TRUSTPILOT_API_KEY"
+
+    - id: amazon
+      name: "Amazon 商品評價"
+      # 預設關閉：Amazon 無公開評價 API，需走 SP-API 授權，客戶簽核後才開
+      enabled: false
+      mock_file: "mock/reviews_amazon.json"
+      api_url: ""
+      token_env: "AMAZON_SPAPI_TOKEN"
+
+brand_voice:
+  brand_name: "Brightleaf Living"
+  # 語氣樣本檔（缺檔會發琥珀警示 tone_mismatch，不致命）
+  profile_file: "mock/brand_voice.json"
+  tone: "溫暖、務實、負責任；先同理再解法，不推卸責任"
+  language: "繁體中文"
+  signature: "— Sarah Chen，Brightleaf Living 客戶體驗團隊"
+  max_words: 120
+  banned_phrases:
+    - "很抱歉造成您的不便"
+    - "我們的系統顯示"
+    - "依照公司規定"

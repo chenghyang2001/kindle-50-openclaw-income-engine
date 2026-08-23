@@ -1,0 +1,58 @@
+# demo07 預約排程器設定檔
+# 書中原型為 WhatsApp 自動排程器，本專案改用 Telegram 作為預設通道
+# （台灣 WhatsApp 滲透率低，Telegram Bot API 零成本且免沙盒驗證）
+
+module:
+  id: "07"
+  name: "預約排程器"
+  deploy_minutes: 75            # 書中：部署 < 75 分鐘
+  recovered_hours_per_month: 10 # 書中：每月回收 10 小時（約 $750）
+  client_setup_price: 300
+  client_monthly_price: 75
+
+runtime:
+  autonomy: draft               # read_only | draft | supervised_auto
+  approved_senders: []          # supervised_auto 時的白名單（handle 或 @domain）
+  days_in_draft: 0
+  notify_channel: console
+
+scheduling:
+  timezone: "Asia/Taipei"
+  # Windows 常態缺 IANA tzdata，ZoneInfo 找不到時降級為固定時差並發 amber 警示
+  fallback_utc_offset_hours: 8
+  slot_duration_minutes: 45
+  slots_to_offer: 3             # 書中鐵律：一次只給 3 個時段，選擇過多會拖延決策
+  min_lead_time_minutes: 120    # 最短前置時間，避免排到 10 分鐘後的會議
+  horizon_days: 14              # 往後最多找 14 天，找不到就回報而非無限迴圈
+  # 空陣列 = 該日公休（週末不開放預約）
+  business_hours:
+    mon: ["09:00", "18:00"]
+    tue: ["09:00", "18:00"]
+    wed: ["09:00", "18:00"]
+    thu: ["09:00", "18:00"]
+    fri: ["09:00", "17:00"]
+    sat: []
+    sun: []
+  # mock 模式的「現在」。固定時間才能讓 --mock 每次輸出一致（可重現的 demo）
+  reference_now: "2026-09-07T08:30:00"
+
+channel:
+  provider: telegram            # telegram | whatsapp（原書通道保留為選項）
+  telegram:
+    bot_token: "${TELEGRAM_BOT_TOKEN}"
+    chat_id: "${TELEGRAM_CHAT_ID_CHENGHYANG2001BOT}"
+  whatsapp:
+    account_sid: "${TWILIO_ACCOUNT_SID}"
+    auth_token: "${TWILIO_AUTH_TOKEN}"
+    from_number: "${TWILIO_FROM}"
+
+state:
+  # 相對於本模組目錄（main.py 以 Path(__file__).parent 展開，禁止硬編碼絕對路徑）
+  store_file: "state/conversations.json"
+
+mock:
+  calendar_file: "mock/calendar.json"
+  conversations_file: "mock/conversations.json"
+
+prompts:
+  conversation_file: "prompts/conversation.md"

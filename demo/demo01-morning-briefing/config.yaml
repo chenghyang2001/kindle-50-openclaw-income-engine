@@ -1,0 +1,96 @@
+# demo01 — 晨間情報簡報設定檔
+# 所有路徑皆相對於本檔所在目錄，禁止填絕對路徑（跨機器同步會壞掉）。
+
+module:
+  id: "01"
+  name: "晨間情報簡報"
+  deploy_minutes: 60
+  recovered_hours_per_month: 35
+  client_setup_price: 300
+  client_monthly_price: 75
+
+runtime:
+  # 本模組只產出簡報、絕不代替使用者回信，因此固定 read_only。
+  autonomy: read_only
+  approved_senders: []
+  days_in_draft: 0
+  notify_channel: console
+
+schedule:
+  timezone: "Asia/Taipei"
+  # 30 分鐘緩衝鐵律：抓取與發送絕不可設在同一分鐘，
+  # 否則 API 稍有延遲就會變成「空簡報準時送達」。
+  execute_at: "06:00"
+  deliver_at: "06:30"
+  min_buffer_minutes: 20
+  retry_on_timeout: true
+
+briefing:
+  prompt_file: "prompts/briefing.md"
+  # 90 秒法則：目標 280–320 字；超過 400 字觸發 AMBER（briefing_too_long）。
+  target_word_min: 280
+  target_word_max: 320
+  hard_word_limit: 400
+  read_seconds: 90
+  max_priorities: 3
+  max_meetings: 3
+  max_news: 3
+  sections:
+    - HEADLINE
+    - TOP_3_PRIORITIES
+    - KEY_MEETINGS
+    - KPI_DELTA
+    - NEWS_ITEMS
+  # CONTEXT_NOTE：附加到 system prompt 尾端，第 04 章實測可減少 40% 不相關輸出。
+  context_note: "收件者為一人公司負責人，只在乎今日可執行的事；任何與今日行程無關的內容一律略過。"
+  llm_model: "claude-sonnet-5"
+  llm_max_tokens: 1200
+
+sources:
+  # weight 決定進入 TOP_3_PRIORITIES 的排序；行事曆權重最高（書中鐵律）。
+  calendar:
+    enabled: true
+    weight: 1.0
+    mock_file: "mock/calendar.json"
+    calendar_id: "primary"
+    lookahead_hours: 18
+    # live 模式需要此環境變數指向 OAuth token JSON 檔；缺少即 RED 中止。
+    token_env: "GOOGLE_CALENDAR_TOKEN"
+  email:
+    enabled: true
+    weight: 0.6
+    mock_file: "mock/emails.json"
+    query: "is:unread newer_than:1d"
+    max_results: 20
+    # live 模式改走已登入的 gws CLI，不自己做 OAuth（避開 7 天 token 過期紅色警報）。
+    cli_command: "gws"
+  news:
+    enabled: true
+    weight: 0.3
+    mock_file: "mock/news.json"
+    max_items: 8
+    request_timeout: 10
+    # 每個 feed 之間至少間隔 1 秒，避免被來源端封鎖。
+    rate_limit_seconds: 1
+    feeds:
+      - "https://feeds.bbci.co.uk/news/business/rss.xml"
+      - "https://rss.cnn.com/rss/money_latest.rss"
+
+kpi:
+  enabled: true
+  # 只寫變化量，不寫歷史脈絡；current/previous 由外部報表系統覆寫。
+  metrics:
+    - name: "月經常性收入"
+      current: 12400
+      previous: 11800
+      unit: "USD"
+    - name: "逾期應收"
+      current: 186000
+      previous: 124000
+      unit: "TWD"
+      lower_is_better: true
+    - name: "待回覆提案"
+      current: 6
+      previous: 9
+      unit: "件"
+      lower_is_better: true

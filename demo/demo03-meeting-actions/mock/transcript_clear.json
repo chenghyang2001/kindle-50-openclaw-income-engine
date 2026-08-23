@@ -1,0 +1,93 @@
+{
+  "transcript_id": "mtg-2026-08-24-q3-pipeline",
+  "title": "Q3 Pipeline Review",
+  "platform": "zoom",
+  "started_at": "2026-08-24T09:00:00+08:00",
+  "ended_at": "2026-08-24T09:32:00+08:00",
+  "quality_hint": "clear",
+  "note": "結構良好、輪流發言、無重疊：對應 README 品質矩陣的 85-92% 區間",
+  "attendees": [
+    {
+      "name": "David Okonkwo",
+      "email": "david@triforge.example",
+      "role": "chair"
+    },
+    {
+      "name": "Priya Raman",
+      "email": "priya@triforge.example",
+      "role": "delivery"
+    },
+    {
+      "name": "Marcus Feld",
+      "email": "marcus@vendor-lab.example",
+      "role": "vendor"
+    },
+    {
+      "name": "Sofia Lindqvist",
+      "email": "sofia@triforge.example",
+      "role": "ops"
+    }
+  ],
+  "utterances": [
+    {
+      "index": 1,
+      "speaker": "David Okonkwo",
+      "text": "Good morning everyone. Thirty minutes, three topics: onboarding, the launch date, and the vendor SOW."
+    },
+    {
+      "index": 2,
+      "speaker": "Priya Raman",
+      "text": "I will send the revised onboarding checklist to the client by Friday."
+    },
+    {
+      "index": 3,
+      "speaker": "David Okonkwo",
+      "text": "Marcus, can you prepare the migration risk summary before next Tuesday?"
+    },
+    {
+      "index": 4,
+      "speaker": "Marcus Feld",
+      "text": "Understood."
+    },
+    {
+      "index": 5,
+      "speaker": "Priya Raman",
+      "text": "We should probably revisit pricing at some point."
+    },
+    {
+      "index": 6,
+      "speaker": "David Okonkwo",
+      "text": "Decision: we are moving the launch date to 15 September."
+    },
+    {
+      "index": 7,
+      "speaker": "Sofia Lindqvist",
+      "text": "I'll update the launch date in the CRM this afternoon."
+    },
+    {
+      "index": 8,
+      "speaker": "Sofia Lindqvist",
+      "text": "Maybe someone could look at the analytics dashboard."
+    },
+    {
+      "index": 9,
+      "speaker": "Marcus Feld",
+      "text": "我來負責整理客戶回饋，週四前給大家。"
+    },
+    {
+      "index": 10,
+      "speaker": "David Okonkwo",
+      "text": "我們決定沿用現有供應商，不重新招標。"
+    },
+    {
+      "index": 11,
+      "speaker": "Priya Raman",
+      "text": "The onboarding deck is already in the shared drive for reference."
+    },
+    {
+      "index": 12,
+      "speaker": "David Okonkwo",
+      "text": "That's everything. Thanks all."
+    }
+  ]
+}

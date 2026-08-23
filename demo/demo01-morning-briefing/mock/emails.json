@@ -1,0 +1,114 @@
+{
+  "generated_for": "2026-08-24",
+  "query": "is:unread newer_than:1d",
+  "messages": [
+    {
+      "id": "msg-001",
+      "from": "sarah.lin@northwind.com",
+      "received": "22:14",
+      "subject": "續約：法務要求調整 SLA 第 4 條",
+      "is_vip": true,
+      "needs_reply": true,
+      "summary": "對方法務要求把停機補償從 5% 提高到 10%，希望今早會議前先給方向"
+    },
+    {
+      "id": "msg-002",
+      "from": "cpa@ledgerworks.tw",
+      "received": "21:40",
+      "subject": "8 月未收款三筆明細",
+      "is_vip": true,
+      "needs_reply": true,
+      "summary": "三筆共 NT$186,000 逾期超過 30 天，需決定是否寄催款函"
+    },
+    {
+      "id": "msg-003",
+      "from": "marcus.webb@helix-legal.co.uk",
+      "received": "05:12",
+      "subject": "Re: 導入時程表",
+      "is_vip": true,
+      "needs_reply": true,
+      "summary": "確認下午啟動會出席，但要求把上線日往後挪一週"
+    },
+    {
+      "id": "msg-004",
+      "from": "billing@cloudhost.io",
+      "received": "03:02",
+      "subject": "發票 #INV-88421 已開立",
+      "is_vip": false,
+      "needs_reply": false,
+      "summary": "本月雲端費用 USD 214，已自動扣款"
+    },
+    {
+      "id": "msg-005",
+      "from": "recruit@talentbridge.com",
+      "received": "23:55",
+      "subject": "推薦 3 位資深後端工程師",
+      "is_vip": false,
+      "needs_reply": false,
+      "summary": "獵頭主動來信，非本季需求"
+    },
+    {
+      "id": "msg-006",
+      "from": "ops@helix-legal.co.uk",
+      "received": "06:01",
+      "subject": "資安問卷需回填",
+      "is_vip": false,
+      "needs_reply": true,
+      "summary": "對方 IT 要求本週五前回填 12 題資安問卷"
+    },
+    {
+      "id": "msg-007",
+      "from": "newsletter@saasweekly.com",
+      "received": "01:20",
+      "subject": "SaaS Weekly #312",
+      "is_vip": false,
+      "needs_reply": false,
+      "summary": "電子報，無行動項目"
+    },
+    {
+      "id": "msg-008",
+      "from": "support@paymentgw.com",
+      "received": "02:47",
+      "subject": "結算延遲通知",
+      "is_vip": false,
+      "needs_reply": false,
+      "summary": "金流商公告 8/25 結算延後 1 個工作天"
+    },
+    {
+      "id": "msg-009",
+      "from": "jason.wu@brightpath.tw",
+      "received": "20:30",
+      "subject": "想聊聊自動化導入",
+      "is_vip": false,
+      "needs_reply": true,
+      "summary": "潛在客戶詢問晨間簡報方案報價"
+    },
+    {
+      "id": "msg-010",
+      "from": "no-reply@calendarapp.com",
+      "received": "04:15",
+      "subject": "行事曆同步提醒",
+      "is_vip": false,
+      "needs_reply": false,
+      "summary": "系統通知，無需處理"
+    },
+    {
+      "id": "msg-011",
+      "from": "promo@officesupply.tw",
+      "received": "00:08",
+      "subject": "限時 8 折文具優惠",
+      "is_vip": false,
+      "needs_reply": false,
+      "summary": "行銷信"
+    },
+    {
+      "id": "msg-012",
+      "from": "legal@northwind.com",
+      "received": "22:31",
+      "subject": "修訂版合約附件",
+      "is_vip": true,
+      "needs_reply": false,
+      "summary": "附上紅線版合約 PDF，供今早會議討論"
+    }
+  ]
+}

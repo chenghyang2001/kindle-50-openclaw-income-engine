@@ -69,7 +69,16 @@ class AutonomyGate:
         SUPERVISED_AUTO 且 recipient 命中白名單 -> SUPERVISED_AUTO
         SUPERVISED_AUTO 但未命中           -> DRAFT（降級）
         其餘                                -> 原 level
-        白名單比對規則：完全相同（不分大小寫），或 recipient 以白名單項目結尾（domain 比對）
+        白名單比對規則（2026-08-24 修訂，安全性強化）：
+        1. 白名單項目以 "@" 開頭（例如 "@acme.com"）-> 網域比對，
+           recipient 必須以該字串結尾才命中
+        2. 白名單項目不以 "@" 開頭 -> 一律視為完整 email，只做精確相等比對
+        3. 兩者皆不分大小寫
+
+        為何不再允許裸網域結尾比對：
+        白名單若寫 "acme.com"，"boss@evil-acme.com" 會誤判命中。
+        攻擊者只要註冊含目標網域的網域名即可讓系統自動回信。
+        故裸字串一律降為精確比對，網域比對必須明寫 "@"。
         """
 
     def can_send(self, recipient: str) -> bool:
@@ -162,7 +171,10 @@ class LLMClient:
                      "[MOCK] <system 前 40 字>"
         mock=False 時：呼叫 Anthropic Messages API（用 urllib.request，不用 requests）
                       逾時或 5xx 走指數退避重試 max_retries 次
-        用量一律追加一行 JSON 到 <cwd>/.usage.jsonl
+        用量一律追加一行 JSON 到用量記錄檔（2026-08-24 修訂）：
+                      路徑優先序 = 環境變數 OPENCLAW_USAGE_LOG > demo/ 目錄下的 .usage.jsonl
+                      （以 config_loader.project_root() 推算，**不可用 cwd**）
+                      理由：cwd 相對會在使用者從其他目錄執行時，把記錄檔亂丟進不相干的 repo
         """
 
     @property

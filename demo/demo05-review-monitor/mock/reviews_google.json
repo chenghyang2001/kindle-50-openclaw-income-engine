@@ -1,0 +1,67 @@
+{
+  "platform": "google",
+  "location": "Brightleaf Living — 台北信義門市",
+  "fetched_at": "2026-08-24T08:00:00+08:00",
+  "reviews": [
+    {
+      "review_id": "g-20260824-001",
+      "author": "林昱萱",
+      "rating": 1,
+      "title": "等了三週還沒到貨",
+      "text": "訂了餐桌組付了全額，官網寫 7 個工作天出貨，結果三週過去完全沒消息。打客服電話沒人接，寫信也沒回。要不是我今天自己查訂單編號，根本不知道被標成缺貨。錢先收了卻不通知，這種做法真的很傷。",
+      "posted_at": "2026-08-24T07:12:00+08:00",
+      "url": "https://maps.google.com/reviews/g-20260824-001",
+      "language": "zh-TW"
+    },
+    {
+      "review_id": "g-20260824-002",
+      "author": "Marcus Weber",
+      "rating": 2,
+      "title": "商品不錯但包裝破損",
+      "text": "沙發本身質感符合價格，但送到的時候外箱明顯被壓過，扶手有一道刮痕。跟門市反映後說要等原廠回覆，等了五天還在等。東西可以接受，處理流程讓人失望。",
+      "posted_at": "2026-08-24T05:40:00+08:00",
+      "url": "https://maps.google.com/reviews/g-20260824-002",
+      "language": "zh-TW"
+    },
+    {
+      "review_id": "g-20260823-003",
+      "author": "陳品叡",
+      "rating": 3,
+      "title": "普通，價格偏高",
+      "text": "產品做工還可以，但同規格的其他品牌便宜快三成。店員態度很好，不會硬推銷，這點加分。會再比較看看。",
+      "posted_at": "2026-08-23T21:05:00+08:00",
+      "url": "https://maps.google.com/reviews/g-20260823-003",
+      "language": "zh-TW"
+    },
+    {
+      "review_id": "g-20260823-004",
+      "author": "Priya Raman",
+      "rating": 4,
+      "title": "安裝服務很專業",
+      "text": "師傅準時到，收尾也把紙箱帶走，這點很少見。扣一顆星是因為預約時間只能選上午或下午，範圍太寬要在家等半天。整體滿意。",
+      "posted_at": "2026-08-23T16:30:00+08:00",
+      "url": "https://maps.google.com/reviews/g-20260823-004",
+      "language": "zh-TW"
+    },
+    {
+      "review_id": "g-20260823-005",
+      "author": "黃思婷",
+      "rating": 5,
+      "title": "第三次回購了",
+      "text": "從書櫃買到餐邊櫃，木紋跟照片一致，沒有色差。這次還幫我調整了層板高度沒有額外收費。會繼續回來。",
+      "posted_at": "2026-08-23T11:18:00+08:00",
+      "url": "https://maps.google.com/reviews/g-20260823-005",
+      "language": "zh-TW"
+    },
+    {
+      "review_id": "g-20260822-006",
+      "author": "Tom Baxter",
+      "rating": 5,
+      "title": "Great after-sales support",
+      "text": "A drawer rail arrived faulty and the replacement was shipped the next day without any argument. That is how it should be done.",
+      "posted_at": "2026-08-22T19:47:00+08:00",
+      "url": "https://maps.google.com/reviews/g-20260822-006",
+      "language": "en"
+    }
+  ]
+}

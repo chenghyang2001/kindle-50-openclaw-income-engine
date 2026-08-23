@@ -1,0 +1,28 @@
+{
+  "source": "crm",
+  "as_of": "2026-08-24",
+  "currency": "USD",
+  "_comment": "金額一律用字串儲存，讀進來直接進 Decimal，避免 JSON float 誤差。",
+  "closed_won": [
+    {
+      "deal_id": "D-2041",
+      "account": "Northwind 顧問",
+      "owner": "Ava",
+      "amount": "1200.00",
+      "closed_at": "2026-08-24T10:12:00+08:00"
+    },
+    {
+      "deal_id": "D-2044",
+      "account": "Kite Labs",
+      "owner": "Marco",
+      "amount": "550.00",
+      "closed_at": "2026-08-24T15:47:00+08:00"
+    }
+  ],
+  "pipeline": [
+    { "stage": "潛在客戶", "deal_count": 18, "amount": "42000.00" },
+    { "stage": "需求確認", "deal_count": 11, "amount": "27500.00" },
+    { "stage": "提案報價", "deal_count": 6, "amount": "19800.00" },
+    { "stage": "議約中", "deal_count": 3, "amount": "9600.00" }
+  ]
+}
