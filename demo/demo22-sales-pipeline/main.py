@@ -539,6 +539,7 @@ def _build_context(
         "notifier": Notifier(channel=args.notify),
         "integrations": config.get("integrations") or {},
         "dry_run": bool(args.dry_run),
+        "is_live": bool(args.live),
         "now": now,
         "planned_calls": [],
         "audit": AuditLog(
@@ -602,14 +603,37 @@ def _run_chains(deals: list, now: datetime, context: dict) -> dict[str, list]:
     return buckets
 
 
+def _dry_run_cost_note(is_live: bool) -> str:
+    """回傳與執行模式相符的成本說明。
+
+    刻意不做涵蓋式宣稱：`--live --dry-run` 下 `LLMClient` 是真實模式，
+    enrichment / proposal / follow-up 的正文**都會實際呼叫 Anthropic API 並產生費用**。
+    dry-run 擋住的只有「業務系統端點」那一層。一句籠統的「不會實際呼叫」會讓
+    使用者以為 dry-run 零成本，然後被帳單嚇到。
+    """
+    if is_live:
+        return (
+            "⚠️  --live 模式下 LLM 內容生成仍會實際呼叫 API（產生費用）；"
+            "上方僅代表業務系統端點未被送出。\n"
+            "    要完全零外部呼叫請用 --mock --dry-run。"
+        )
+    return "✓  --mock --dry-run：完全零外部呼叫、零網路、零成本（LLM 亦為離線 mock）。"
+
+
 def _finish_dry_run(
     context: dict,
     state: PipelineState,
     fingerprint: str,
     now: datetime,
 ) -> None:
-    """dry-run 收尾：印出將呼叫的端點與內容，並發出通行收據。"""
-    print("── dry-run 內部通訊測試（不會實際送出）──")
+    """dry-run 收尾：印出將呼叫的業務系統端點與內容，並發出通行收據。
+
+    訊息刻意把對外呼叫分成兩類，因為兩者的 dry-run 行為不同：
+    - **業務系統端點**（CRM / 提案 / 外寄 / 導入）：dry-run 一律不送出。
+    - **LLM 內容生成**：`--live --dry-run` 仍會真的呼叫並計費——這是刻意保留的，
+      dry-run 的價值就是預覽「真實生成的內容」，換成 fixture 會失去意義。
+    """
+    print("── dry-run 內部通訊測試：以下業務系統端點不會被實際呼叫 ──")
     for call in context["planned_calls"]:
         print(
             f"  {call['method']} {call['endpoint']}｜deal={call['deal_id']}"
@@ -617,7 +641,8 @@ def _finish_dry_run(
         )
         print(f"      內容摘要：{call['payload_preview']['excerpt']!r}")
     if not context["planned_calls"]:
-        print("  （本次沒有任何對外呼叫）")
+        print("  （本次沒有任何待發的業務系統呼叫）")
+    print(_dry_run_cost_note(bool(context["is_live"])))
     state.record_dry_run(fingerprint, now)
     context["audit"].record(
         ACTION_DRY_RUN_RECEIPT,

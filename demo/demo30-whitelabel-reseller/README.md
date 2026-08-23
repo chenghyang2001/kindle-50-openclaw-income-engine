@@ -116,6 +116,34 @@ brand_context.yml（提供者的預設品牌 + BRAND_SUBSTITUTION_PROTOCOL）
    `infrastructure provider` / `基礎設施提供者`）。命中即 AMBER + 稽核紀錄。
    白牌承諾的是「顧問是隱形的引擎室」，提供者的名字漏出去，經銷商的客戶關係就沒了。
 
+### 4a. ⚠️ 本檔與 demo21 的 `brand_context.yml` **不可互換**
+
+本模組的 `brand_context.yml` 是**本模組專用**。
+`demo21-marketing-swarm/brand_context.yml` 檔名相同、概念同源，但 **schema 已經分歧，兩份不可互換**。
+直接把其中一份複製到另一個模組會靜默失效（讀不到預期的鍵，卻不會報錯）。
+
+**成因**：本模組開工時 demo21 的 `brand_context.yml` 尚未產出，
+兩邊各自依 apxG_p03 的 Swarm 繼承概念實作，領域不同就長出了不同結構。
+經裁決**不統一 schema**——白牌交付與行銷協同的語意本來就不一樣，
+硬套同一份結構只會讓兩邊都彆扭。
+
+| 項目 | `demo21-marketing-swarm` | `demo30-whitelabel-reseller`（本模組） |
+| --- | --- | --- |
+| 繼承旗標 | 無此欄位 | `inherit_from_orchestrator: true` |
+| 階段對照鍵 | **`STAGE_MAP`**（大寫） | **`stage_map`**（小寫） |
+| 階段語意 | 行銷漏斗四階段<br>`awareness` / `nurture` / `conversion` / `retention` | 交付三階段<br>`white_label_package` / `branding_implementation` / `service_delivery` |
+| 階段內欄位 | `active_agents` / `primary_kpi` / `directive` | `order` / `label` / `deliverables` |
+| 租戶識別 | `tenant_slug`（單層） | 不放在本檔；用 `[RESELLER_SLUG]/[SUB_CLIENT_SLUG]` 兩層 namespace（見 `mock/tenants.json` 與 `tenancy.py`） |
+| 其他頂層鍵 | `context_version` / `updated_at` / `tenant_slug` / `voice` / `audience` / `guardrails` / `compliance` | `brand_substitution_protocol` / `stack` |
+
+**兩邊唯一真正共通的只有概念**：Orchestrator 持有品牌上下文、子智能體繼承、更新即級聯。
+資料結構層面沒有任何相容性保證。
+
+**若未來要真正共用同一份底座**：必須先統一 schema，
+並在**同一次改動中同步改完兩個模組**（含各自的 `main.py` 讀取邏輯與測試）。
+**不要只改一邊**——只改一邊會讓另一邊在讀不到鍵時退回預設值，
+而預設值在白牌場景意味著「輸出掛錯品牌」，那是不可逆的信譽損害。
+
 ---
 
 ## 五、⚠️ 原著數字衝突與判定

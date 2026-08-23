@@ -220,6 +220,9 @@ python main.py --mock
 # 空跑：跑完整流程，印出將呼叫哪些外部端點、送出什麼，但不發送
 python main.py --mock --dry-run
 
+# 空跑但用真實模型生成內容：業務系統不送出，但 LLM 會實際呼叫（有費用）
+python main.py --live --dry-run
+
 # 核准本週策略備忘錄（必須具名）後才會放行發布
 python main.py --mock --approve --approved-by "Elena Torres"
 
@@ -238,7 +241,7 @@ python main.py --live --notify telegram
 | 旗標 | 說明 |
 | --- | --- |
 | `--mock` / `--live` | 離線（預設）／串真實 API，互斥 |
-| `--dry-run` | 跑完流程但不發送，並完整揭露外部呼叫內容 |
+| `--dry-run` | 跑完流程但不對業務系統發送，並完整揭露外部呼叫內容（**不涵蓋 LLM 呼叫**，見下表） |
 | `--notify` | `console`（預設）/ `telegram` / `gmail` / `line` / `whatsapp` |
 | `--config` | 設定檔路徑，預設同目錄 `config.yaml` |
 | `--state-file` | 核准狀態檔路徑 |
@@ -246,6 +249,27 @@ python main.py --live --notify telegram
 | `--approve` / `--approved-by` | 核准本週備忘錄（必須具名） |
 | `--stage` | 覆寫本次執行的行銷階段 |
 | `--now` | 覆寫當前時間（ISO 8601），供測試取得可重現的排程時點 |
+
+### ⚠️ `--dry-run` 到底「不送」什麼（四種組合）
+
+`--dry-run` 擋的是**業務系統**（社群 / Email / CRM / CMS / GA4），
+**不擋 LLM 內容生成**。因此 `--live --dry-run` 仍會實際呼叫 Anthropic API 並產生費用：
+
+| 組合 | LLM 呼叫 | 業務系統送出 | 成本 |
+| --- | --- | --- | --- |
+| `--mock` | ❌ 讀 fixture | ❌ | 0 |
+| `--mock --dry-run` | ❌ 讀 fixture | ❌ | 0 |
+| `--live --dry-run` | ✅ **真實呼叫** | ❌ | **有** |
+| `--live` | ✅ 真實呼叫 | ✅ | 有 |
+
+**為什麼 `--live --dry-run` 不改成用 mock LLM**：dry-run 的價值就是讓人預覽
+**真實生成的內容**再決定要不要送出。換成 fixture 就失去意義了。
+所以行為保留，但程式與本文件都明講代價 —— 要完全零外部呼叫、零成本，
+請用 `--mock --dry-run`。
+
+程式對應行為：`--mock --dry-run` 印綠色訊息「LLM 與業務系統皆未實際呼叫」；
+`--live --dry-run` 改印**琥珀警示**點名「已實際呼叫 Anthropic API，會產生費用」，
+並計入 `amber_count`。
 
 ---
 

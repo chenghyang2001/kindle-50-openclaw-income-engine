@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -161,7 +162,8 @@ def test_edge_case_currency_and_precision():
 
 
 def test_integration_approval_gate_blocks_board(monkeypatch, tmp_path, capsys):
-    """整合：未經財務總監核准 → 董事會拿不到報表；逾時 2 小時 SLA → 琥珀燈 + 稽核事件。
+    """整合：未經財務總監核准 → 董事會拿不到報表；逾時 2 小時 SLA → 琥珀燈 + 稽核事件；
+    稽核軌跡的雜湊鏈能抓出「竄改內容」與「整行刪除」兩種事後偽造。
 
     這是本模組最重要的保證，也涵蓋與 _shared 的互動（Diagnostics.amber、
     Notifier console、AutonomyGate 預設 draft）。
@@ -195,3 +197,42 @@ def test_integration_approval_gate_blocks_board(monkeypatch, tmp_path, capsys):
 
     # 報表仍實際輸出到 console（不是靜默失敗），且帶著草稿浮水印
     assert "草稿・待財務總監審核" in capsys.readouterr().out
+
+    # ── 稽核軌跡雜湊鏈 ──
+    # 1) 正常執行（含跨兩次執行續接）後，整條鏈必須完整
+    audit_path = Path(second["audit_file"])
+    assert audit_mod.verify_file(audit_path) == []
+    assert audit_mod.first_broken_line(audit_path) is None
+
+    lines = audit_path.read_text(encoding="utf-8").splitlines()
+    assert len(lines) >= 6
+
+    # 2) 竄改攻擊：改掉第 3 行的內容但不改它的 entry_hash
+    #    （偽造 approved_by / 時間戳的典型手法——這正是核准紀錄的後門）
+    tampered_path = tmp_path / "tampered.jsonl"
+    forged = json.loads(lines[2])
+    forged["actor"] = "attacker@example.com"
+    tampered_path.write_text(
+        "\n".join(lines[:2] + [json.dumps(forged, ensure_ascii=False)] + lines[3:]) + "\n",
+        encoding="utf-8",
+    )
+    problems = audit_mod.verify_file(tampered_path)
+    assert problems, "內容被竄改卻沒有被偵測到"
+    assert "第 3 行" in problems[0]
+    assert "entry_hash" in problems[0]
+    assert audit_mod.first_broken_line(tampered_path) == 3
+
+    # 3) 刪除攻擊：整行砍掉第 3 行（想讓某個事件從稽核中消失）
+    deleted_path = tmp_path / "deleted.jsonl"
+    deleted_path.write_text("\n".join(lines[:2] + lines[3:]) + "\n", encoding="utf-8")
+    problems = audit_mod.verify_file(deleted_path)
+    assert problems, "整行刪除卻沒有被偵測到"
+    assert "prev_hash 接不上" in problems[0]
+    assert audit_mod.first_broken_line(deleted_path) == 3
+
+    # 4) 記憶體中的鏈驗證 + Decimal 正規化（寫入與驗證必須用同一套正規化）
+    fresh = audit_mod.AuditLog(tmp_path / "chain.jsonl", "demo23-test", FIXED_TZ)
+    fresh.record("t1", {"amount": Decimal("0.30")})
+    fresh.record("t2", {"nested": {"values": [Decimal("2.005"), "x"]}})
+    assert fresh.verify_chain() == []
+    assert fresh.verify_file() == []

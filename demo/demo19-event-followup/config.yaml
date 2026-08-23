@@ -37,7 +37,13 @@ compliance:
   # 缺任何一項 -> 全部信件強制降為草稿（禁止自動送出）並發 AMBER。
   sender_identity: "沛宇數位行銷有限公司 · 活動組 王思穎"
   physical_address: "台北市信義區松高路 9 號 12 樓"
+  # {{ATTENDEE_TOKEN}} 由程式逐封替換成該與會者專屬的 token
+  # （sha256(salt:email) 取前 16 碼）。替換後仍殘留 {{ 的信件會被強制降為草稿。
   unsubscribe_url: "https://example.com/unsubscribe?token={{ATTENDEE_TOKEN}}"
+  # 退訂 token 的 salt。**示範值，正式部署必須換掉且不可進版控**：
+  # 改寫成 "${OPENCLAW_UNSUBSCRIBE_SALT}"，config_loader 會自環境變數展開。
+  # --live 模式若仍是這組示範值會收到 AMBER 警告。
+  unsubscribe_token_salt: "demo-only-salt-請於正式部署改為機密值"
   reply_to: "events@example.com"
 
 segmentation:

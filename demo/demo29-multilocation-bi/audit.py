@@ -12,7 +12,8 @@
 
 每一行是一個 JSON 物件，欄位固定，方便 `jq` / SIEM 直接吃：
     {"ts": ISO-8601 UTC, "run_id":…, "module":…, "event":…, "actor":…,
-     "role":…, "pack":…, "visible_site_ids":[…], …事件專屬欄位}
+     "role":…, "pack":…, "visible_site_ids":[…],
+     "role_was_unknown":…, "denial_reason":…, …事件專屬欄位}
 """
 
 from __future__ import annotations
@@ -142,6 +143,10 @@ def _scope_fields(scope: Any) -> dict[str, Any]:
         "role": payload.get("role"),
         "pack": payload.get("pack"),
         "visible_site_ids": payload.get("visible_site_ids"),
+        # 角色認不出來的呼叫可能是設定錯誤，也可能是有人在試探角色名稱。
+        # 兩者都要留痕，否則事後只看得到「這次沒看到任何據點」而不知道為什麼。
+        "role_was_unknown": payload.get("role_was_unknown", False),
+        "denial_reason": payload.get("denial_reason"),
     }
 
 

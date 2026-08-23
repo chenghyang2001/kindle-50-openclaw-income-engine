@@ -415,7 +415,18 @@ def format_summary(result: dict[str, Any]) -> str:
 def _deliver(result: dict[str, Any], args: argparse.Namespace, diagnostics: Diagnostics) -> bool:
     """送出摘要。dry-run 只印不送，並完整揭露將呼叫的外部端點與送出內容。"""
     if getattr(args, "dry_run", False):
-        diagnostics.green("dry-run：已跑完整流程，未對外送出任何請求")
+        if result["mode"] == "mock":
+            diagnostics.green("dry-run（mock）：已跑完整流程，LLM 與業務系統皆未實際呼叫")
+        else:
+            # --live --dry-run 只擋業務系統，內容生成是真的打 API、真的算錢。
+            # 用 amber 而不是 green 講這件事，因為它會產生使用者沒預期的帳單。
+            diagnostics.amber(
+                symptom=(
+                    "dry-run（live）：業務系統未送出，但策略備忘錄與五個 Sub-agent 的"
+                    "內容生成已實際呼叫 Anthropic API，會產生費用"
+                ),
+                fix="若要完全零外部呼叫與零成本，請改用 --mock --dry-run",
+            )
         print(result["preflight_report"])
         print(result["summary_text"])
         return False
@@ -550,9 +561,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         details=result["totals"],
     )
     result["audit"] = audit.summary()
-    result["amber_count"] = diagnostics.amber_count
     result["summary_text"] = format_summary(result)
     result["notified"] = _deliver(result, args, diagnostics)
+    # 放在 _deliver 之後：--live --dry-run 的費用警示是在送出階段才發出的
+    result["amber_count"] = diagnostics.amber_count
     return result
 
 

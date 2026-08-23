@@ -30,8 +30,10 @@ from analyser import (
     BAND_NEUTRAL,
     BAND_SLOW,
     STATUS_OVERSTOCK,
+    AnalyserError,
     SkuAnalysis,
     to_rate,
+    to_signed_rate,
 )
 
 MONEY_QUANT = Decimal("0.01")
@@ -413,26 +415,48 @@ def summarise_proposals(proposals: list[PriceProposal]) -> dict[str, int]:
     }
 
 
+def _percent_or_problem(
+    settings: dict[str, Any], key: str, default: Any, problems: list[str]
+) -> Decimal | None:
+    """讀出一個 pricing 百分比設定；轉不動就把問題收進清單並回傳 None。
+
+    這裡刻意用 `to_signed_rate()` 而不是 `to_rate()`：後者對負值直接拋
+    `AnalyserError`，會讓 `validate_settings()` 在第一個問題就中斷。
+    負值是本函式要**回報**的問題之一，不是要中止流程的例外——
+    設定檔同時有兩個錯時，使用者必須一次看到兩個，而不是修完一個再發現還有一個。
+    """
+    try:
+        return to_signed_rate(settings.get(key, default), f"pricing.{key}")
+    except AnalyserError as exc:
+        problems.append(str(exc))
+        return None
+
+
 def validate_settings(settings: dict[str, Any]) -> list[str]:
-    """啟動時檢查定價設定是否合理，回傳問題清單（空清單＝通過）。
+    """啟動時檢查定價設定是否合理，回傳**完整**問題清單（空清單＝通過）。
 
     這些檢查故意做在跑分析之前：設定錯了就整批建議都錯，
     與其產出一份看似正常的錯誤報告，不如當場擋住。
+
+    本函式**不拋例外**：無法解析、負值、超出上限全部收斂成問題字串，
+    呼叫端才拿得到一次到位的清單。
     """
     problems: list[str] = []
-    max_change = to_rate(settings.get("max_price_change_percent", 10), "max_price_change_percent")
-    if max_change <= 0:
+    max_change = _percent_or_problem(settings, "max_price_change_percent", 10, problems)
+    ceiling = _percent_or_problem(settings, "max_price_change_ceiling", 30, problems)
+    if max_change is not None and max_change <= 0:
         problems.append("pricing.max_price_change_percent 必須大於 0，否則永遠無法調價")
-    ceiling = to_rate(settings.get("max_price_change_ceiling", 30), "max_price_change_ceiling")
-    if max_change > ceiling:
+    if max_change is not None and ceiling is not None and max_change > ceiling:
         problems.append(
             f"pricing.max_price_change_percent={_pct(max_change)}% 超過安全上限 "
             f"{_pct(ceiling)}%，單次調價幅度過大等於關掉安全閥"
         )
-    if to_rate(settings.get("min_margin_percent", 5), "min_margin_percent") < 0:
+    min_margin = _percent_or_problem(settings, "min_margin_percent", 5, problems)
+    if min_margin is not None and min_margin < 0:
         problems.append("pricing.min_margin_percent 不可為負數（那等於允許虧本賣）")
     for key in ("undercut_match_delta_percent", "fast_mover_increase_percent",
                 "overstock_clearance_percent"):
-        if to_rate(settings.get(key, 1), key) < 0:
+        value = _percent_or_problem(settings, key, 1, problems)
+        if value is not None and value < 0:
             problems.append(f"pricing.{key} 不可為負數")
     return problems

@@ -24,6 +24,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -61,8 +62,21 @@ CONTEXT_NOTE = (
     "不要假裝彼此很熟。信件必須讓對方一眼看出「這是寫給我的」。"
 )
 
-# 法遵三件套：行銷名單信件缺任一項就不得自動送出
-COMPLIANCE_FIELDS = ("sender_identity", "physical_address", "unsubscribe_url")
+# 法遵必填欄位：缺任一項就不得自動送出
+COMPLIANCE_FIELDS = (
+    "sender_identity",
+    "physical_address",
+    "unsubscribe_url",
+    "unsubscribe_token_salt",
+)
+
+# 退訂連結中的個人化佔位符。每封信都必須被替換成該與會者專屬的 token，
+# 否則所有收件人共用同一組連結 —— 系統無從得知「要退訂誰」。
+TOKEN_PLACEHOLDER = "{{ATTENDEE_TOKEN}}"
+TOKEN_LENGTH = 16
+
+# config 內附的示範 salt。正式環境（--live）沿用這組值會被判定為設定疏漏。
+DEMO_TOKEN_SALT = "demo-only-salt-請於正式部署改為機密值"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -151,8 +165,41 @@ def _check_compliance(compliance: dict, diagnostics: Diagnostics) -> tuple[bool,
     return False, [message]
 
 
-def _compliance_footer(compliance: dict) -> str:
-    """組出行銷信必備的信尾（寄件人識別 + 地址 + 退訂連結）。"""
+def _unsubscribe_token(attendee_email: str, salt: str) -> str:
+    """由 email + salt 產生該與會者專屬、且無法反推回 email 的退訂 token。
+
+    為什麼不直接把 email 放進退訂網址：
+    1. 退訂連結會出現在信件內文、瀏覽器歷史、referer 與伺服器 access log 中，
+       等於把整份名單的 email 沿路灑出去，退訂機制反而變成個資外洩管道。
+    2. 明文 email 可被列舉——攻擊者拿一份猜測名單就能替別人退訂。
+    salt 提供不可預測性；沒有 salt 的話，任何人知道 email 就能自行算出 token。
+    """
+    payload = f"{salt}:{attendee_email.strip().lower()}".encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()[:TOKEN_LENGTH]
+
+
+def _resolve_token_salt(
+    compliance: dict,
+    diagnostics: Diagnostics,
+    is_mock: bool,
+) -> tuple[str, list[str]]:
+    """取出退訂 token 的 salt；正式模式仍用示範值即視為設定疏漏。"""
+    salt = str(compliance.get("unsubscribe_token_salt") or "").strip()
+    if is_mock or (salt and salt != DEMO_TOKEN_SALT):
+        return salt, []
+    message = "正式模式仍在使用 config 內附的示範 unsubscribe_token_salt"
+    diagnostics.amber(
+        symptom=message,
+        fix="改設為 ${OPENCLAW_UNSUBSCRIBE_SALT} 之類的環境變數並保密，勿進版控",
+    )
+    return salt, [message]
+
+
+def _compliance_footer(compliance: dict, attendee_email: str, salt: str) -> str:
+    """組出行銷信必備的信尾（寄件人識別 + 地址 + **個人化**退訂連結）。
+
+    信尾一律由程式逐字組出，不交給 LLM 生成——法遵資訊不能被模型改寫或漏寫。
+    """
     lines = [
         "—",
         str(compliance.get("sender_identity") or "").strip(),
@@ -163,8 +210,31 @@ def _compliance_footer(compliance: dict) -> str:
         lines.append(f"回信請寄至：{reply_to}")
     unsubscribe = str(compliance.get("unsubscribe_url") or "").strip()
     if unsubscribe:
-        lines.append(f"不想再收到活動信件請點此退訂：{unsubscribe}")
+        token = _unsubscribe_token(attendee_email, salt)
+        url = unsubscribe.replace(TOKEN_PLACEHOLDER, token)
+        lines.append(f"不想再收到活動信件請點此退訂：{url}")
     return "\n".join(line for line in lines if line)
+
+
+def _render_footer(context: dict, attendee: dict) -> tuple[str, bool]:
+    """組出這位與會者專屬的信尾，並回報是否還有未替換的佔位符。
+
+    殘留 `{{` 代表網址樣板裡有程式不認得的佔位符——這種連結送出去也點不動，
+    而且比「完全沒有退訂連結」更危險：外觀合規，實際失效，要等到客訴才會發現。
+    """
+    email = str(attendee.get("email") or "")
+    footer = _compliance_footer(context["compliance"], email, context["token_salt"])
+    if "{{" not in footer:
+        return footer, True
+    message = (
+        f"{attendee.get('id')} 的信尾仍有未替換的佔位符，該封信已強制降為草稿"
+    )
+    context["warnings"].append(message)
+    context["diagnostics"].amber(
+        symptom=message,
+        fix="檢查 compliance.unsubscribe_url 的樣板；未支援的佔位符請移除或補上替換邏輯",
+    )
+    return footer, False
 
 
 def _resolve_state(args: argparse.Namespace, config: dict, event_id: str) -> EventState:
@@ -399,12 +469,14 @@ def _process_one(decision: dict, attendee: dict, context: dict, now: datetime) -
             "detail": exc.detail,
         }
     _maybe_handover(decision, attendee, context, now)
+    footer, is_footer_clean = _render_footer(context, attendee)
     body = _compose_message(context["llm"], attendee, context["event"], decision)
-    body = f"{body}\n\n{context['footer']}" if context["footer"] else body
+    body = f"{body}\n\n{footer}" if footer else body
     email = str(attendee.get("email") or "")
     gate: AutonomyGate = context["gate"]
     level = gate.effective_level(email)
-    is_compliant = bool(context["is_compliant"])
+    # 信尾佔位符沒替換乾淨的信件一律降為草稿，不論自主權層級為何
+    is_compliant = bool(context["is_compliant"]) and is_footer_clean
     can_send = gate.can_send(email) and is_compliant and not context["dry_run"]
     entry = _record(decision, attendee, body, level, is_compliant)
     if can_send:
@@ -456,6 +528,7 @@ def _build_context(config: dict, args: argparse.Namespace, event: dict,
     """組出跑序列所需的共用物件。"""
     compliance = config.get("compliance") or {}
     is_compliant, compliance_warnings = _check_compliance(compliance, diagnostics)
+    salt, salt_warnings = _resolve_token_salt(compliance, diagnostics, is_mock)
     return {
         "sequencer": sequencer,
         "gate": gate,
@@ -463,12 +536,13 @@ def _build_context(config: dict, args: argparse.Namespace, event: dict,
         "event": event,
         "llm": LLMClient(mock=is_mock, context_note=CONTEXT_NOTE),
         "notifier": Notifier(channel=args.notify),
-        "footer": _compliance_footer(compliance),
+        "compliance": compliance,
+        "token_salt": salt,
         "is_compliant": is_compliant,
         "slack_channel": str((config.get("crm") or {}).get("slack_channel") or ""),
         "dry_run": bool(args.dry_run),
         "handovers": [],
-        "warnings": list(compliance_warnings),
+        "warnings": list(compliance_warnings) + list(salt_warnings),
     }
 
 

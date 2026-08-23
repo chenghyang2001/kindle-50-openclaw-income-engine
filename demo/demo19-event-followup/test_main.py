@@ -12,6 +12,7 @@ AMBER——這與被測的業務邏輯完全無關，卻會污染 amber_count，
 from __future__ import annotations
 
 import json
+import re
 import sys
 from datetime import timedelta, timezone as dt_timezone
 from pathlib import Path
@@ -215,6 +216,20 @@ def test_integration_reply_and_unsubscribe_block_all_sends(
     assert _ids(first["drafted"]) == {"A-2002", "A-2003", "A-2004", "A-2005"}
     assert first["sent"][0]["autonomy"] == "supervised_auto"
     assert all(item["autonomy"] == "draft" for item in first["drafted"])
+
+    # 3b. 退訂連結必須逐人個人化——所有人共用一組連結等於沒有退訂機制，
+    #     系統無從得知「要退訂誰」，而且外觀合規會讓問題更晚才被發現
+    messages = first["sent"] + first["drafted"]
+    matches = [re.search(r"token=([0-9a-f]{16})\b", item["body"]) for item in messages]
+    assert all(match is not None for match in matches), "退訂連結缺少 16 碼 token"
+    tokens = [match.group(1) for match in matches if match is not None]
+    assert len(set(tokens)) == len(messages), "不同與會者的退訂 token 不得重複"
+    # 沒有任何未替換的佔位符殘留（{{ATTENDEE_TOKEN}} 必須已被取代）
+    assert all("{{" not in item["body"] for item in messages)
+    # token 不得洩漏 email 本身（退訂連結會進 log 與 referer）
+    assert all(
+        "@" not in item["body"].rsplit("退訂：", 1)[-1] for item in messages
+    )
 
     # 4. --state-file 生效：進度確實落地
     assert first["state_file"] == str(state_file)

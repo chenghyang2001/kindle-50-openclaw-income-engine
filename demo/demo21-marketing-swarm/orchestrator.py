@@ -552,6 +552,9 @@ def preflight_dry_run(
     )
     return {
         "passed": is_passed,
+        # is_mock 必須跟著回傳：報告要據此區分「哪一類請求真的不會送出」。
+        # --live --dry-run 只擋業務系統，LLM 仍會實際呼叫並產生費用。
+        "is_mock": is_mock,
         "checks": checks,
         "hard_fail": hard_fail,
         "credential_gaps": credential_gaps,
@@ -571,8 +574,28 @@ def format_preflight_report(preflight: dict[str, Any]) -> str:
         lines.append(f"      將送出：{preview}")
         if check["missing_env"]:
             lines.append(f"      缺少憑證環境變數：{', '.join(check['missing_env'])}")
-    lines.append("  （以上皆為模擬，本階段不對外送出任何請求）")
+    lines.extend(_preflight_disclosure(bool(preflight.get("is_mock", True))))
     return "\n".join(lines)
+
+
+def _preflight_disclosure(is_mock: bool) -> list[str]:
+    """揭露這次 dry-run 到底「不送」什麼。
+
+    刻意分成兩種說法：--mock --dry-run 確實是零網路零成本，可以講滿；
+    但 --live --dry-run 只擋下社群 / Email / CRM 等業務系統，策略備忘錄與
+    五個 Sub-agent 的內容生成**仍會實際呼叫 Anthropic API 並產生費用**。
+    這裡不把兩者混為一談 —— 使用者若以為 dry-run 一律免費，會被帳單嚇到。
+
+    為什麼不乾脆讓 dry-run 一律走 mock LLM：dry-run 的價值就是預覽
+    「真的會發出去的內容」。換成 fixture 就失去意義了，所以保留行為、講清楚代價。
+    """
+    if is_mock:
+        return ["  （以上為 dry-run 預覽：本次為離線模式，LLM 與業務系統都沒有實際呼叫，零成本）"]
+    return [
+        "  （以上為 dry-run 預覽：不會對社群 / Email / CRM 等業務系統送出任何內容）",
+        "  ⚠️ 注意：--live 模式下 LLM 內容生成仍會實際呼叫 Anthropic API，會產生費用。",
+        "     若要完全零外部呼叫、零成本，請改用 --mock --dry-run。",
+    ]
 
 
 # ---------------------------------------------------------------------------

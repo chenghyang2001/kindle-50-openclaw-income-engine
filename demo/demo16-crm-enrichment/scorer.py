@@ -17,6 +17,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
@@ -229,6 +230,22 @@ def _numeric(record: dict[str, Any], field_name: str) -> Decimal | None:
         return None
 
 
+def _matches_token(text: str, token: str) -> bool:
+    """關鍵字比對：ASCII 詞彙要求詞界，非 ASCII（中日韓）詞彙用子字串。
+
+    為什麼不能一律用子字串——"director" 裡面藏著 "cto"（dire-CTO-r）。
+    短代號（cto / coo / vp / cfo）一旦用 `token in text` 比對，
+    "Director of Ecommerce" 會被判成 C-level，該筆多拿滿分權重
+    （實測 C-1005 因此多拿 4 分，Warm/Hot 的分界就被污染了）。
+    中文沒有詞界可用，故僅對 ASCII 詞彙套用詞界規則。
+    """
+    if not token:
+        return False
+    if token.isascii():
+        return re.search(rf"(?<![a-z0-9]){re.escape(token)}(?![a-z0-9])", text) is not None
+    return token in text
+
+
 def _eval_industry(record: dict[str, Any], params: dict[str, Any]) -> tuple[Decimal, str, bool]:
     """SIC 代碼落在白名單給滿分；只有產業名稱時退而用關鍵字比對（次要證據）。"""
     whitelist = {str(code).strip() for code in (params.get("sic_whitelist") or [])}
@@ -243,7 +260,7 @@ def _eval_industry(record: dict[str, Any], params: dict[str, Any]) -> tuple[Deci
 
     keywords = [str(word).strip().lower() for word in (params.get("industry_keywords") or [])]
     text = str(industry).strip().lower()
-    if any(word and word in text for word in keywords):
+    if any(_matches_token(text, word) for word in keywords):
         ratio = _decimal(params.get("keyword_ratio", "0.6"), "keyword_ratio")
         return (ratio, f"無 SIC，產業名稱「{industry}」命中關鍵字（次要證據）", True)
     return (ZERO, f"產業「{industry}」不在 ICP 範圍", True)
@@ -299,7 +316,7 @@ def _eval_title_seniority(record: dict[str, Any], params: dict[str, Any]) -> tup
     text = str(title).strip().lower()
     for index, tier in enumerate(params.get("tiers") or []):
         titles = [str(word).strip().lower() for word in (tier.get("titles") or [])]
-        if any(word and word in text for word in titles):
+        if any(_matches_token(text, word) for word in titles):
             ratio = _decimal(tier.get("ratio", 0), f"scoring.criteria.title_seniority.tiers[{index}].ratio")
             return (ratio, f"職稱「{title}」命中第 {index + 1} 層", True)
     return (ZERO, f"職稱「{title}」不在決策層清單", True)

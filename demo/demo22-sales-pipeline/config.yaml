@@ -8,7 +8,11 @@ module:
   id: "22"
   name: "全漏斗業務自動化"
   deploy_minutes: 2400          # 書中「1 週」部署，以每日 8 小時 × 5 天估算的分鐘數
-  recovered_hours_per_month: 0  # 原簡報未提供「顧問端內部回收」；0 代表未知而非零
+  # 原簡報未提供「顧問端內部回收」工時。此處用 null（不是 0）表示「未知」：
+  # 0 是一個合法數值，任何沒讀註解的下游程式都會把它當成「回收 0 小時」而照算，
+  # 等於用預設值靜默掩蓋遺失（違反 CONTRACT §0 引用的防禦性開發原則）。
+  # null 會讓下游在使用前被迫先判空。與同批的 demo21 型別一致。
+  recovered_hours_per_month: null
   client_setup_price: 4500
   client_monthly_price: 2000
 

@@ -14,6 +14,7 @@ import sys
 from decimal import Decimal
 from pathlib import Path
 
+import pytest
 import yaml
 
 _DEMO_DIR = Path(__file__).resolve().parent
@@ -164,6 +165,18 @@ def test_edge_case_price_rails_block_dangerous_changes(tmp_path):
     assert proposal.severity == "red"
     assert proposal.proposed_price is None
     assert proposal.blocked_price == Decimal("79.20")   # 對手 80.00 -1%，低於成本 95.00
+
+    # (4) validate_settings 必須回傳「完整」問題清單，不可在第一個問題就拋例外
+    #     （負值 margin 若在轉換階段拋錯，使用者就看不到同時存在的第二個設定問題）
+    broken = {**SETTINGS, "min_margin_percent": -10, "max_price_change_percent": 50}
+    problems = pricer.validate_settings(broken)
+    assert len(problems) == 2, problems
+    assert any("min_margin_percent 不可為負數" in item for item in problems)
+    assert any("超過安全上限" in item for item in problems)
+    # 負值 margin 關不掉成本閘門：_check_rails() 讀到負的毛利設定直接拋錯（fail-closed），
+    # 寧可整批中止，也不會因為安全閥被調鬆就放行一個低於成本的價格
+    with pytest.raises(analyser.AnalyserError):
+        pricer.propose(analysis, broken)
 
     # 被擋下的項目全部進了稽核軌跡，事後查得到「誰想改、為什麼沒改成」
     entries = audit.read_entries(result["audit_file"])

@@ -9,9 +9,11 @@
    這是資料隔離要求，不是 UI 便利性——只在 render 層過濾，等於把他店營運數據
    放進同一份記憶體物件、同一份 LLM prompt、同一份稽核附件裡，一次 bug 就外洩。
 
-2. **權限設定缺失或角色未知，一律退回最小權限。**
-   未知角色 -> 視為店長；店長沒指定據點或指定了不存在的據點 -> 可見集合為**空集合**
-   （deny-all），而不是預設 Full Pack。安全預設值必須是「什麼都看不到」。
+2. **權限設定缺失或角色未知，一律退回最小權限，而最小權限的底線是「什麼都不給」。**
+   角色無法辨識 -> 直接 deny-all，**不論 `--site` 給了什麼**（角色都認不出來，就
+   無從得知這個呼叫者有權看哪一店，照著他自己給的 `--site` 放行等於零驗證）；
+   店長沒指定據點或指定了不存在的據點 -> 同樣 deny-all。
+   任何情況都不會退回 Full Pack。安全預設值必須是「什麼都看不到」。
 
 3. **輸出前再驗一次（縱深防禦）。**
    `assert_no_leak()` 把即將送出的 payload / 報表文字序列化後，掃描是否出現
@@ -58,6 +60,8 @@ class AccessScope:
     visible_site_ids: frozenset[str]
     pack: str
     denial_reason: str | None = None
+    #: 角色字串無法辨識。這種呼叫可能是設定錯誤，也可能是探測行為，必須留痕。
+    role_was_unknown: bool = False
 
     @property
     def is_denied(self) -> bool:
@@ -96,6 +100,7 @@ class AccessScope:
             "visible_site_ids": sorted(self.visible_site_ids),
             "is_denied": self.is_denied,
             "denial_reason": self.denial_reason,
+            "role_was_unknown": self.role_was_unknown,
         }
 
 
@@ -104,18 +109,19 @@ def _normalise(value: Any) -> str:
     return "" if value is None else str(value).strip().lower()
 
 
-def parse_role(raw: Any, diagnostics: DiagnosticsLike | None = None) -> Role:
-    """把字串轉成 Role。**任何無法辨識的值都退回 SITE_MANAGER**（最小權限）。"""
-    text = _normalise(raw)
+def parse_role(raw: Any) -> tuple[Role, bool]:
+    """把字串轉成 `(角色, 是否可辨識)`。
+
+    無法辨識時第一個值降為 `SITE_MANAGER`，但第二個值為 False——呼叫端**必須**據此
+    強制 deny-all，不可只靠「降級成店長」了事。理由見 `resolve_scope` 的說明。
+
+    本函式刻意不吃 `diagnostics`：它是純函式，警示由 `resolve_scope` 統一發出，
+    避免同一次解析在兩個地方各印一則語意重疊的琥珀燈。
+    """
     try:
-        return Role(text)
+        return Role(_normalise(raw)), True
     except ValueError:
-        if diagnostics is not None:
-            diagnostics.amber(
-                f"未知或缺失的角色設定 {raw!r}，本次退回最小權限（店長視野）",
-                "以 --role hq 或 --role site_manager 明確指定；不可依賴預設值取得 Full Pack",
-            )
-        return Role.SITE_MANAGER
+        return Role.SITE_MANAGER, False
 
 
 def resolve_scope(
@@ -125,10 +131,31 @@ def resolve_scope(
     registry_site_ids: Iterable[str],
     diagnostics: DiagnosticsLike | None = None,
 ) -> AccessScope:
-    """算出本次執行的可見據點集合。這是整個模組唯一有權放行資料的地方。"""
+    """算出本次執行的可見據點集合。這是整個模組唯一有權放行資料的地方。
+
+    **角色無法辨識時一律 deny-all，不論 `--site` 給了什麼。**
+
+    `--site` 是呼叫者自己給的參數、沒有經過任何驗證；角色認不出來，就等於不知道
+    這個呼叫者有權存取哪一家店。此時若還照著 `--site` 放行，等於「你說要看 X 就
+    給你 X」——任何人只要亂打一個角色名加上一個有效店碼，就能拿到那家店的完整
+    營運資料，而且他根本不需要知道任何合法角色名稱。
+
+    對「不存在的據點」既然已經 deny-all，對「不認得的角色」就必須一樣嚴格：
+    **不知道你是誰，就什麼都不給。**
+    """
     all_ids = frozenset(str(item) for item in registry_site_ids)
-    role = parse_role(role_raw, diagnostics)
+    role, is_recognised_role = parse_role(role_raw)
     actor = str(actor_raw).strip() if actor_raw else f"unknown:{role.value}"
+
+    if not is_recognised_role:
+        # 刻意不在訊息中列出合法角色清單：那等於直接告訴探測者正確答案是什麼。
+        return _denied(
+            actor=actor,
+            site_id=str(site_raw).strip() if site_raw else None,
+            diagnostics=diagnostics,
+            reason=f"角色 {role_raw!r} 無法辨識，已拒絕所有存取",
+            role_was_unknown=True,
+        )
 
     if role is Role.HQ:
         return AccessScope(
@@ -170,8 +197,13 @@ def _denied(
     site_id: str | None,
     diagnostics: DiagnosticsLike | None,
     reason: str,
+    role_was_unknown: bool = False,
 ) -> AccessScope:
-    """建立 deny-all 範圍：可見集合為空，後續取數迴圈自然一筆都不會跑。"""
+    """建立 deny-all 範圍：可見集合為空，後續取數迴圈自然一筆都不會跑。
+
+    `role_was_unknown` 會一路帶進 `to_dict()` 與稽核軌跡：角色認不出來的呼叫
+    可能是設定錯誤，也可能是有人在試探角色名稱，兩者都必須留痕。
+    """
     if diagnostics is not None:
         diagnostics.amber(
             f"權限解析失敗（{reason}），本次可見據點為空集合",
@@ -184,6 +216,7 @@ def _denied(
         visible_site_ids=frozenset(),
         pack=PACK_OWN_SITE,
         denial_reason=reason,
+        role_was_unknown=role_was_unknown,
     )
 
 

@@ -685,8 +685,10 @@ def main() -> int:
         print(f"錯誤：{exc}", file=sys.stderr)
         return 1
 
-    if result["delivery"]["channel"] != "console":
-        # console 通道已經由 Notifier 印過，不重複輸出。
+    if not result["delivery"]["delivered"]:
+        # 只有「真的送出去了」才不重印：console 通道送出時 Notifier 已經印過。
+        # 未送出的情況（--dry-run、自主權扣住的草稿、通道失敗）一定要印在終端機，
+        # 否則 --dry-run 的變更計畫沒有任何人看得到，這個旗標就等於不存在。
         print(result["report_text"])
     if result["is_partial"]:
         print(

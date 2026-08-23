@@ -202,3 +202,20 @@ def test_integration_provider_failure_still_delivers(tmp_path, monkeypatch, caps
     assert result["delivery"]["delivered"] is False
     assert result["delivery"]["reason"] == "dry-run"
     assert "Apollo" in capsys.readouterr().err
+
+    # 走 main() 的實際印出路徑：只驗 result["change_plan"] 會繞過 CLI 輸出邏輯，
+    # 而 --dry-run 的全部價值就是「讓人在終端機上看到將要改什麼」。
+    # 看不到 = 功能不存在，因此這裡用 capsys 斷言 stdout 真的有變更計畫。
+    monkeypatch.setattr(
+        sys, "argv",
+        ["main.py", "--mock", "--dry-run", "--notify", "console",
+         "--state-file", str(tmp_path / "cli-state.json"),
+         "--csv-out", str(tmp_path / "cli-report.csv")],
+    )
+    assert main.main() == 0
+    stdout = capsys.readouterr().out
+    assert "變更計畫（尚未寫入 CRM）" in stdout
+    assert "Kite Labs" in stdout
+    assert "industry" in stdout and "→" in stdout  # 從什麼值變成什麼值
+    assert "保留 CRM" in stdout                     # 衝突欄位的處置也要看得到
+    assert not (tmp_path / "cli-report.csv").exists()

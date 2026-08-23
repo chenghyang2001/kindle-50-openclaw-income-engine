@@ -92,6 +92,19 @@ def to_rate(raw: Any, field: str = "velocity") -> Decimal:
     return value.quantize(RATE_QUANT, rounding=ROUND_HALF_UP)
 
 
+def to_signed_rate(raw: Any, field: str = "percent") -> Decimal:
+    """把**可能為負**的百分比轉成 Decimal（刻意不做正負檢查）。
+
+    與 `to_rate()` 的分工：
+      - `to_rate()`  用於「負值＝資料壞掉」的欄位（流速、天數、庫存門檻），
+                     負值直接拋錯是對的，因為那種資料不該繼續往下走。
+      - `to_signed_rate()` 用於**設定檔驗證**，那裡的負值是要被「回報」的問題，
+                     不是要被中止的例外——在轉換階段就拋錯，呼叫端只會看到
+                     第一個錯誤，永遠拿不到完整的問題清單。
+    """
+    return _to_decimal(raw, field).quantize(RATE_QUANT, rounding=ROUND_HALF_UP)
+
+
 def to_count(raw: Any, field: str = "current_stock") -> int:
     """把庫存數量轉成非負整數"""
     if isinstance(raw, bool):

@@ -109,7 +109,9 @@ def _emit_red(diagnostics: Diagnostics, red_alerts: list[str], *,
     那會讓「今天有一筆負毛利」變成「今天什麼都不知道」。
 
     RED 事實不會被吞掉：它已經印在 stderr、寫進稽核軌跡、列進報告的
-    「需人工介入」段，而且會讓行程以退出碼 1 結束。
+    「需人工介入」段，並收進 result["red_alerts"]，讓行程以**退出碼 2**結束
+    （見 main() 的退出碼約定：RED 是「有結果、需要人看」，不是「沒有結果」；
+    退出碼 1 只留給設定錯誤、資料源壞掉這類重跑也沒用的致命狀況）。
     """
     try:
         diagnostics.red(symptom=symptom, cause=cause, fix=fix)

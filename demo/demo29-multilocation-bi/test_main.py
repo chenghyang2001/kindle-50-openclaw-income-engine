@@ -107,10 +107,40 @@ def test_happy_path_hq_full_pack(tmp_path):
 
 
 def test_edge_case_unknown_role_falls_back_to_deny_all(tmp_path):
-    """邊界：未知角色 + 不存在的據點 -> 退回最小權限並拒絕存取，且不得除以零。
+    """邊界：角色無法辨識 -> 一律拒絕存取，且不得除以零。
 
-    安全預設值必須是「什麼都看不到」；若這裡退回 Full Pack，整個模組的賣點就沒了。
+    兩個獨立情境都要驗，因為它們的失敗模式完全不同：
+      A. 未知角色 + **有效**據點 -> 仍須 deny-all（`--site` 是呼叫者自己給的參數，
+         角色都認不出來就無從得知他有權看哪一店，照著放行等於零驗證）
+      B. 未知角色 + 不存在的據點 -> deny-all
+    安全預設值必須是「什麼都看不到」；若任一情境放行，整個模組的賣點就沒了。
     """
+    # --- 情境 A：未知角色 + 有效據點，仍然什麼都不給 ---
+    probing = main.run(_args(tmp_path, role="auditor", site_id="tpe-xinyi"))
+
+    assert probing["access"]["is_denied"] is True
+    assert probing["access"]["role_was_unknown"] is True
+    assert probing["access"]["visible_site_ids"] == []
+    assert probing["sites"] == []
+    assert probing["sites_reporting"] == 0
+    # 有效店碼也不得換到任何一格數字
+    assert "tpe-xinyi" not in probing["report_text"]
+    assert "台北信義旗艦店" not in probing["report_text"]
+    assert "2,150,000" not in probing["report_text"]
+    # 拒絕訊息不可列出合法角色清單，否則等於告訴探測者正確答案
+    denial = probing["access"]["denial_reason"]
+    assert "無法辨識" in denial
+    assert "site_manager" not in denial and "hq" not in denial
+
+    # 這種呼叫可能是設定錯誤，也可能是探測行為 -> 必須在稽核軌跡留痕
+    resolved = next(
+        item for item in audit.read_events(Path(probing["audit"]["file"]))
+        if item["event"] == audit.EVENT_ACCESS_RESOLVED
+    )
+    assert resolved["role_was_unknown"] is True
+    assert resolved["visible_site_ids"] == []
+
+    # --- 情境 B：未知角色 + 不存在的據點 ---
     result = main.run(_args(tmp_path, role="auditor", site_id="ghost-store"))
 
     assert result["access"]["role"] == Role.SITE_MANAGER.value
@@ -141,6 +171,14 @@ def test_edge_case_unknown_role_falls_back_to_deny_all(tmp_path):
     scope = resolve_scope("site_manager", None, "someone", ["tpe-xinyi"])
     assert scope.is_denied is True
     assert scope.can_see_ranking is False
+    assert scope.role_was_unknown is False
+
+    # 角色認不出來時，即使據點合法也不得進入店長的正常解析路徑
+    unknown = resolve_scope("auditor", "tpe-xinyi", "someone", ["tpe-xinyi"])
+    assert unknown.role_was_unknown is True
+    assert unknown.is_denied is True
+    assert unknown.visible_site_ids == frozenset()
+    assert unknown.can_see_ranking is False
 
 
 def test_integration_site_manager_sees_only_own_site(tmp_path, capsys):
