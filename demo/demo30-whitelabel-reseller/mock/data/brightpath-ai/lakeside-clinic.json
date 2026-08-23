@@ -1,0 +1,18 @@
+{
+  "namespace": "brightpath-ai/lakeside-clinic",
+  "period": "2026-08",
+  "automations_live": [
+    "morning-briefing",
+    "inbox-zero-agent",
+    "meeting-transcription",
+    "review-monitor"
+  ],
+  "metrics": {
+    "tasks_completed": 623,
+    "human_review_items": 88,
+    "sla_breaches": 0,
+    "uptime_pct": 99.99
+  },
+  "incidents": [],
+  "notes": "醫療場景，人工審核比例刻意維持偏高（自主權停在 draft）。"
+}

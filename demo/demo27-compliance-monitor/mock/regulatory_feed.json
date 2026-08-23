@@ -1,0 +1,43 @@
+{
+  "source_system": "mock/regulatory_feed.json（離線示範用政府公告 RSS/API 快照，非真實公告）",
+  "fetched_at": "2026-08-24T08:50:00+08:00",
+  "items": [
+    {
+      "item_id": "REG-2026-0812",
+      "published_at": "2026-08-12",
+      "authority": "Information Commissioner's Office",
+      "title": "Updated guidance on international data transfers",
+      "impact_level": "critical",
+      "affects": ["POL-DP-01", "CTR-2023-0442"],
+      "excerpt": "Controllers relying on the transfer risk assessment template published in 2022 must complete a reassessment before 31 October 2026."
+    },
+    {
+      "item_id": "REG-2026-0805",
+      "published_at": "2026-08-05",
+      "authority": "Environment Agency",
+      "title": "Fee schedule change for hazardous substances permits",
+      "impact_level": "standard",
+      "affects": ["LIC-HAZ-0071"],
+      "excerpt": "Permit renewal fees increase from 1 October 2026. Applications submitted before that date are charged at the current rate."
+    },
+    {
+      "item_id": "REG-2026-0731",
+      "published_at": "2026-07-31",
+      "authority": "HM Treasury",
+      "title": "Consultation outcome: sanctions reporting thresholds",
+      "impact_level": null,
+      "affects": ["POL-AML-02"],
+      "excerpt": "The government will legislate to amend reporting thresholds when parliamentary time allows.",
+      "note": "公告未載明生效日與影響範圍，無法自行判定等級"
+    },
+    {
+      "item_id": "REG-2026-0722",
+      "published_at": "2026-07-22",
+      "authority": "Companies House",
+      "title": "Reminder: identity verification for directors",
+      "impact_level": "standard",
+      "affects": [],
+      "excerpt": "Directors appointed after the commencement date must verify their identity before filing."
+    }
+  ]
+}

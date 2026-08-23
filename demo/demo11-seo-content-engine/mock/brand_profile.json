@@ -1,0 +1,21 @@
+{
+  "brand": "北原倉儲科技",
+  "brand_en": "Northfield WMS",
+  "site": "https://www.northfield-wms.example.com/",
+  "positioning": "專做中小型倉庫的倉儲管理系統，主打「不用先換掉現有 ERP 也能上線」",
+  "audience": "營運主管與倉管組長，多半同時管 3-15 人的現場團隊，沒有專職 IT",
+  "voice_pillars": [
+    "先講限制再講好處，不承諾做不到的事",
+    "所有數字都要附上量測條件",
+    "用現場語言（棧板、揀貨單、盤差），不用管理顧問術語"
+  ],
+  "expertise_notes": [
+    "導入專案平均分成現況盤點、主檔整理、試營運、正式切換四個階段",
+    "最常見的失敗點是主檔（品號、儲位）沒整理乾淨就上線",
+    "盤差率與揀貨錯誤率是客戶最在意的兩個指標"
+  ],
+  "banned_words": ["業界第一", "保證", "百分之百", "零錯誤", "最便宜"],
+  "call_to_action": "想知道你的倉庫現在卡在哪一段，可以先用網站上的導入自評表跑一次。",
+  "cta_url": "https://www.northfield-wms.example.com/self-assessment",
+  "fact_policy": "任何具體數字、客戶名稱、專案時程都必須由編輯填入，AI 一律留下【待填：…】標記，不得自行推估。"
+}

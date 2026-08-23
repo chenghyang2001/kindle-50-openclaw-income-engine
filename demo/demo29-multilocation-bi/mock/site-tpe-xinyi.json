@@ -1,0 +1,14 @@
+{
+  "_schema": "shopify-analytics-daily",
+  "shop_domain": "tpe-xinyi.example.myshopify.com",
+  "staff_hours": "980",
+  "daily_orders": [
+    {"date": "2026-08-17", "gross_sales": "300000", "refunds": "4000", "order_count": 640, "sessions": 3100},
+    {"date": "2026-08-18", "gross_sales": "285000", "refunds": "3500", "order_count": 610, "sessions": 2950},
+    {"date": "2026-08-19", "gross_sales": "292000", "refunds": "4200", "order_count": 620, "sessions": 3050},
+    {"date": "2026-08-20", "gross_sales": "310000", "refunds": "5000", "order_count": 650, "sessions": 3200},
+    {"date": "2026-08-21", "gross_sales": "335000", "refunds": "4300", "order_count": 690, "sessions": 3350},
+    {"date": "2026-08-22", "gross_sales": "348000", "refunds": "4500", "order_count": 700, "sessions": 3300},
+    {"date": "2026-08-23", "gross_sales": "310000", "refunds": "4500", "order_count": 590, "sessions": 3050}
+  ]
+}

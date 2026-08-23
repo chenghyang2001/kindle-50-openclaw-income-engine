@@ -1,0 +1,90 @@
+# demo25 — 動態客戶媒合引擎（房地產 / B2B）
+# 書中數據（SPEC-21-30 #25，來源 ch07_p08、apxG_p12）：
+#   部署 1 週｜內部回收「原簡報未提供」｜售價 $3,500 setup + $1,400/mo
+
+module:
+  id: "25"
+  name: "動態客戶媒合引擎"
+  # 1 週 = 7 × 24 × 60 分鐘。契約 §7 要求本欄位為分鐘數，
+  # Level 3 模組的部署單位是「週」而非「分鐘」，這裡如實換算不做縮短。
+  deploy_minutes: 10080
+  # ⚠️ 原簡報 36 張投影片沒有任何一頁提供「顧問端內部回收工時」，
+  # 一律以 0 佔位代表「原簡報未提供」，禁止推估（見 README「數字口徑」）。
+  recovered_hours_per_month: 0
+  client_setup_price: 3500
+  client_monthly_price: 1400
+
+runtime:
+  # 推薦信是直接寄到買方信箱的對外通訊，誤送成本高（且房地產推薦受法規檢視），
+  # 預設維持 draft：先由業務過目再送出。
+  autonomy: draft
+  approved_senders: []
+  days_in_draft: 0
+  notify_channel: console
+
+matching:
+  # 逐字取自 SPEC-21-30 #25 的 matching_criteria 區塊（apxG_p12）
+  hard_match_fields: ["max_price", "min_bedrooms", "property_type"]
+  soft_match_fields: ["preferred_postcodes", "required_features", "min_floor_area"]
+  match_score_threshold: 80
+  hard_match_weight: 3
+  soft_match_weight: 1
+
+  # 分支 A 分級推播門檻（apxG_p12：Perfect 90+ / Strong 75-89）
+  # ⚠️ 已知規格衝突：Strong 從 75 起算，但 match_score_threshold 是 80，
+  # 因此 75.00–79.99 會被標為 strong 卻**不推播**。原簡報同時給了這兩個數字，
+  # 本模組照字面實作、不自行裁定，並在報告中明列這段落差（見 README）。
+  perfect_score_min: 90
+  strong_score_min: 75
+
+  # 規格只給權重不給硬門檻，預設 false = 純加權（照字面實作）。
+  # 改為 true 時，任一 hard_match_fields 未命中即不推播（實作補充，非原著）。
+  require_all_hard_matches: false
+
+  # 通知時效（apxG_p12：上架 60 分鐘內完成通知）。超過即記 AMBER + 稽核事件。
+  notify_sla_minutes: 60
+
+  # 🔴 公平住房法遵欄位白名單（實作補充，原著未提供，但為法遵必要）。
+  # 只有客觀物件條件可以進入媒合；任何疑似受保護特徵的欄位名一律拒絕執行。
+  # 新增欄位前必須先確認 matcher.py 有對應的比對邏輯，否則會當場報錯。
+  allowed_criteria_fields:
+    - max_price
+    - min_price
+    - min_bedrooms
+    - max_bedrooms
+    - min_bathrooms
+    - property_type
+    - preferred_postcodes
+    - required_features
+    - min_floor_area
+    - max_property_age_years
+
+# 分支 B — 低詢問度物件自動產生 Vendor Pricing Pack（降價談判包）
+vendor_pack:
+  max_enquiries_last_7_days: 2
+  min_days_on_market: 14
+
+engagement:
+  # 高優先級（Perfect 90+）推薦附加看屋預約連結與簡訊提示（apxG_p12 分支 A）。
+  # 未設定環境變數時 config_loader 會保留 ${...} 原樣，程式偵測到即改記 AMBER 並略過連結，
+  # 不會把 "${CALENDLY_VIEWING_URL}" 這串字面值寄給買方。
+  calendly_url: "${CALENDLY_VIEWING_URL}"
+  # 本 demo 只在通知內容標記「附加 SMS」，不實際串接簡訊供應商（見 README 已知限制）。
+  is_sms_enabled_for_high_priority: true
+
+sources:
+  # 相對路徑一律相對於本 demo 目錄解析（程式內用 Path(__file__).parent，不硬編碼）
+  listings_mock: "mock/listings.json"
+  buyers_mock: "mock/buyers.json"
+  # --live 時改讀這兩個端點（標準庫 urllib.request，不用 requests）
+  listings_url: "${LISTINGS_API_URL}"
+  buyers_url: "${BUYERS_API_URL}"
+  request_timeout_seconds: 15
+  # mock 模式的固定「現在時間」，讓 60 分鐘時效判定可重現（--now 可覆寫）
+  mock_now: "2026-08-24T09:00:00+08:00"
+
+state:
+  # 通知去重狀態檔：記錄「哪個買方收過哪個物件」與買方條件指紋
+  state_file: "state/notifications.json"
+  # 稽核軌跡（append-only JSONL）
+  audit_file: "state/audit.jsonl"

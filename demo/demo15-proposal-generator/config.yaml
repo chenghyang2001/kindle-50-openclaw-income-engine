@@ -1,0 +1,182 @@
+# demo15 提案與報價生成器 —— 設定檔（Level 2 代理商，自動化模組 #15）
+#
+# 定價來源裁決：模組自身售價一律以**附錄 F（apxF_p09）**為準。
+# 第 05 章（ch05_p08）另有一套較高的數字（$950 + $260/月），原著兩處不一致，
+# 本檔保留為 premium_* 欄位僅供對照，不參與任何計算。詳見 README §9。
+
+module:
+  id: "15"
+  name: "提案與報價生成器"
+  english_name: "Proposal and Quote Generator"
+  level: 2
+  deploy_minutes: 480              # 書中：1 Day（兩來源一致），以 8 小時工作日計
+  recovered_hours_per_proposal: 3  # 書中：每份提案回收 3 小時
+  client_setup_price: 1000         # apxF_p09：$1,000 首付（**採用**）
+  client_monthly_price: 200        # apxF_p09：$200/月（**採用**）
+  premium_setup_price: 950         # ch05_p08：$950 設置費（僅對照，不使用）
+  premium_monthly_price: 260       # ch05_p08：$260/月（僅對照，不使用）
+  pricing_source: "apxF_p09"
+
+runtime:
+  # 提案是對外文件，預設 draft：一律先進人工審查，不自動寄給客戶。
+  autonomy: draft
+  approved_senders:
+    - "@northwind-logistics.example"
+  days_in_draft: 30                # 已超過書中鐵律的 14 天觀察期
+  notify_channel: console
+
+# ---------------------------------------------------------------------------
+# 🔒 安全鐵律：電子簽署永不自動送出
+# SPEC #15 原文：「自動化發送電子簽署流程（**依核准模式**）」。
+# 提案可以自動生成，但送出簽署請求＝讓客戶有機會當場締約，AI 不得自行為公司締約。
+# 本區塊的 require_human_approval 即使被改成 false，程式也會強制回 true 並發 AMBER。
+# ---------------------------------------------------------------------------
+signature:
+  provider: "docusign"
+  require_human_approval: true
+  never_auto_send: true
+  approver_role: "業務主管（Deal Owner）"
+  approval_note: "請人工覆核報價金額與服務範圍後，於 DocuSign 後台手動送出簽署請求。"
+
+pricing:
+  currency: "USD"
+  # ⚠️ 原簡報（ch05_p08 / apxF_p09）只給了「RATE_CARD 組合服務項目與標準收費」與
+  # 「A/B/C 三個投資選項（Essential / Recommended / Comprehensive）」兩條規則，
+  # **沒有提供**稅率、折扣級距、報價有效天數。以下為可調的部署預設值，
+  # 交付客戶前必須依當地稅制與該公司的商務政策改寫。
+  tax_rate: "0.05"                 # 原簡報未提供，部署預設值
+  tax_label: "營業稅"
+  quote_valid_days: 14             # 原簡報未提供，部署預設值
+  discount_basis: "one_off"        # 折扣只作用於一次性費用，訂閱月費不打折
+
+  # 級距由上而下比對，第一個命中的勝出（門檻須由大到小排列）。
+  discount_tiers:
+    - min_subtotal: "20000.00"
+      rate: "0.15"
+    - min_subtotal: "10000.00"
+      rate: "0.10"
+    - min_subtotal: "5000.00"
+      rate: "0.05"
+
+  # 超出以下任一條件即標記 requires_human_pricing，改由人工核價。
+  guardrails:
+    max_discount_rate: "0.20"      # 折扣上限；超過只夾到上限，並要求人工介入
+    auto_quote_ceiling: "25000.00" # 單一方案含稅建置費天花板
+
+  # SPEC #15：`Pricing Strategy` 自動生成 A/B/C 三個投資選項以提高轉化率。
+  # add_ons 一律「完整列出」而非繼承上一階，避免日後改動時發生隱性疊加。
+  tiers:
+    - key: "essential"
+      name: "方案 A — 基礎版（Essential）"
+      summary: "只做最痛的那一段，最快看到結果。"
+      add_ons: []
+    - key: "recommended"
+      name: "方案 B — 推薦版（Recommended）"
+      summary: "含教育訓練與標準維運訂閱，交付後能自行運作。"
+      is_recommended: true
+      add_ons:
+        - code: "training_session"
+          quantity: 1
+        - code: "retainer_standard"
+          quantity: 1
+    - key: "comprehensive"
+      name: "方案 C — 完整版（Comprehensive）"
+      summary: "含歷史資料遷移與成效儀表板，一次到位。"
+      add_ons:
+        - code: "training_session"
+          quantity: 1
+        - code: "retainer_standard"
+          quantity: 1
+        - code: "data_migration"
+          quantity: 1
+        - code: "analytics_dashboard"
+          quantity: 1
+
+# ---------------------------------------------------------------------------
+# RATE_CARD（定價卡）—— SPEC #15 Processing 段的核心資料結構。
+# 金額一律寫成「加引號的字串」：YAML 未加引號的 1200.00 會被解析成 float，
+# 程式會當場拒收（見 pricing.to_decimal），這是刻意的防呆。
+# ---------------------------------------------------------------------------
+rate_card:
+  - code: "discovery_workshop"
+    name: "探索工作坊"
+    billing: "one_off"
+    unit: "場"
+    unit_price: "1200.00"
+    max_quantity: 4
+  - code: "automation_module"
+    name: "自動化模組建置"
+    billing: "one_off"
+    unit: "個"
+    unit_price: "1000.00"
+    max_quantity: 10
+  - code: "crm_integration"
+    name: "CRM 系統整合"
+    billing: "one_off"
+    unit: "式"
+    unit_price: "1800.00"
+    max_quantity: 3
+  - code: "data_migration"
+    name: "歷史資料遷移"
+    billing: "one_off"
+    unit: "式"
+    unit_price: "2500.00"
+    max_quantity: 2
+  - code: "training_session"
+    name: "團隊教育訓練"
+    billing: "one_off"
+    unit: "場"
+    unit_price: "600.00"
+    max_quantity: 6
+  - code: "retainer_standard"
+    name: "標準維運訂閱"
+    billing: "monthly"
+    unit: "月"
+    unit_price: "200.00"
+    max_quantity: 12
+  - code: "retainer_priority"
+    name: "優先支援訂閱"
+    billing: "monthly"
+    unit: "月"
+    unit_price: "450.00"
+    max_quantity: 12
+  - code: "analytics_dashboard"
+    name: "成效儀表板訂閱"
+    billing: "monthly"
+    unit: "月"
+    unit_price: "250.00"
+    max_quantity: 12
+
+# 提案敘事段落（由 LLM 生成，但**絕不允許出現任何金額**）
+drafting:
+  prompt_path: "prompts/draft_proposal.md"
+  max_tokens: 1800
+  required_sections:
+    - "高階主管摘要"
+    - "我們的理解"
+    - "方法論"
+    - "相關案例"
+  # 敘事中若偵測到金額樣式，一律遮蔽成此字串並發 AMBER。
+  redaction_placeholder: "［金額由系統計算後填入］"
+
+llm:
+  context_note: "你正在為一間 B2B 自動化代理商撰寫提案敘事。所有價格、費用、折扣、投報率的數字都由系統另行計算，你的輸出中不得出現任何金額。"
+
+# live 模式的 CRM 匯出檔（Deals + Meeting Notes + Company Profile）
+crm:
+  export_path: ""
+  system: "hubspot"
+
+output:
+  dir: "output"
+  filename_template: "{proposal_id}.md"
+
+state:
+  ledger_file: ".proposals.json"
+
+notify:
+  subject_prefix: "[demo15]"
+
+mock:
+  deals_path: "mock/deals.json"
+  narrative_dir: "mock/narratives"

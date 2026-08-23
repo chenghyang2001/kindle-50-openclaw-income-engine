@@ -1,0 +1,45 @@
+{
+  "agent_id": "analytics",
+  "produced": 7,
+  "unit": "日報/週",
+  "primary_kpi": "qualified_leads",
+  "samples": [
+    {
+      "id": "A-2026-09-08",
+      "date": "2026-09-08",
+      "kpi_value": 11,
+      "baseline": "前七日平均 8.4",
+      "delta_pct": 31.0,
+      "findings": [
+        "落地頁下載轉申請的比例上升，但追蹤碼上週才更新，前後期不可直接比較"
+      ],
+      "measurement_caveats": ["GA4 資料 24 小時內可能回填"]
+    },
+    {
+      "id": "A-2026-09-11",
+      "date": "2026-09-11",
+      "kpi_value": 7,
+      "baseline": "前四週同一星期平均 9.1",
+      "delta_pct": -23.1,
+      "findings": [
+        "週四社群觸及下滑，時段與同業促銷重疊；尚不足以判定為內容問題"
+      ],
+      "measurement_caveats": ["社群平台觸及統計口徑當週調整過"]
+    },
+    {
+      "id": "A-2026-09-13",
+      "date": "2026-09-13",
+      "kpi_value": 14,
+      "baseline": "目標值 每日 8",
+      "delta_pct": 75.0,
+      "findings": ["週末試喝申請集中湧入，來源以既有訂戶推薦為主"],
+      "measurement_caveats": []
+    }
+  ],
+  "weekly_rollup": {
+    "primary_kpi_total": 63,
+    "vs_prior_week_pct": 18.5,
+    "confidence": "medium"
+  },
+  "blockers": []
+}

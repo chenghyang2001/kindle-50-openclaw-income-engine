@@ -1,0 +1,50 @@
+{
+  "source": "xero",
+  "scope": "accounting.transactions.read",
+  "period": "2026-07",
+  "currency": "USD",
+  "pnl_lines": [
+    {
+      "code": "4000",
+      "label": "訂閱營收",
+      "category": "revenue",
+      "actual": "412500.00",
+      "prior_year": "355000.00"
+    },
+    {
+      "code": "4100",
+      "label": "專案與導入營收",
+      "category": "revenue",
+      "actual": "138200.00",
+      "prior_year": "151000.00"
+    },
+    {
+      "code": "5000",
+      "label": "雲端與託管成本",
+      "category": "cogs",
+      "actual": "96400.00",
+      "prior_year": "82000.00"
+    },
+    {
+      "code": "6200",
+      "label": "行銷費用",
+      "category": "opex",
+      "actual": "74800.00",
+      "prior_year": "61000.00"
+    },
+    {
+      "code": "6300",
+      "label": "差旅與辦公費用",
+      "category": "opex",
+      "actual": "21350.00",
+      "prior_year": "19800.00"
+    },
+    {
+      "code": "6900",
+      "label": "專業服務費",
+      "category": "opex",
+      "actual": "18900.00",
+      "prior_year": "12500.00"
+    }
+  ]
+}

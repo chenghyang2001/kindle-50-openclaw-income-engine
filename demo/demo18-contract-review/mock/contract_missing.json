@@ -1,0 +1,76 @@
+{
+  "contract_id": "MSA-2026-0502-ORRIN",
+  "title": "Services Agreement between Northgate Analytics Ltd and Orrin Fieldworks LLP",
+  "counterparty": "Orrin Fieldworks LLP",
+  "received_via": "cli_upload",
+  "received_at": "2026-08-24T11:05:00+01:00",
+  "jurisdiction": "england_wales",
+  "page_count": 22,
+  "financials": {
+    "currency": "GBP",
+    "annual_value": "120000.00"
+  },
+  "note": "刻意刪除三條關鍵保護條款：Data Protection / Insurance / Non-Solicitation。合約全文完全沒有這三者的任何字樣，因此 Missing 是可證實的判定，不是猜測。",
+  "sections": [
+    {
+      "number": "1",
+      "heading": "Definitions and Interpretation",
+      "text": "In this Agreement the following terms shall have the meanings set out below. Deliverables means the items specified in the applicable Statement of Work."
+    },
+    {
+      "number": "2",
+      "heading": "Payment Terms",
+      "text": "The Client shall pay each undisputed invoice within thirty (30) days of the invoice date. Late payment shall accrue interest at two per cent per annum above the Bank of England base rate."
+    },
+    {
+      "number": "3",
+      "heading": "Confidentiality",
+      "text": "Each party shall keep confidential all Confidential Information disclosed by the other party for a period of five (5) years from the date of disclosure."
+    },
+    {
+      "number": "4",
+      "heading": "Intellectual Property",
+      "text": "Each party retains ownership of its Background Intellectual Property. Title to the Deliverables shall transfer to the Client upon payment in full of all sums due under this Agreement."
+    },
+    {
+      "number": "5",
+      "heading": "Warranties",
+      "text": "The Supplier warrants that the Services shall be performed with reasonable skill and care and that the Deliverables shall be free from material defects for ninety (90) days following acceptance."
+    },
+    {
+      "number": "6",
+      "heading": "Limitation of Liability",
+      "text": "The aggregate liability of either party under this Agreement shall not exceed the total fees payable in the twelve months preceding the claim, being GBP 120,000. Neither party shall be liable for indirect or consequential loss."
+    },
+    {
+      "number": "7",
+      "heading": "Indemnities",
+      "text": "Each party shall indemnify the other against third party claims arising from its own breach of this Agreement, subject always to the limitations set out in clause 6."
+    },
+    {
+      "number": "8",
+      "heading": "Termination",
+      "text": "Either party may terminate this Agreement for convenience on thirty (30) days prior written notice to the other party."
+    },
+    {
+      "number": "9",
+      "heading": "Assignment",
+      "text": "Neither party may assign this Agreement in whole or in part without the prior written consent of the other party, such consent not to be unreasonably withheld."
+    },
+    {
+      "number": "10",
+      "heading": "Force Majeure",
+      "text": "Neither party shall be liable for any failure to perform caused by a Force Majeure Event. If a Force Majeure Event continues for more than sixty (60) consecutive days, either party may terminate this Agreement on written notice."
+    },
+    {
+      "number": "11",
+      "heading": "Governing Law",
+      "text": "This Agreement shall be governed by and construed in accordance with the laws of England and Wales."
+    },
+    {
+      "number": "12",
+      "heading": "Dispute Resolution",
+      "text": "The parties shall first seek to resolve any dispute by good faith negotiation for thirty (30) days. Failing resolution, the courts of England and Wales shall have exclusive jurisdiction."
+    }
+  ]
+}

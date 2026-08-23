@@ -1,0 +1,371 @@
+# demo18 — 合約審查與條款提取（第 05 章 #18 / 附錄F p15-p16）
+# 路徑一律相對於本模組目錄，執行期由 main.py 以 Path(__file__) 推算，禁止硬編碼絕對路徑。
+#
+# ⚠ 法律免責：本設定檔定義的是「初步篩選」基準，不構成法律意見。
+#    任何簽署決定前必須由合格法律專業人員審閱。詳見 README「法律免責聲明」。
+
+module:
+  id: "18"
+  name: "合約審查與條款提取"
+  # 第05章：1 Day；附錄F 另註記「需 90 分鐘深度配置」（兩者不衝突，一併記錄）
+  deploy_minutes: 480
+  deep_config_minutes: 90
+  # 書中回收單位是「每份合約 5 小時」，不是每月固定時數
+  recovered_hours_per_contract: 5
+  # 兩來源（第05章 / 附錄F）定價完全一致，直接採用
+  client_setup_price: 1800
+  client_monthly_price: 500
+
+runtime:
+  autonomy: draft # read_only | draft | supervised_auto
+  approved_senders: []
+  days_in_draft: 0
+  notify_channel: console
+
+llm:
+  model: claude-sonnet-5
+  max_tokens: 3000
+  # CONTEXT_NOTE：第 04 章實測可減少 40% 不相關輸出
+  context_note: "這是法務初步篩選，讀者是執業律師。只輸出合約原文能佐證的事實，禁止改寫條款文字，禁止提供法律意見。"
+
+# JURISDICTION（附錄F p15）：比對基準的前提。
+# 沒有管轄權就沒有「標準立場」可言，未設定或不支援一律紅色警報停機。
+jurisdiction:
+  code: "england_wales"
+  label: "英格蘭與威爾斯法（English law）"
+  supported:
+    - "england_wales"
+    - "new_york"
+
+extraction:
+  # 鐵律：提取結果必須是合約原文的逐字複製，通不過驗證就不輸出引文
+  require_verbatim: true
+  # 標題命中（條款全文可信）與僅內文命中（只取命中句）的信心值差距
+  heading_match_confidence: 0.95
+  body_match_confidence: 0.72
+  # 低於此值一律標 needs_human_review，且不得判為 Standard
+  confidence_floor: 0.75
+  # 單則引文上限；超過則以句子邊界截斷（截斷後仍是原文精確前綴）並標人工複核
+  quote_max_chars: 800
+
+review:
+  # Standard 是四分類中唯一的「放行」判定，因此絕對不能用猜的。
+  # 任何無法確認符合標準立場的條款一律降級為 Deviation 並標 needs_human_review。
+  unresolved_verdict: "Deviation"
+  # 備忘錄標題（附錄F Output：Word Memo + Email）
+  memo_title: "合約審查備忘錄（初步篩選，非法律意見）"
+
+escalation:
+  # Step 4 Action：紅旗繞過常規備忘錄，直送資深合夥人
+  senior_partner: "senior.partner@lawfirm.example"
+  bypass_memo_on_red_flag: true
+  # 同一份合約（相同 contract_id + 相同全文雜湊）已警報過就不重複轟炸資深合夥人
+  suppress_duplicate_alert: true
+
+output:
+  memo_recipients:
+    - "reviewing.associate@lawfirm.example"
+    - "counterparty.counsel@vendor.example"
+  # 書中承諾：4-8 分鐘內產出結構化風險備忘錄
+  turnaround_minutes_max: 8
+
+state:
+  # 已審查台帳（去重複警報用）。測試與 CI 請用 --state-file 指到暫存目錄。
+  store_file: "state/.reviewed.json"
+
+mock:
+  # --mock 預設讀這份；用 --contract 可指向 deviation / missing / redflag 版本
+  contract: "mock/contract_standard.json"
+
+# ---------------------------------------------------------------------------
+# RISK_ESCALATION_RULES（附錄F p15/p16 的 trigger_immediately_if）
+# 硬性紅線：命中即為 Red Flag，繞過常規備忘錄直送資深合夥人警報。
+# 書中明列兩條紅線：① 無上限責任 ② 背景 IP 轉讓。逐條實作，不自行增刪。
+# ---------------------------------------------------------------------------
+risk_escalation_rules:
+  - id: "unlimited_liability"
+    label_en: "Unlimited Liability"
+    label_zh: "無上限責任"
+    why: "責任不設上限等於把公司全部資產押在單一合約上，任何金額的求償都無法預估。"
+    escalate_to: "senior_partner"
+    trigger_immediately_if:
+      - '(?i)\bunlimited\s+liabilit(?:y|ies)\b'
+      - '(?i)\bliabilit(?:y|ies)\b[^.]{0,60}\bshall\s+be\s+unlimited\b'
+      - '(?i)\b(?:no|without)\s+(?:any\s+)?(?:cap|limit)\b[^.]{0,40}\bliabilit(?:y|ies)\b'
+      - '(?i)\bliabilit(?:y|ies)\b[^.]{0,60}\bno\s+cap\s+shall\s+apply\b'
+      - '無限責任'
+      - '責任不設上限'
+
+  - id: "background_ip_assignment"
+    label_en: "Background IP Assignment"
+    label_zh: "背景智慧財產權轉讓"
+    why: "背景 IP 是公司既有資產，一旦讓與即失去在其他客戶專案重複使用的權利。"
+    escalate_to: "senior_partner"
+    trigger_immediately_if:
+      - '(?i)\bbackground\b[^.]{0,40}\bintellectual\s+property\b[^.]{0,80}\b(?:assign|assigns|assigned|assignment|transfers?)\b'
+      - '(?i)\bassigns?\b[^.]{0,80}\bbackground\s+intellectual\s+property\b'
+      - '(?i)\bassigns?\b[^.]{0,80}\bbackground\s+IP\b'
+      - '背景智慧財產權[^。]{0,40}讓與'
+
+# ---------------------------------------------------------------------------
+# CLAUSE_LIBRARY（附錄F p15：系統核心，定義 14 種標準條款的企業基準立場）
+#
+# ⚠ 實作補充：原簡報只給出「14 種」這個數量，**沒有列出是哪 14 種**。
+#   以下 14 條為本實作依英美商務合約慣例補齊的示範基準，
+#   正式導入時必須由客戶的法務主管逐條改寫成該公司真正的 Standard Position。
+#
+# 每條欄位：
+#   standard_position  企業基準立場（給人看的一句話）
+#   heading_patterns   標題命中樣式（命中則取整條條款全文）
+#   body_patterns      內文命中樣式（標題找不到時的退路，只取命中句）
+#   must_include       條款必須具備的保護要素；缺任一即 Deviation
+#   deviation_if       命中即 Deviation，附風險說明與替代字詞
+#   amount_policy      金額型基準（用 Decimal 比對，禁止 float）
+# ---------------------------------------------------------------------------
+clause_library:
+  - id: "limitation_of_liability"
+    name_en: "Limitation of Liability"
+    name_zh: "責任限制"
+    is_required: true
+    standard_position: "雙方責任上限不超過求償前 12 個月已付費用（即年度合約金額 1 倍），並排除間接與衍生損失。"
+    heading_patterns:
+      - '(?i)limitation\s+of\s+liabilit'
+      - '(?i)^liabilit'
+    body_patterns:
+      - '(?i)\baggregate\s+liabilit'
+      - '(?i)\bshall\s+not\s+exceed\b[^.]{0,60}\bfees\b'
+    must_include:
+      - '(?i)(?:shall\s+not\s+exceed|aggregate\s+liabilit|capped\s+at|limited\s+to)'
+    deviation_if:
+      - pattern: '(?i)(?:indirect|consequential)\s+loss[^.]{0,40}\bshall\s+be\s+recoverable\b'
+        note: "未排除間接／衍生損失，賠償金額無法預估。"
+        suggested_wording: "Neither party shall be liable for indirect or consequential loss."
+    amount_policy:
+      kind: "max_multiple_of_annual_value"
+      value: "1.0"
+      note: "責任上限金額超過年度合約金額 1 倍。"
+      suggested_wording: "...shall not exceed the total fees payable in the twelve months preceding the claim."
+
+  - id: "indemnity"
+    name_en: "Indemnities"
+    name_zh: "賠償"
+    is_required: true
+    standard_position: "相互賠償，範圍僅限第三方請求，且受責任限制條款拘束。"
+    heading_patterns:
+      - '(?i)indemnit(?:y|ies)'
+    body_patterns:
+      - '(?i)\bshall\s+indemnif'
+    must_include:
+      - '(?i)indemnif'
+    deviation_if:
+      - pattern: '(?i)\bindemnif(?:y|ies)\b[^.]{0,120}\bany\s+and\s+all\b'
+        note: "賠償範圍為「任何及所有」請求，等同不設邊界的單向賠償。"
+        suggested_wording: "...shall indemnify the other against third party claims arising from its own breach."
+      - pattern: '(?i)\bindemnif(?:y|ies)\b[^.]{0,160}\bwithout\s+(?:any\s+)?(?:limit|cap)\b'
+        note: "賠償不受責任上限拘束，實質架空責任限制條款。"
+        suggested_wording: "...subject always to the limitations set out in the Limitation of Liability clause."
+
+  - id: "termination"
+    name_en: "Termination"
+    name_zh: "終止"
+    is_required: true
+    standard_position: "任一方得以 30 日書面通知便利終止。"
+    heading_patterns:
+      - '(?i)^termination'
+    body_patterns:
+      - '(?i)\bterminate\s+this\s+agreement\b'
+    must_include:
+      - '(?i)terminat'
+    deviation_if:
+      - pattern: '(?i)(?:ninety|90|one\s+hundred\s+and\s+eighty|180|three\s+hundred\s+and\s+sixty[- ]five|365)\s*(?:\(\d+\)\s*)?days\W{0,3}(?:prior\s+)?(?:written\s+)?notice'
+        note: "終止通知期遠超過 30 日，實質鎖死退出彈性。"
+        suggested_wording: "Either party may terminate for convenience on thirty (30) days prior written notice."
+      - pattern: '(?i)\bmay\s+not\s+terminate\b[^.]{0,60}\bfor\s+convenience\b'
+        note: "完全排除便利終止權。"
+        suggested_wording: "Either party may terminate this Agreement for convenience on thirty (30) days notice."
+
+  - id: "payment_terms"
+    name_en: "Payment Terms"
+    name_zh: "付款條件"
+    is_required: true
+    standard_position: "無爭議發票自發票日起 30 日內付款，逾期計息。"
+    heading_patterns:
+      - '(?i)payment\s+terms'
+      - '(?i)^payment'
+    body_patterns:
+      - '(?i)\bpay\s+each\b[^.]{0,40}\binvoice\b'
+    must_include:
+      - '(?i)\b(?:days|net\s*\d+)\b'
+    deviation_if:
+      - pattern: '(?i)(?:sixty|60|ninety|90|one\s+hundred\s+and\s+twenty|120)\s*(?:\(\d+\)\s*)?days\b[^.]{0,40}\binvoice\b'
+        note: "付款期超過 30 日，直接壓縮現金流。"
+        suggested_wording: "...shall pay each undisputed invoice within thirty (30) days of the invoice date."
+
+  - id: "confidentiality"
+    name_en: "Confidentiality"
+    name_zh: "保密"
+    is_required: true
+    standard_position: "雙向保密，保密期限自揭露日起 5 年。"
+    heading_patterns:
+      - '(?i)confidentialit'
+    body_patterns:
+      - '(?i)\bconfidential\s+information\b'
+    must_include:
+      - '(?i)confidential'
+    deviation_if:
+      - pattern: '(?i)\bconfidential\b[^.]{0,120}\b(?:in\s+perpetuity|perpetual|indefinitely)\b'
+        note: "保密義務無限期，離職員工與後續專案永久受限，實務上無法管理。"
+        suggested_wording: "...for a period of five (5) years from the date of disclosure."
+
+  - id: "intellectual_property"
+    name_en: "Intellectual Property"
+    name_zh: "智慧財產權"
+    is_required: true
+    standard_position: "各自保有背景 IP；交付成果 IP 於價金全額付清後移轉客戶。"
+    heading_patterns:
+      - '(?i)intellectual\s+property'
+    body_patterns:
+      - '(?i)\bbackground\s+intellectual\s+property\b'
+      - '(?i)\btitle\s+to\s+the\s+deliverables\b'
+    must_include:
+      - '(?i)intellectual\s+property'
+    deviation_if:
+      - pattern: '(?i)\btitle\s+to\s+the\s+deliverables\b[^.]{0,80}\bon\s+(?:the\s+)?effective\s+date\b'
+        note: "成果 IP 於生效日即移轉，付款前就失去交付物的所有權槓桿。"
+        suggested_wording: "Title to the Deliverables shall transfer upon payment in full of all sums due."
+
+  - id: "data_protection"
+    name_en: "Data Protection"
+    name_zh: "資料保護"
+    is_required: true
+    standard_position: "遵循 UK GDPR 與 DPA 2018，個資外洩 72 小時內通報。"
+    heading_patterns:
+      - '(?i)data\s+protection'
+      - '(?i)\bGDPR\b'
+    body_patterns:
+      - '(?i)\bUK\s+GDPR\b'
+      - '(?i)\bpersonal\s+data\s+breach\b'
+    must_include:
+      - '(?i)(?:GDPR|data\s+protection)'
+    deviation_if:
+      - pattern: '(?i)\bpersonal\s+data\s+breach\b[^.]{0,80}\b(?:thirty|30|fourteen|14|seven|7)\s*(?:\(\d+\)\s*)?days\b'
+        note: "外洩通報期以「日」計，超過 UK GDPR 的 72 小時法定上限。"
+        suggested_wording: "...shall notify without undue delay and in any event within seventy-two (72) hours."
+
+  - id: "governing_law"
+    name_en: "Governing Law"
+    name_zh: "準據法"
+    is_required: true
+    standard_position: "以配置的管轄權（預設英格蘭與威爾斯法）為準據法。"
+    heading_patterns:
+      - '(?i)governing\s+law'
+    body_patterns:
+      - '(?i)\bgoverned\s+by\b[^.]{0,60}\blaws\s+of\b'
+    must_include:
+      - '(?i)\bgoverned\s+by\b'
+    deviation_if:
+      - pattern: '(?i)\bgoverned\s+by\b[^.]{0,80}\blaws\s+of\s+the\s+State\s+of\b'
+        note: "準據法為美國州法，與已配置的管轄權基準不一致，整份比對基準需重設。"
+        suggested_wording: "...governed by and construed in accordance with the laws of England and Wales."
+
+  - id: "dispute_resolution"
+    name_en: "Dispute Resolution"
+    name_zh: "爭議解決"
+    is_required: true
+    standard_position: "先善意協商 30 日；未解決者由管轄權所在地法院專屬管轄。"
+    heading_patterns:
+      - '(?i)dispute\s+resolution'
+    body_patterns:
+      - '(?i)\bexclusive\s+jurisdiction\b'
+      - '(?i)\bbinding\s+arbitration\b'
+    must_include:
+      - '(?i)(?:dispute|arbitration|jurisdiction)'
+    deviation_if:
+      - pattern: '(?i)\bbinding\s+arbitration\b[^.]{0,100}\b(?:Singapore|New\s+York|Hong\s+Kong|Dubai)\b'
+        note: "爭議須赴境外仲裁，差旅與當地律師成本可能高於爭議金額本身。"
+        suggested_wording: "...the courts of England and Wales shall have exclusive jurisdiction."
+
+  - id: "warranties"
+    name_en: "Warranties"
+    name_zh: "保證"
+    is_required: true
+    standard_position: "服務以合理技能與注意提供；交付成果驗收後 90 日內無重大瑕疵。"
+    heading_patterns:
+      - '(?i)warrant(?:y|ies)'
+    body_patterns:
+      - '(?i)\bwarrants\s+that\b'
+    must_include:
+      - '(?i)warrant'
+    deviation_if:
+      - pattern: '(?i)\b(?:disclaims|excludes)\s+all\s+warrant(?:y|ies)\b'
+        note: "全面排除保證，交付品質完全無契約救濟。"
+        suggested_wording: "The Supplier warrants that the Services shall be performed with reasonable skill and care."
+
+  - id: "insurance"
+    name_en: "Insurance"
+    name_zh: "保險"
+    is_required: true
+    standard_position: "專業責任保險每一請求不低於 £2,000,000，且於契約期間持續有效。"
+    heading_patterns:
+      - '(?i)^insurance'
+    body_patterns:
+      - '(?i)\bprofessional\s+indemnity\s+insurance\b'
+    must_include:
+      - '(?i)insur'
+    deviation_if: []
+    amount_policy:
+      kind: "min_amount"
+      value: "2000000.00"
+      note: "專業責任保險額度低於基準 £2,000,000，求償時保額不足以覆蓋損失。"
+      suggested_wording: "...shall maintain professional indemnity insurance of not less than GBP 2,000,000 for each and every claim."
+
+  - id: "assignment"
+    name_en: "Assignment"
+    name_zh: "契約讓與"
+    is_required: true
+    standard_position: "非經他方事前書面同意不得讓與，同意不得無理拒絕。"
+    heading_patterns:
+      - '(?i)^assignment'
+    body_patterns:
+      - '(?i)\bmay\s+(?:not\s+)?assign\s+this\s+agreement\b'
+    must_include:
+      - '(?i)assign'
+    deviation_if:
+      - pattern: '(?i)\bmay\s+assign\b[^.]{0,80}\bto\s+any\s+(?:third\s+party|affiliate|person)\b[^.]{0,60}\bwithout\b'
+        note: "對方可任意讓與給第三人，等於失去對交易相對人的選擇權。"
+        suggested_wording: "Neither party may assign without the prior written consent of the other party."
+      - pattern: '(?i)\bmay\s+freely\s+assign\b'
+        note: "明文允許自由讓與，無任何同意要求。"
+        suggested_wording: "Neither party may assign without the prior written consent of the other party."
+
+  - id: "force_majeure"
+    name_en: "Force Majeure"
+    name_zh: "不可抗力"
+    is_required: true
+    standard_position: "標準不可抗力免責；持續逾 60 日任一方得終止。"
+    heading_patterns:
+      - '(?i)force\s+majeure'
+    body_patterns:
+      - '(?i)\bforce\s+majeure\s+event\b'
+    must_include:
+      - '(?i)force\s+majeure'
+    deviation_if:
+      - pattern: '(?i)\bforce\s+majeure\b[^.]{0,140}\b(?:economic|financial|market)\s+(?:hardship|downturn|conditions)\b'
+        note: "把景氣不佳寫進不可抗力，對方可用市場理由免除履約義務。"
+        suggested_wording: "Force Majeure Event excludes economic hardship or changes in market conditions."
+
+  - id: "non_solicitation"
+    name_en: "Non-Solicitation"
+    name_zh: "禁止招攬"
+    is_required: true
+    standard_position: "契約期間及終止後 12 個月內不得招攬他方員工。"
+    heading_patterns:
+      - '(?i)non[- ]?solicitation'
+    body_patterns:
+      - '(?i)\bsolicit\s+for\s+employment\b'
+    must_include:
+      - '(?i)solicit'
+    deviation_if:
+      - pattern: '(?i)(?:twenty[- ]four|24|thirty[- ]six|36|forty[- ]eight|48)\s*(?:\(\d+\)\s*)?months\b[^.]{0,60}\btermination\b'
+        note: "禁止招攬期超過 12 個月，在英格蘭法下有被認定為不合理限制而全條無效的風險。"
+        suggested_wording: "...during the Term and for twelve (12) months following termination."

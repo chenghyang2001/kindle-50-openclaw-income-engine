@@ -1,0 +1,77 @@
+{
+  "source": "ERP（Xero）未結採購單匯出 — 離線測試資料",
+  "exported_at": "2026-08-24T08:55:00+08:00",
+  "note": "涵蓋正常進度、逾期未確認、逾期未到貨、回覆看不懂、已完成、多幣別六種情境",
+  "orders": [
+    {
+      "po_number": "PO-20260801",
+      "supplier_id": "nordwind",
+      "description": "鋁擠型外殼 6063-T5 × 400",
+      "amount": "12480.00",
+      "currency": "EUR",
+      "placed_at": "2026-08-01T10:00:00+08:00",
+      "eta": "2026-08-24T12:00:00+08:00",
+      "scenario": "正常進度：已確認、已出貨，供應商來信改期到 08-25 18:00，落在交期前 48 小時追蹤窗內"
+    },
+    {
+      "po_number": "PO-20260805",
+      "supplier_id": "kaohsiung",
+      "description": "CNC 治具組 A2 × 12 套",
+      "amount": "486000.00",
+      "currency": "TWD",
+      "placed_at": "2026-08-21T13:00:00+08:00",
+      "eta": "2026-09-05T12:00:00+08:00",
+      "scenario": "逾期未確認：下單 68 小時仍無有效確認（唯一一封『確認』來自不相干網域，已被擋下）"
+    },
+    {
+      "po_number": "PO-20260812",
+      "supplier_id": "delta",
+      "description": "電源模組 24V/150W × 300",
+      "amount": "8750.00",
+      "currency": "USD",
+      "placed_at": "2026-08-12T09:00:00+08:00",
+      "eta": "2026-08-22T17:00:00+08:00",
+      "scenario": "逾期未到貨：已確認但從未出貨，交期已過 40 小時（含 24 小時寬限）"
+    },
+    {
+      "po_number": "PO-20260814",
+      "supplier_id": "osaka",
+      "description": "SUS304 板材 1.2t × 80 張",
+      "amount": "1450000",
+      "currency": "JPY",
+      "placed_at": "2026-08-14T09:00:00+08:00",
+      "eta": "2026-09-12T12:00:00+08:00",
+      "scenario": "回覆看不懂：兩封日文回信一封沒有 PO 號碼、一封分類不出來，PO 因此停留在已下單並逾期未確認"
+    },
+    {
+      "po_number": "PO-20260716",
+      "supplier_id": "nordwind",
+      "description": "散熱鰭片模組 × 250",
+      "amount": "3200.00",
+      "currency": "EUR",
+      "placed_at": "2026-07-16T09:00:00+08:00",
+      "eta": "2026-08-05T12:00:00+08:00",
+      "scenario": "已完成且準時：08-05 09:40 到貨，早於承諾交期"
+    },
+    {
+      "po_number": "PO-20260722",
+      "supplier_id": "delta",
+      "description": "PCBA 主控板 rev.C × 500",
+      "amount": "15600.00",
+      "currency": "USD",
+      "placed_at": "2026-07-22T10:00:00+08:00",
+      "eta": "2026-08-10T17:00:00+08:00",
+      "scenario": "已完成但遲到：08-13 11:20 才到貨，計分卡準時率因此被拉下來"
+    },
+    {
+      "po_number": "PO-20260818",
+      "supplier_id": "kaohsiung",
+      "description": "陽極處理代工 batch-77",
+      "amount": "92000.00",
+      "currency": "TWD",
+      "placed_at": "2026-08-18T09:00:00+08:00",
+      "eta": "2026-09-10T12:00:00+08:00",
+      "scenario": "正常進度：已確認（但確認花了 25.5 小時，超過 24 小時門檻，計分卡會看得到）"
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+# 模組 #30 — 品牌上下文（BRAND_SUBSTITUTION_PROTOCOL 的單一真理來源）
+#
+# 架構來源：apxG_p03「The Swarm Architecture: 全域繼承與編排器機制」
+#   Orchestrator Agent 持有 brand_context.yml；所有子智能體帶
+#   INHERIT_FROM_ORCHESTRATOR: true，對本檔的任何更新會瞬間級聯（Cascade）
+#   到所有子智能體，消除資料重複與品牌衝突。
+#
+# 本檔是「基礎設施提供者的預設品牌層」。
+# 每個經銷商在 mock/tenants.json 內的 brand_overrides 會整組覆蓋這裡的欄位——
+# 這就是「整組抽換」：換掉的是同一組 key 的值，不是在輸出上貼補丁。
+
+inherit_from_orchestrator: true
+
+# 預設品牌（未被經銷商覆蓋時使用）。
+brand:
+  display_name: "AI Operations Department"
+  legal_entity: "（由經銷商協議指定）"
+  support_email: "support@example.invalid"
+  primary_color: "#1F2933"
+  accent_color: "#3E7BFA"
+  logo_asset: "assets/default-mark.svg"
+  tone: "專業、克制、以數字說話，不使用行銷形容詞"
+  locale: "zh-TW"
+  footer: "本報告由您的 AI 營運部自動產出"
+
+# BRAND_SUBSTITUTION_PROTOCOL（apxG_p19）
+# fields：允許經銷商覆蓋的欄位白名單。不在清單上的欄位就算 tenants.json 有寫也不套用，
+#         避免經銷商透過設定檔改到品牌以外的行為（例如分潤比例）。
+brand_substitution_protocol:
+  fields:
+    - display_name
+    - legal_entity
+    - support_email
+    - primary_color
+    - accent_color
+    - logo_asset
+    - tone
+    - footer
+  # 出現在對外輸出就算品牌外洩。白牌的核心承諾是「顧問是隱形的引擎室」
+  # （ch07_p14 Service Delivery），提供者的名字漏出去，經銷商的客戶關係就沒了。
+  forbidden_leaks:
+    - "OpenClaw"
+    - "Income Engine"
+    - "infrastructure provider"
+    - "基礎設施提供者"
+
+# STAGE_MAP：白牌交付的三個階段（ch07_p14 執行架構三段）。
+# 子智能體用它把「現在該做什麼」對回經銷商合約的階段，不各自解讀。
+stage_map:
+  white_label_package:
+    order: 1
+    label: "白牌包裝"
+    deliverables:
+      - "白牌格式指南"
+      - "經銷商協議範本"
+      - "BRAND_LAYER 自訂檢查表"
+  branding_implementation:
+    order: 2
+    label: "品牌植入"
+    deliverables:
+      - "所有系統輸出套用經銷商品牌外衣"
+      - "品牌外洩掃描通過"
+  service_delivery:
+    order: 3
+    label: "服務交付"
+    deliverables:
+      - "隱形引擎室：幕後基礎設施維運"
+      - "月報與分潤對帳"
+
+# SaaS Infrastructure Stack 三層（apxG_p18）。
+# 白牌授權賣的是這一整疊，不是單一模組。
+stack:
+  tier1_quick_wins:
+    - morning-briefing
+    - inbox-zero-agent
+    - meeting-transcription
+    - review-monitor
+  tier2_ops_infrastructure:
+    - client-onboarding
+    - support-triage
+    - crm-enrichment
+    - performance-dashboard
+  tier3_anchor_automation:
+    - full-sales-pipeline
+    - marketing-swarm

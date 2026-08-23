@@ -1,0 +1,98 @@
+{
+  "_comment": "歷史狀態檔：週對週比較與四週移動平均的來源。weeks 由舊到新排列，最後一筆即『上週』。--mock 預設只讀不寫；加 --state-file 才會寫回。",
+  "keep_weeks": 12,
+  "weeks": [
+    {
+      "week_id": "2026-W29",
+      "values": {
+        "ga4_sessions": "12000",
+        "ga4_users": "9000",
+        "ga4_conversion_rate": "2.40",
+        "ga4_avg_session_seconds": "150",
+        "google_ads_spend": "4000.00",
+        "google_ads_cpl": "40.00",
+        "google_ads_roas": "3.60",
+        "meta_spend": "2000.00",
+        "meta_ctr": "1.20",
+        "crm_new_leads": "100",
+        "crm_qualified_opportunities": "30",
+        "crm_pipeline_value": "180000.00",
+        "crm_win_rate": "22.00",
+        "crm_avg_deal_cycle_days": "40",
+        "xero_revenue": "60000.00",
+        "xero_gross_margin": "55.00",
+        "quickbooks_expenses": "30000.00",
+        "quickbooks_cash_balance": "120000.00"
+      }
+    },
+    {
+      "week_id": "2026-W30",
+      "values": {
+        "ga4_sessions": "12500",
+        "ga4_users": "9200",
+        "ga4_conversion_rate": "2.50",
+        "ga4_avg_session_seconds": "152",
+        "google_ads_spend": "4100.00",
+        "google_ads_cpl": "41.00",
+        "google_ads_roas": "3.50",
+        "meta_spend": "2100.00",
+        "meta_ctr": "1.25",
+        "crm_new_leads": "110",
+        "crm_qualified_opportunities": "32",
+        "crm_pipeline_value": "190000.00",
+        "crm_win_rate": "23.00",
+        "crm_avg_deal_cycle_days": "39",
+        "xero_revenue": "62000.00",
+        "xero_gross_margin": "56.00",
+        "quickbooks_expenses": "31000.00",
+        "quickbooks_cash_balance": "125000.00"
+      }
+    },
+    {
+      "week_id": "2026-W31",
+      "values": {
+        "ga4_sessions": "12800",
+        "ga4_users": "9400",
+        "ga4_conversion_rate": "2.55",
+        "ga4_avg_session_seconds": "155",
+        "google_ads_spend": "4200.00",
+        "google_ads_cpl": "42.00",
+        "google_ads_roas": "3.40",
+        "meta_spend": "2200.00",
+        "meta_ctr": "1.30",
+        "crm_new_leads": "120",
+        "crm_qualified_opportunities": "34",
+        "crm_pipeline_value": "200000.00",
+        "crm_win_rate": "24.00",
+        "crm_avg_deal_cycle_days": "38",
+        "xero_revenue": "64000.00",
+        "xero_gross_margin": "57.00",
+        "quickbooks_expenses": "32000.00",
+        "quickbooks_cash_balance": "130000.00"
+      }
+    },
+    {
+      "week_id": "2026-W32",
+      "values": {
+        "ga4_sessions": "13000",
+        "ga4_users": "9500",
+        "ga4_conversion_rate": "2.60",
+        "ga4_avg_session_seconds": "160",
+        "google_ads_spend": "4000.00",
+        "google_ads_cpl": "40.00",
+        "google_ads_roas": "3.50",
+        "meta_spend": "2000.00",
+        "meta_ctr": "1.20",
+        "crm_new_leads": "120",
+        "crm_qualified_opportunities": "35",
+        "crm_pipeline_value": "200000.00",
+        "crm_win_rate": "25.00",
+        "crm_avg_deal_cycle_days": "40",
+        "xero_revenue": "65000.00",
+        "xero_gross_margin": "58.00",
+        "quickbooks_expenses": "30000.00",
+        "quickbooks_cash_balance": "135000.00"
+      }
+    }
+  ]
+}

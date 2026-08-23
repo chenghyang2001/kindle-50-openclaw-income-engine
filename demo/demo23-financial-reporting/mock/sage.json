@@ -1,0 +1,13 @@
+{
+  "source": "sage",
+  "scope": "sales_invoices (all read)",
+  "period": "2026-07",
+  "currency": "USD",
+  "pipeline": {
+    "open_pipeline_value": "3950000.00",
+    "weighted_pipeline_value": "1660000.00",
+    "monthly_recurring_revenue": "412500.00",
+    "invoice_count": 128,
+    "overdue_receivables": "96400.00"
+  }
+}

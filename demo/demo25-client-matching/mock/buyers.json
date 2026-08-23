@@ -1,0 +1,75 @@
+{
+  "_comment": "離線用買方／批發商名單。criteria 只允許 config.matching.allowed_criteria_fields 內的客觀條件；違規範例另存於 buyers_noncompliant.json，避免污染預設執行。",
+  "buyers": [
+    {
+      "buyer_id": "B-101",
+      "name": "陳雅琳",
+      "email": "yalin.chen@buyers.example",
+      "criteria": {
+        "max_price": "28000000",
+        "min_bedrooms": 3,
+        "property_type": ["電梯大樓", "華廈"],
+        "preferred_postcodes": ["106", "110"],
+        "required_features": ["電梯", "車位"],
+        "min_floor_area": "30"
+      },
+      "_scenario": "L-001 完全命中 100 分（Perfect，附看屋連結）；L-005 部分命中 83.33（Strong，仍推播）"
+    },
+    {
+      "buyer_id": "B-102",
+      "name": "林家豪",
+      "email": "chiahao.lin@buyers.example",
+      "criteria": {
+        "max_price": "32000000",
+        "min_bedrooms": 2,
+        "property_type": ["電梯大樓", "華廈", "公寓"],
+        "preferred_postcodes": ["114"],
+        "required_features": ["車位", "健身房"],
+        "min_floor_area": "45"
+      },
+      "_scenario": "L-002 完全命中 100 分（但逾時效）；L-001 與 L-005 皆 75.00 —— Strong 分級卻低於門檻 80，不推播"
+    },
+    {
+      "buyer_id": "B-103",
+      "name": "王思婷",
+      "email": "szuting.wang@buyers.example",
+      "criteria": {
+        "max_price": "12000000",
+        "min_bedrooms": 2,
+        "property_type": ["公寓"],
+        "preferred_postcodes": ["100"],
+        "required_features": ["近捷運"],
+        "min_floor_area": "20"
+      },
+      "_scenario": "L-004 命中 91.67（Perfect）；其餘物件總價與房型皆不符 → 不命中"
+    },
+    {
+      "buyer_id": "B-104",
+      "name": "Sarah Chen（批發分銷 / B2B）",
+      "email": "sarah.chen@wholesale.example",
+      "criteria": {
+        "max_price": "30000000",
+        "min_bedrooms": 3,
+        "property_type": ["電梯大樓", "華廈"],
+        "preferred_postcodes": ["106"],
+        "required_features": ["電梯"],
+        "min_floor_area": "28"
+      },
+      "_scenario": "去重驗證：mock/state_seed.json 已記錄 B-104|L-001 通知過，且指紋未變 → 本次必須被去重擋下"
+    },
+    {
+      "buyer_id": "B-105",
+      "name": "黃俊傑",
+      "email": "chunchieh.huang@buyers.example",
+      "criteria": {
+        "max_price": "27000000",
+        "min_bedrooms": 3,
+        "property_type": ["電梯大樓", "華廈"],
+        "preferred_postcodes": ["106", "104"],
+        "required_features": ["電梯"],
+        "min_floor_area": "30"
+      },
+      "_scenario": "條件變更重比對：seed 的指紋是舊值 → 清空該買方去重紀錄 → L-001 重新推薦"
+    }
+  ]
+}

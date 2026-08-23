@@ -1,0 +1,33 @@
+{
+  "channel": "intercom",
+  "fetched_at": "2026-08-24T09:00:00+08:00",
+  "messages": [
+    {
+      "message_id": "ic-20260824-001",
+      "customer_name": "蔡曼寧",
+      "customer_contact": "manning.tsai@example.com",
+      "subject": "",
+      "text": "請問運費怎麼算？要滿多少才免運？",
+      "received_at": "2026-08-24T08:33:00+08:00",
+      "locale": "zh-TW"
+    },
+    {
+      "message_id": "ic-20260824-002",
+      "customer_name": "David Lin",
+      "customer_contact": "david.lin@example.com",
+      "subject": "",
+      "text": "我的訂單 BL-20911 物流到哪了？系統一直顯示處理中。",
+      "received_at": "2026-08-24T08:47:00+08:00",
+      "locale": "zh-TW"
+    },
+    {
+      "message_id": "ic-20260824-003",
+      "customer_name": "羅怡君",
+      "customer_contact": "yijun.lo@example.com",
+      "subject": "",
+      "text": "同一張椅子已經修了兩次還是壞，這次真的太誇張。再沒有人處理，我就直接投訴到消保官。",
+      "received_at": "2026-08-24T08:55:00+08:00",
+      "locale": "zh-TW"
+    }
+  ]
+}

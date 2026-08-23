@@ -1,0 +1,40 @@
+{
+  "agent_id": "content",
+  "produced": 10,
+  "unit": "草稿/週",
+  "channel_targets": {
+    "blog": 6,
+    "newsletter_long": 2,
+    "landing_page": 2
+  },
+  "samples": [
+    {
+      "id": "C-001",
+      "objective_id": "OBJ-3",
+      "channel": "blog",
+      "title": "把烘焙日期印在最顯眼的地方，等於自己給自己設了七天期限",
+      "angle": "多數品牌把烘焙日藏在封口下方，因為越新鮮越難備貨。我們反過來做，逼自己把庫存週轉壓進七天。",
+      "proof_point": "本季出貨豆平均烘焙後 5.2 天內送達客戶手上",
+      "word_count": 980
+    },
+    {
+      "id": "C-002",
+      "objective_id": "OBJ-1",
+      "channel": "landing_page",
+      "title": "手沖參數表：先把水溫與時間固定下來，再談豆子",
+      "angle": "客人說淺焙太酸，九成不是豆子的問題，是萃取沒做完。參數表把變因收斂到兩個。",
+      "proof_point": "本季出貨豆平均烘焙後 5.2 天內送達客戶手上",
+      "word_count": 640
+    },
+    {
+      "id": "C-003",
+      "objective_id": "OBJ-2",
+      "channel": "newsletter_long",
+      "title": "我們把滯銷豆退出訂閱箱之後，退訂率的變化",
+      "angle": "訂閱制最容易偷懶的地方就是把賣不掉的豆子塞進箱子。停掉這件事的代價與回報。",
+      "proof_point": "庫存週轉壓在 7 天內，滯銷豆不進訂閱箱",
+      "word_count": 1120
+    }
+  ],
+  "blockers": []
+}

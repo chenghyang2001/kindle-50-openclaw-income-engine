@@ -1,0 +1,27 @@
+{
+  "source": "companies_house",
+  "as_of": "2026-08-24",
+  "_comment": "英國官方公司登記處。權威度最高，因此在 config.providers 中排第一，同一欄位優先採用它的值。以公司網域為索引鍵。",
+  "records": {
+    "northwind-analytics.co.uk": {
+      "sic_code": "62012",
+      "industry": "Software Development",
+      "company_country": "GB"
+    },
+    "kitelabs.io": {
+      "sic_code": "62020",
+      "industry": "IT Consultancy",
+      "company_country": "GB"
+    },
+    "vellumlegal.co.uk": {
+      "sic_code": "69102",
+      "industry": "Legal Activities",
+      "company_country": "GB"
+    },
+    "orbitra.co.uk": {
+      "sic_code": "58290",
+      "industry": "Software Publishing",
+      "company_country": "GB"
+    }
+  }
+}

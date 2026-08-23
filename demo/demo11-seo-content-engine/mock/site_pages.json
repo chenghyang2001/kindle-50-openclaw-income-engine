@@ -1,0 +1,62 @@
+{
+  "site": "https://www.northfield-wms.example.com/",
+  "notes": "既有已發布頁面清單，供內部連結建議比對。真實部署時由 CMS（WordPress REST API /wp/v2/posts）或 sitemap.xml 定期同步。",
+  "pages": [
+    {
+      "url": "https://www.northfield-wms.example.com/guide/wms-basics",
+      "title": "WMS 是什麼：倉儲管理系統的基本功能與適用時機",
+      "topics": ["倉儲管理系統", "WMS 導入"],
+      "keywords": ["wms", "倉儲管理系統", "基本功能"],
+      "published_on": "2026-03-11"
+    },
+    {
+      "url": "https://www.northfield-wms.example.com/guide/stocktaking-checklist",
+      "title": "年度盤點前的 12 項檢查清單",
+      "topics": ["庫存盤點"],
+      "keywords": ["庫存盤點", "盤點", "檢查清單", "範本"],
+      "published_on": "2026-04-02"
+    },
+    {
+      "url": "https://www.northfield-wms.example.com/guide/cycle-count",
+      "title": "循環盤點怎麼排：把年度大盤拆成每天 20 分鐘",
+      "topics": ["庫存盤點", "庫存週轉率"],
+      "keywords": ["循環盤點", "庫存盤點", "週轉"],
+      "published_on": "2026-05-19"
+    },
+    {
+      "url": "https://www.northfield-wms.example.com/guide/inventory-turnover",
+      "title": "庫存週轉率公式拆解：三個常被算錯的分母",
+      "topics": ["庫存週轉率"],
+      "keywords": ["庫存週轉率", "公式", "週轉天數"],
+      "published_on": "2026-06-08"
+    },
+    {
+      "url": "https://www.northfield-wms.example.com/guide/barcode-picking",
+      "title": "條碼揀貨導入實錄：從紙本揀貨單到 PDA 的四個月",
+      "topics": ["條碼揀貨", "WMS 導入"],
+      "keywords": ["條碼揀貨", "pda", "揀貨單"],
+      "published_on": "2026-06-24"
+    },
+    {
+      "url": "https://www.northfield-wms.example.com/pricing",
+      "title": "方案與報價",
+      "topics": ["倉儲管理系統", "WMS 導入"],
+      "keywords": ["費用", "報價", "方案", "價格"],
+      "published_on": "2026-01-15"
+    },
+    {
+      "url": "https://www.northfield-wms.example.com/guide/wms-vs-erp",
+      "title": "WMS 與 ERP 的分工：哪些事不該叫 ERP 做",
+      "topics": ["倉儲管理系統", "WMS 導入"],
+      "keywords": ["wms", "erp", "差異", "分工"],
+      "published_on": "2026-07-07"
+    },
+    {
+      "url": "https://www.northfield-wms.example.com/case/fresh-food-3pl",
+      "title": "客戶案例：生鮮 3PL 的揀貨錯誤率改善專案",
+      "topics": ["條碼揀貨", "倉儲管理系統"],
+      "keywords": ["案例", "3pl", "揀貨錯誤率"],
+      "published_on": "2026-07-29"
+    }
+  ]
+}

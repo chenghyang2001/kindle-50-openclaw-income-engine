@@ -1,0 +1,50 @@
+{
+  "_comment": "🔴 違反公平住房法的媒合條件範例，**專供測試驗證『被擋下』**。刻意與 buyers.json 分開存放：預設的 python main.py --mock 必須能跑完，違規資料只在 test_main.py 中被明確載入。",
+  "_expected": "執行時應拋 ComplianceError 並以 exit code 1 中止，絕不可靜默略過違規欄位後照常推薦。",
+  "buyers": [
+    {
+      "buyer_id": "B-901",
+      "name": "違規範例 A（家庭狀況）",
+      "email": "violation.a@buyers.example",
+      "criteria": {
+        "max_price": "25000000",
+        "min_bedrooms": 3,
+        "property_type": ["華廈"],
+        "no_children": true,
+        "_violation": "no_children 屬家庭狀況（familial status），公平住房法明文禁止"
+      }
+    },
+    {
+      "buyer_id": "B-902",
+      "name": "違規範例 B（族裔偏好）",
+      "email": "violation.b@buyers.example",
+      "criteria": {
+        "max_price": "30000000",
+        "min_bedrooms": 2,
+        "preferred_ethnic_neighbourhood": ["東區"],
+        "_violation": "以族裔劃分社區＝redlining，屬種族歧視"
+      }
+    },
+    {
+      "buyer_id": "B-903",
+      "name": "違規範例 C（身心障礙）",
+      "email": "violation.c@buyers.example",
+      "criteria": {
+        "max_price": "18000000",
+        "min_bedrooms": 2,
+        "exclude_disability_adapted": true,
+        "_violation": "以身心障礙相關特徵過濾買方或物件，屬身心障礙歧視"
+      }
+    },
+    {
+      "buyer_id": "B-904",
+      "name": "違規範例 D（白名單外的未知欄位）",
+      "email": "violation.d@buyers.example",
+      "criteria": {
+        "max_price": "22000000",
+        "lifestyle_segment": "young_professionals",
+        "_violation": "欄位名本身不含受保護詞根，但不在白名單內；生活風格分群常是年齡／家庭狀況的代理變數，一律先擋再人工審核"
+      }
+    }
+  ]
+}

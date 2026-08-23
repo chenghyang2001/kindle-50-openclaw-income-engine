@@ -1,0 +1,9 @@
+{
+  "_schema": "pos-business-days",
+  "terminal_group": "POS-TNN-E",
+  "_note": "刻意保留的『無回應據點』樣本：POS 中控主機逾時，回傳 error 而非 business_days。",
+  "error": {
+    "code": "gateway_timeout",
+    "message": "POS 中控主機無回應（連線逾時 30 秒，模擬故障）"
+  }
+}

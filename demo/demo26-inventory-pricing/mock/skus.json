@@ -1,0 +1,112 @@
+{
+  "_comment": "離線 SKU 快照（模擬 Shopify read_inventory + read_products 的輸出）。刻意涵蓋五種情境：熱銷、正常、滯銷 14 天以上、成本價高於售價、缺貨。金額一律字串，避免 JSON 轉成 float 後失去精度。",
+  "generated_at": "2026-08-24T02:00:00Z",
+  "source": "shopify-admin-api (mock snapshot)",
+  "currency": "USD",
+  "skus": [
+    {
+      "sku_id": "SKU-1001",
+      "product_name": "Linen Bedding Set — Queen",
+      "category": "bedding",
+      "current_stock": 84,
+      "avg_daily_velocity_7d": "6.4",
+      "avg_daily_velocity_30d": "4.1",
+      "reorder_point": 8,
+      "days_since_last_sale": 0,
+      "current_price": "129.00",
+      "cost_price": "58.00",
+      "_scenario": "熱銷（fast mover）＋對手價高於我方 → 矩陣建議調漲"
+    },
+    {
+      "sku_id": "SKU-1002",
+      "product_name": "Ceramic Table Lamp — Sand",
+      "category": "lighting",
+      "current_stock": 60,
+      "avg_daily_velocity_7d": "2.0",
+      "avg_daily_velocity_30d": "2.1",
+      "reorder_point": 10,
+      "days_since_last_sale": 1,
+      "current_price": "89.50",
+      "cost_price": "38.00",
+      "_scenario": "正常（HEALTHY）＋對手價在中性帶 → hold_if 命中，維持原價"
+    },
+    {
+      "sku_id": "SKU-1003",
+      "product_name": "Oak Side Table — Natural",
+      "category": "furniture",
+      "current_stock": 96,
+      "avg_daily_velocity_7d": "0.4",
+      "avg_daily_velocity_30d": "0.9",
+      "reorder_point": 20,
+      "days_since_last_sale": 21,
+      "current_price": "240.00",
+      "cost_price": "150.00",
+      "_scenario": "滯銷 21 天（>= 14 天門檻）＋對手低價 8% → 降價匹配對手 -1%，並觸發促銷企劃"
+    },
+    {
+      "sku_id": "SKU-1004",
+      "product_name": "Rattan Armchair — Clearance Lot",
+      "category": "furniture",
+      "current_stock": 30,
+      "avg_daily_velocity_7d": "0.35",
+      "avg_daily_velocity_30d": "0.6",
+      "reorder_point": 10,
+      "days_since_last_sale": 18,
+      "current_price": "45.00",
+      "cost_price": "52.00",
+      "_scenario": "成本價高於售價（負毛利）→ 分析階段即標記 NEGATIVE_MARGIN，禁止自動調價並發 RED"
+    },
+    {
+      "sku_id": "SKU-1005",
+      "product_name": "Wool Throw Blanket — Charcoal",
+      "category": "bedding",
+      "current_stock": 0,
+      "avg_daily_velocity_7d": "3.2",
+      "avg_daily_velocity_30d": "2.8",
+      "reorder_point": 14,
+      "days_since_last_sale": 0,
+      "current_price": "60.00",
+      "cost_price": "26.00",
+      "_scenario": "缺貨（stock=0）→ REORDER_URGENT，且缺貨中一律不調價"
+    },
+    {
+      "sku_id": "SKU-1006",
+      "product_name": "Marble Coffee Table — Ivory",
+      "category": "furniture",
+      "current_stock": 480,
+      "avg_daily_velocity_7d": "1.5",
+      "avg_daily_velocity_30d": "1.4",
+      "reorder_point": 20,
+      "days_since_last_sale": 3,
+      "current_price": "75.00",
+      "cost_price": "40.00",
+      "_scenario": "OVERSTOCK（可售 320 天）→ 矩陣建議清理 20%，但超過單次調價上限 10% 被安全閥擋下並升級人工"
+    },
+    {
+      "sku_id": "SKU-1007",
+      "product_name": "Brass Floor Lamp — Matte",
+      "category": "lighting",
+      "current_stock": 22,
+      "avg_daily_velocity_7d": "1.8",
+      "avg_daily_velocity_30d": "1.7",
+      "reorder_point": 10,
+      "days_since_last_sale": 2,
+      "current_price": "112.00",
+      "cost_price": "49.00",
+      "_scenario": "可售 12.2 天 < 補貨點 x1.5 → REORDER_RECOMMENDED，對手價在中性帶不動價"
+    },
+    {
+      "sku_id": "SKU-1008",
+      "product_name": "Stoneware Mug Set — Speckled",
+      "category": "tableware",
+      "current_stock": 140,
+      "avg_daily_velocity_7d": "0.3",
+      "avg_daily_velocity_30d": "0.5",
+      "reorder_point": 15,
+      "days_since_last_sale": 30,
+      "current_price": "32.00",
+      "cost_price": "14.00",
+      "_scenario": "滯銷 30 天＋對手價高於我方 → 矩陣「保持現狀」，但仍觸發促銷企劃"
+    }
+  ]
+}

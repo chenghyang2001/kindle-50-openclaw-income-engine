@@ -1,0 +1,25 @@
+{
+  "namespace": "acme-ops/harbor-freight-co",
+  "period": "2026-08",
+  "automations_live": [
+    "client-onboarding",
+    "support-triage",
+    "performance-dashboard",
+    "inbox-zero-agent"
+  ],
+  "metrics": {
+    "tasks_completed": 1120,
+    "human_review_items": 54,
+    "sla_breaches": 1,
+    "uptime_pct": 99.71
+  },
+  "incidents": [
+    {
+      "at": "2026-08-12T03:20:00+00:00",
+      "severity": "amber",
+      "owner": "provider",
+      "summary": "CRM webhook 重試 3 次後成功，延遲 22 分鐘"
+    }
+  ],
+  "notes": "SLA 破口由基礎設施提供者承擔（技術層），已於月報揭露。"
+}

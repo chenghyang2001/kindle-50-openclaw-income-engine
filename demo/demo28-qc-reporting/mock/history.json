@@ -1,0 +1,46 @@
+{
+  "generated_at": "2026-08-22T05:42:00+08:00",
+  "note": "上一期基準值。週對週 / 月對月比較只能引用這裡的實際歷史值，缺項一律留 null，程式不得自行外推。",
+  "previous_week": {
+    "period_key": "2026-W33",
+    "period_label": "2026-W33（08/10–08/16）",
+    "lines": {
+      "L1": {
+        "defect_rate_pct": "0.38",
+        "yield_pct": "99.62",
+        "critical_alerts": 0,
+        "major_alerts": 1
+      },
+      "L2": {
+        "defect_rate_pct": "0.44",
+        "yield_pct": "99.56",
+        "critical_alerts": 0,
+        "major_alerts": 0
+      },
+      "L3": {
+        "defect_rate_pct": "0.31",
+        "yield_pct": "99.69",
+        "critical_alerts": 0,
+        "major_alerts": 0
+      },
+      "L4": {
+        "defect_rate_pct": "1.02",
+        "yield_pct": "98.98",
+        "critical_alerts": 0,
+        "major_alerts": 2
+      }
+    }
+  },
+  "previous_month": {
+    "period_key": "2026-07",
+    "period_label": "2026 年 7 月",
+    "plant": {
+      "defect_rate_pct": "0.51",
+      "yield_pct": "99.49",
+      "critical_alerts": 2,
+      "major_alerts": 7,
+      "customer_complaints": 5,
+      "note": "客訴件數為客戶端 CRM 匯出，非 MES 資料"
+    }
+  }
+}

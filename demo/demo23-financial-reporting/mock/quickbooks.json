@@ -1,0 +1,14 @@
+{
+  "source": "quickbooks",
+  "scope": "com.intuit.quickbooks.accounting (read)",
+  "period": "2026-07",
+  "currency": "USD",
+  "cashflow": {
+    "opening_balance": "1284300.00",
+    "operating": "58900.00",
+    "investing": "-145000.00",
+    "financing": "-32500.00",
+    "closing_balance": "1165700.00",
+    "monthly_operating_outflow": "598500.00"
+  }
+}

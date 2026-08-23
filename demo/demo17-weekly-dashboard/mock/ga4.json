@@ -1,0 +1,11 @@
+{
+  "source": "ga4",
+  "week_id": "2026-W33",
+  "_comment": "GA4 週報表匯出。數值一律字串，讀進來直接進 Decimal，避免 JSON float 誤差。",
+  "metrics": {
+    "sessions": "13650",
+    "users": "9880",
+    "conversion_rate": "2.86",
+    "avg_session_seconds": "152"
+  }
+}

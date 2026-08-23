@@ -1,0 +1,94 @@
+# demo29 — 多據點商業智慧匯總（Level 3 企業級，自動化 #29）
+#
+# 金額與門檻一律用「字串」寫（"1850000.00" 而非 1850000.00）：YAML 的裸數字會被
+# 解析成 float，進到跨據點加總時二進位誤差會被放大，對帳的人會看到
+# 4349999.999999999。讀進 Python 後統一走 Decimal(str(...))。
+
+module:
+  id: "29"
+  name: "多據點商業智慧匯總"
+  # 部署時間：ch07_p03 / apxG_p17 皆記「1 週」。deploy_minutes 是契約 §7 的欄位，
+  # 這裡換算成 5 個工作天 x 8 小時 = 2400 分鐘。
+  deploy_minutes: 2400
+  # 「內部回收」= 顧問自己的建置工時回收。36 張原簡報沒有任何一頁提供這個數字，
+  # 一律標記未提供，不從客戶端 ROI 反推（見 README「原簡報缺漏」章節）。
+  recovered_hours_per_month: null
+  recovered_hours_note: "（原簡報未提供）"
+  # 定價以模組頁（ch07_p12 / apxG_p17）的逐案報價為準：$4,500 setup + $2,000/mo。
+  # apxG_p20 的 Commercial Matrix 十欄同值（$8,000-$10,000 / $4,000-$6,000），
+  # 研判為套用模板的價格帶，不採用（見 README「定價差異」章節）。
+  client_setup_price: 4500
+  client_monthly_price: 2000
+
+runtime:
+  # 報表會對外發送，依第 04 章自主權階梯鐵律，預設一律 draft。
+  autonomy: draft
+  approved_senders: []
+  days_in_draft: 0
+  notify_channel: console
+
+access:
+  # 預設角色刻意是「店長」而不是總部：Full Pack 必須靠 --role hq 明示取得。
+  # 若這裡改成 hq，任何忘記帶旗標的排程都會把全網數據送出去。
+  default_role: "site_manager"
+  default_site_id: "tpe-xinyi"
+  default_actor: "mgr.xinyi@example.com"
+
+audit:
+  # 模組層級的 JSONL 稽核軌跡（誰、何時、看了哪些據點）。
+  file: "audit/access.jsonl"
+  # 寫不進稽核檔預設視為致命：本模組的賣點就是「店長看不到他店數據」，
+  # 而唯一能事後舉證的只有這份軌跡。唯讀檔案系統（容器 / CI）才改成 false。
+  fail_closed: true
+
+report:
+  # apxG_p17：週一 07:00 準時發送，換取 30+ 小時的決策優勢（vs 週二下午）。
+  deliver_at: "07:00"
+  deliver_weekday: "Monday"
+  timezone: "Asia/Taipei"
+  currency: "TWD"
+  # 收件人依角色分流；店長清單只在該店長自己的執行中被使用。
+  hq_recipients:
+    - "coo@example.com"
+    - "bi@example.com"
+  site_manager_recipients:
+    - "store-manager@example.com"
+
+registry:
+  # LOCATION_REGISTRY：異質 API 的據點名冊（Shopify / Square / POS）。
+  file: "mock/registry.json"
+
+baseline:
+  # 4 週滾動基準線。state_file 不存在時以 seed_file 當種子（首次執行）。
+  window_weeks: 4
+  min_weeks: 4
+  seed_file: "mock/baselines.json"
+  state_file: "state/baselines.json"
+  # 只有總部視野的執行會推進基準線：基準線是全網的正式紀錄，
+  # 讓每個店長各自寫入會產生互相覆蓋的競態，且店長對他店視窗沒有寫入正當性。
+  update_requires_hq: true
+
+composite:
+  # Composite Score = 各指標「本期 / 自身 4 週基準線 x 100」的加權平均。
+  # 刻意不對同儕正規化：那會讓店長算分也得先拿到全網數字，隔離在演算法層被架空。
+  weights:
+    revenue: 40
+    transactions: 20
+    average_ticket: 15
+    conversion_rate: 15
+    revenue_per_labour_hour: 10
+  tiers:
+    top_tier_min: "110"
+    core_min: "90"
+
+anomaly:
+  # apxG_p17 明訂的異常門檻：偏離 15% 觸發。正負皆標。
+  deviation_pct: "15"
+
+prompts:
+  rollup: "prompts/rollup.md"
+
+live:
+  # --live 時缺少這些環境變數要明確報錯退出，不可靜默退回 mock。
+  required_env:
+    - ANTHROPIC_API_KEY

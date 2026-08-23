@@ -1,0 +1,106 @@
+# demo27 — 法務文件分析與合規監控（第 07 章 / 附錄G #27）
+# 路徑一律相對於本模組目錄，執行期由 main.py 以 Path(__file__) 推算，禁止硬編碼絕對路徑。
+#
+# ⚠️ 法律免責：本設定檔的門檻值只是「初步篩選」用的工程參數，
+#    不構成法律意見。實際到期日、通知義務、違規風險必須由合格法律專業人員確認。
+
+module:
+  id: "27"
+  name: "法務文件分析與合規監控"
+  # 附錄G / 第07章：部署時間 1 週（非分鐘級，故以天記）
+  deploy_days: 7
+  # 原簡報 36 張投影片皆未提供「顧問內部回收工時」，一律留空不推估
+  recovered_hours_per_month: null
+  # 定價以各模組頁為準（apxG_p20 商業矩陣的 $8k-$10k 是套用同一組模板值）
+  client_setup_price: 4000
+  client_monthly_price: 1800
+
+runtime:
+  autonomy: draft # read_only | draft | supervised_auto
+  approved_senders: []
+  days_in_draft: 0
+  notify_channel: console
+
+llm:
+  model: claude-sonnet-5
+  max_tokens: 1500
+  # CONTEXT_NOTE：第 04 章實測可減少 40% 不相關輸出
+  context_note: "這是企業法遵初篩，不是法律意見。只複述來源明確寫出的文字，禁止補完、禁止推測法律後果。"
+
+clock:
+  # 到期日一律在此時區換算；Windows 無 IANA tzdata 時降級為固定時差並發 amber
+  timezone: "Asia/Taipei"
+  fallback_offset_hours: 8
+
+monitoring:
+  # 附錄G apxG_p15：合約與執照在到期前 120 / 60 / 14 天三階段警告
+  warning_days: [120, 60, 14]
+  # 內部政策預設審查週期（單一政策可用 review_cycle_days 覆寫）
+  default_policy_review_cycle_days: 365
+  # 逾期寬限天數：0 代表過期當天就算逾期（法遵不給寬限，寧可早報）
+  overdue_grace_days: 0
+  # 信心低於此值的條款判讀一律標 needs_human_review，不猜
+  confidence_floor: 0.75
+  sources:
+    contracts: "mock/contracts.json"
+    licences: "mock/licences.json"
+    policies: "mock/policies.json"
+    regulatory: "mock/regulatory_feed.json"
+  # --live 時的政府公告 RSS / API（未設環境變數時 config_loader 保留原樣字串）
+  regulatory_feed_url: "${COMPLIANCE_FEED_URL}"
+
+escalation:
+  # ⚠️ 門檻推導說明：SPEC（apxG_p15）明訂三級的「通道 + 通知對象」，
+  #    但未明訂「哪個天數落在哪一級」。下表由 120/60/14 三階段警告時程推導，
+  #    屬工程預設值，導入客戶時必須由該客戶的法務長書面確認後才可沿用。
+  rules:
+    overdue: critical
+    stage_14: critical
+    stage_60: high
+    stage_120: standard
+    # 條款看不懂 / 缺必要欄位：交責任經理補資料，絕不由系統猜測
+    needs_human_review: high
+    # 法規來源未自行標示影響等級時的預設
+    regulatory_default: standard
+  levels:
+    critical:
+      channels: ["slack", "email"]
+      recipients: ["法務長 (General Counsel)", "法遵官 (Compliance Officer)"]
+      # 安全注意（apxG_p15）：Critical 必須雙通道同時通知，單一通道失效即漏報
+      requires_dual_channel: true
+    high:
+      channels: ["slack", "email"]
+      recipients: ["責任經理 (Responsible Manager)"]
+      requires_dual_channel: false
+    standard:
+      channels: ["email"]
+      recipients: ["合規信箱 (compliance@)"]
+      requires_dual_channel: false
+  # 全域安全閥（apxG_p03）：所有對外 API 呼叫前必經 --dry-run 內部通訊測試。
+  # 每個邏輯通道對應的憑證環境變數；--live 時缺任一項即該通道不可用。
+  channel_env:
+    slack: ["SLACK_WEBHOOK_URL"]
+    email: ["GMAIL_SENDER_ADDRESS"]
+
+registry:
+  # 三份 CSV 台帳是稽核證據，一律「追加式」寫入，永不覆蓋歷史
+  dir: "registry"
+  files:
+    contracts: "contract_inventory.csv"
+    licences: "licence_inventory.csv"
+    policies: "policy_register.csv"
+
+state:
+  # 去重狀態檔：同一筆資料在同一警告階段只升級一次，避免每日重複轟炸法務長
+  store_file: ".compliance-state.json"
+  suppress_repeat_alerts: true
+
+prompts:
+  regulatory_impact: "prompts/regulatory_impact.md"
+  clause_review: "prompts/clause_review.md"
+
+mock:
+  # --mock 時把「現在」釘在固定時刻，讓示範與測試每天跑都得到同一組天數
+  frozen_now: "2026-08-24T09:00:00+08:00"
+  # LLM 離線回應用的 fixture（mock=True 時 complete() 讀這份，不連網）
+  impact_fixture: "mock/impact_assessment.md"

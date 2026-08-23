@@ -1,0 +1,5 @@
+{
+  "_comment": "「首週」情境：客戶剛上線，沒有任何上週資料可比較。所有 KPI 的 WoW 與移動平均都是 null，RAG 一律灰燈，Focus Actions 為空——絕不能拿 0 當上週值去算出假的 +100%。把 config.yaml 的 history.mock_file 指到本檔即可重現。",
+  "keep_weeks": 12,
+  "weeks": []
+}

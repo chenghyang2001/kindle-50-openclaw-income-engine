@@ -1,0 +1,182 @@
+# ============================================================================
+# 模組 #21 多智能體行銷協同群（The Multi-Agent Marketing Swarm）
+# 來源：ch07_p04、apxG_p03（Swarm Architecture）、apxG_p04、apxG_p05
+#
+# Level 3 三個硬性設計，全部反映在本檔案：
+# 1. 單一真理來源：品牌事實只存在 brand_context.yml，這裡只放「怎麼跑」
+# 2. 強制安全閥：任何對外 API 呼叫前必先過 --dry-run 內部通訊測試
+# 3. 單一人類監督節點：策略備忘錄 approval_required: true，未核准不得發布
+# ============================================================================
+
+module:
+  id: "21"
+  name: "多智能體行銷協同群"
+  # 書中部署時間為「1 週」。deploy_minutes 是契約 §7 的欄位，這裡照 1 週換算，
+  # 不是「一次執行要跑 1 週」的意思。
+  deploy_minutes: 10080
+  # 原簡報 36 張投影片沒有任何一頁提供「顧問自己的內部工時回收」，
+  # 全部 ROI 數字皆為客戶端節省。依規定標記為未提供，禁止推估。
+  recovered_hours_per_month: null
+  client_setup_price: 5000      # ch07_p03 / apxG_p04：$5,000 建置費
+  client_monthly_price: 2500    # apxG_p04：$2,500/mo
+
+runtime:
+  # 預設 draft：行銷蜂群一次會產出跨五個渠道的內容，錯一次是全渠道品牌事故。
+  # 書中鐵律是兩週觀察期 + 客戶簽核才能往上放寬。
+  autonomy: draft
+  approved_senders: []          # 放「已簽核可自動發布的渠道代號」，如 blog / newsletter
+  days_in_draft: 0
+  notify_channel: console
+
+# ---------------------------------------------------------------------------
+# 蜂群架構（apxG_p03）
+# ---------------------------------------------------------------------------
+swarm:
+  orchestrator_name: "Marketing Director Agent"
+  brand_context_file: "brand_context.yml"   # Orchestrator 持有的單一真理來源
+  active_stage: "conversion"                # 對應 brand_context.yml 的 STAGE_MAP
+  min_tone_examples: 3                      # 少於此數發 amber（契約 tone_mismatch）
+
+  # 五個 Sub-agent。INHERIT_FROM_ORCHESTRATOR 逐字保留原簡報寫法：
+  # 設為 false 代表該 agent 自行維護品牌資料 —— 那正是本模組要消滅的狀態，
+  # 因此程式會對 false 發出 amber 並在稽核日誌留下紀錄。
+  agents:
+    - id: content
+      display_name: "Content Agent"
+      INHERIT_FROM_ORCHESTRATOR: true
+      prompt_file: "prompts/content_agent.md"
+      fixture_file: "mock/content_agent.json"
+      quota_min: 8              # apxG_p04：8-12 草稿/週
+      quota_max: 12
+      quota_unit: "草稿/週"
+      integration: cms
+
+    - id: social
+      display_name: "Social Agent"
+      INHERIT_FROM_ORCHESTRATOR: true
+      prompt_file: "prompts/social_agent.md"
+      fixture_file: "mock/social_agent.json"
+      quota_min: 28            # apxG_p04：28 貼文/週（固定值，非區間）
+      quota_max: 28
+      quota_unit: "貼文/週"
+      integration: social
+
+    - id: email
+      display_name: "Email Agent"
+      INHERIT_FROM_ORCHESTRATOR: true
+      prompt_file: "prompts/email_agent.md"
+      fixture_file: "mock/email_agent.json"
+      quota_min: 2             # apxG_p04：2-3 活動
+      quota_max: 3
+      quota_unit: "活動/週"
+      integration: email
+
+    - id: lead_gen
+      display_name: "Lead Gen Agent"
+      INHERIT_FROM_ORCHESTRATOR: true
+      prompt_file: "prompts/lead_gen_agent.md"
+      fixture_file: "mock/lead_gen_agent.json"
+      quota_min: 50            # apxG_p04：50+ 名單（無上限）
+      quota_max: null
+      quota_unit: "名單/週"
+      integration: crm
+
+    - id: analytics
+      display_name: "Analytics Agent"
+      INHERIT_FROM_ORCHESTRATOR: true
+      prompt_file: "prompts/analytics_agent.md"
+      fixture_file: "mock/analytics_agent.json"
+      quota_min: 7             # apxG_p04：每日 KPI -> 一週 7 份
+      quota_max: 7
+      quota_unit: "日報/週"
+      integration: ga4
+
+# ---------------------------------------------------------------------------
+# 策略備忘錄與人類審核節點（apxG_p05）
+# ---------------------------------------------------------------------------
+strategy_memo:
+  prompt_file: "prompts/strategy_memo.md"
+  fixture_file: "mock/strategy_memo.json"
+  approval_required: true       # 整份 Level 3 唯一保留的人類監督節點
+  human_review_minutes: 20      # ch07_p04：人類只需花 20 分鐘審核
+  schedule:
+    timezone: "Asia/Taipei"
+    # tzdata 缺失時（精簡版 Windows Python 常見）退回固定時差，
+    # 讓 --mock 在沒有 tzdata 的機器上仍可跑完，並發 amber 告知。
+    fallback_utc_offset_hours: 8
+    weekday: "SUN"              # apxG_p05：每週日
+    time: "07:00"               # apxG_p05：07:00 生成策略備忘錄
+
+# ---------------------------------------------------------------------------
+# 整合層與強制安全閥（apxG_p03 Webhook Architecture）
+# 所有 inter-agent 通訊在任何 live API call 前必經強制內部 --dry-run 測試。
+# 這裡只登記「會打到哪裡、需要哪個環境變數」，程式碼中不得出現任何金鑰。
+# ---------------------------------------------------------------------------
+integrations:
+  cms:
+    display_name: "CMS（WordPress / Webflow）"
+    endpoint: "https://api.example-cms.test/v1/posts"
+    method: POST
+    auth: oauth2
+    env_vars: ["CMS_OAUTH_TOKEN"]
+  ga4:
+    display_name: "GA4 Service Account"
+    endpoint: "https://analyticsdata.googleapis.com/v1beta/properties:runReport"
+    method: POST
+    auth: service_account
+    env_vars: ["GA4_SERVICE_ACCOUNT_JSON", "GA4_PROPERTY_ID"]
+  social:
+    display_name: "社群排程 API"
+    endpoint: "https://api.example-social.test/v2/schedule"
+    method: POST
+    auth: bearer
+    env_vars: ["SOCIAL_SCHEDULER_TOKEN"]
+  email:
+    display_name: "電子報平台 API"
+    endpoint: "https://api.example-esp.test/v3/campaigns"
+    method: POST
+    auth: bearer
+    env_vars: ["ESP_API_TOKEN"]
+  crm:
+    display_name: "CRM 名單寫入 API"
+    endpoint: "https://api.example-crm.test/v1/leads/bulk"
+    method: POST
+    auth: bearer
+    env_vars: ["CRM_API_TOKEN"]
+
+# ---------------------------------------------------------------------------
+# 稽核軌跡（Level 3 要求）與執行狀態
+# 兩者預設寫在模組目錄下，屬執行期產物；跑測試或 CI 時用
+# --audit-file / --state-file 指向暫存目錄，避免污染工作樹。
+# ---------------------------------------------------------------------------
+audit:
+  file: "audit/swarm-audit.jsonl"
+  enabled: true
+
+state:
+  file: "state/swarm-state.json"
+
+# ---------------------------------------------------------------------------
+# 白牌覆寫（#30 的共同技術底座）
+# enabled: true 時，Orchestrator 會把 overrides 併入 brand_context 並
+# 級聯至五個 Sub-agent —— 這就是「整組抽換品牌」的實際操作。
+# ---------------------------------------------------------------------------
+white_label:
+  enabled: false
+  tenant_slug: ""
+  overrides: {}
+
+# ---------------------------------------------------------------------------
+# 商業數據（README 的 Financial Model 由程式從這裡算，不寫死在文件裡）
+# ---------------------------------------------------------------------------
+economics:
+  replaced_team_headcount: 5          # ch07_p04：Before 為 5 人編制
+  replaced_cost_low: 8000             # $8,000/月
+  replaced_cost_high: 15000           # $15,000/月
+  output_multiplier: "3-4 倍"
+  profit_margin_before_pct: 48        # ch07_p04：48% -> 72%
+  profit_margin_after_pct: 72
+  # apxG_p20 The Level 3 Commercial Matrix 十個模組全部印同一組數字，
+  # 明顯是模板佔位值。這裡保留原文供銷售話術使用，但計算一律以上方逐案報價為準。
+  commercial_matrix_setup_band: "$8,000-$10,000"
+  commercial_matrix_monthly_band: "$4,000-$6,000"

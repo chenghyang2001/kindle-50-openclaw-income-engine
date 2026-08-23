@@ -1,0 +1,73 @@
+# 模組 #30 — 白牌「AI 營運部」客戶經銷方案
+# 書中數據：部署 2 週｜客戶 $8,000–$10,000 setup + $4,000–$6,000/mo
+#           下游子客戶 $1,000–$2,000/月/家（ch07_p14 / apxG_p18）
+
+module:
+  id: "30"
+  name: "白牌 AI 營運部客戶經銷方案"
+  # 2 週 = 14 天 × 24 小時 × 60 分。#30 是全書唯一非 1 週的模組。
+  deploy_minutes: 20160
+  # 原簡報 36 張投影片沒有任何一頁提供「顧問自己的內部回收工時」，
+  # 一律留 null 由程式印出「（原簡報未提供）」，禁止推估。
+  recovered_hours_per_month: null
+  client_setup_price: 8000
+  client_setup_price_max: 10000
+  client_monthly_price: 4000
+  client_monthly_price_max: 6000
+
+runtime:
+  autonomy: draft            # read_only | draft | supervised_auto
+  approved_senders: []       # supervised_auto 必填白名單（email 或 "@domain"）
+  days_in_draft: 0           # 未滿 14 天就開 supervised_auto 會收到 AMBER 警告
+  notify_channel: console
+
+# 白牌化前提門檻（apxG_p18 前提條件橫幅 + ch07_p14 觸發門檻）
+whitelabel:
+  min_stable_days: 90            # 「穩定運行 90+ 天」——未達門檻不得進入白牌模式
+  days_stable: 132               # 本次部署實測值
+  min_enterprise_automations: 4  # 「成功部署 4 個以上企業級方案」才算基礎設施
+  deployed_automations: 5
+
+# 分潤（apxG_p19：20-30% 經銷商 / 70-80% 基礎設施提供者）
+# ⚠️ ch07_p14 印為「20-300%」，判定為誤植，見 README 第五節。
+# 比例可調整，但 reseller_pct + provider_pct 必須恰為 100，否則程式拒絕執行。
+revenue_share:
+  reseller_pct: 25
+  provider_pct: 75
+  reseller_band: [20, 30]        # 落在帶外不擋，但會發 AMBER 提醒回查經銷商協議
+
+pricing:
+  sub_client_monthly_min: 1000   # ch07_p14：下游子客戶 $1,000–$2,000/月/家
+  sub_client_monthly_max: 2000
+
+# 多租戶隔離（apxG_p19：[RESELLER_SLUG]/[SUB_CLIENT_SLUG_X]）
+tenancy:
+  # 所有租戶資料檔的允許根目錄。任何組合後 resolve() 落在此目錄外的路徑
+  # 一律視為安全事件，拒絕並寫稽核日誌。
+  data_root: "mock/data"
+
+brand:
+  context_file: "brand_context.yml"
+
+safety:
+  # 全域安全閥（apxG_p03）：所有 API 呼叫前必經 --dry-run 內部通訊測試。
+  # 設為 false 不會被接受——程式會強制覆寫為 true 並發 AMBER。
+  require_dry_run_selftest: true
+  # 隔離演練（mock/access_attempts.json）中被拒絕的嘗試是否要中斷整支程式。
+  # 預設 false：那份清單是「刻意重放的敵意輸入」，目的就是證明每一筆都被擋下並留痕，
+  # 擋下來就中斷反而看不到完整演練結果。
+  # ⚠️ 與此無關的是 --tenant：由旗標指定的 namespace 若解析失敗，
+  #    一律 RED 並結束行程，且不可用設定關掉（那是驅動本次執行的身分，不是演練資料）。
+  halt_on_isolation_violation: false
+
+state:
+  file: "state.json"             # 可用 --state-file 覆蓋
+
+audit:
+  file: "audit.jsonl"            # 可用 --audit-file 覆蓋
+
+mock:
+  tenants: "mock/tenants.json"
+  access_attempts: "mock/access_attempts.json"
+  # 固定基準時間，讓 --mock 每次執行的稽核時間戳完全可重現
+  now: "2026-08-24T09:00:00+00:00"

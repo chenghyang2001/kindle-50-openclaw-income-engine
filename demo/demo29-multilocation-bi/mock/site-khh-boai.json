@@ -1,0 +1,14 @@
+{
+  "_schema": "shopify-analytics-daily",
+  "shop_domain": "khh-boai.example.myshopify.com",
+  "staff_hours": "690",
+  "daily_orders": [
+    {"date": "2026-08-17", "gross_sales": "108000", "refunds": "1500", "order_count": 325, "sessions": 1900},
+    {"date": "2026-08-18", "gross_sales": "112000", "refunds": "1600", "order_count": 335, "sessions": 1980},
+    {"date": "2026-08-19", "gross_sales": "118000", "refunds": "1700", "order_count": 355, "sessions": 2080},
+    {"date": "2026-08-20", "gross_sales": "125000", "refunds": "1900", "order_count": 375, "sessions": 2200},
+    {"date": "2026-08-21", "gross_sales": "122000", "refunds": "1800", "order_count": 368, "sessions": 2160},
+    {"date": "2026-08-22", "gross_sales": "118000", "refunds": "1800", "order_count": 352, "sessions": 2060},
+    {"date": "2026-08-23", "gross_sales": "109000", "refunds": "1700", "order_count": 290, "sessions": 1720}
+  ]
+}

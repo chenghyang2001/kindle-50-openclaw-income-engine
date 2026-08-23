@@ -1,0 +1,94 @@
+{
+  "mailbox": "orders@yourcompany.example",
+  "fetched_at": "2026-08-24T08:58:00+08:00",
+  "note": "12 封信，其中 3 封刻意設計為解析失敗（無 PO 號碼／網域冒名／分類不出來）",
+  "messages": [
+    {
+      "id": "e001",
+      "from": "ops@nordwind-components.example",
+      "subject": "Order acknowledgement - PO-20260801",
+      "received_at": "2026-08-01T18:20:00+08:00",
+      "body": "Dear team,\n\nWe acknowledge your purchase order PO-20260801 and confirm the production slot for week 33.\n\nKind regards,\nNordwind Components"
+    },
+    {
+      "id": "e002",
+      "from": "logistics@nordwind-components.example",
+      "subject": "Shipment notice PO-20260801 (tracking DHL 4392018855)",
+      "received_at": "2026-08-20T16:40:00+08:00",
+      "body": "The goods for PO-20260801 have been dispatched today. Tracking: DHL 4392018855.\nRevised ETA 2026-08-25 18:00 because of the customs booking slot.\n\nNordwind Logistics"
+    },
+    {
+      "id": "e003",
+      "from": "sales@delta-circuit.example",
+      "subject": "Re: PO-20260812 - order confirmed",
+      "received_at": "2026-08-12T13:05:00+08:00",
+      "body": "Hi,\n\nPO-20260812 is confirmed and entered into our MRP. Production schedule to follow.\n\nDelta Circuit Supply"
+    },
+    {
+      "id": "e004",
+      "from": "kaigai@osaka-metal.example",
+      "subject": "ご連絡",
+      "received_at": "2026-08-16T11:30:00+08:00",
+      "body": "いつもお世話になっております。\n件名の件、社内で確認しております。追ってご連絡いたします。\n\n大阪メタル",
+      "expected": "解析失敗：主旨與內文都沒有 PO 號碼，無法歸屬到任何採購單"
+    },
+    {
+      "id": "e005",
+      "from": "procurement@unknown-vendor.example",
+      "subject": "PO-20260805 acknowledgement",
+      "received_at": "2026-08-22T09:15:00+08:00",
+      "body": "We acknowledge PO-20260805 and will arrange production shortly.\n\nBest regards",
+      "expected": "解析失敗：寄件網域不是 PO-20260805 的供應商，疑似冒名或轉寄；因此該 PO 仍算未確認"
+    },
+    {
+      "id": "e006",
+      "from": "billing@delta-circuit.example",
+      "subject": "Invoice INV-88213 for PO-20260722",
+      "received_at": "2026-08-14T10:05:00+08:00",
+      "body": "Please find attached invoice INV-88213 covering PO-20260722. Payment terms net 30.\n\nDelta Circuit Supply, Billing"
+    },
+    {
+      "id": "e007",
+      "from": "ops@nordwind-components.example",
+      "subject": "PO-20260716 acknowledged",
+      "received_at": "2026-07-16T15:30:00+08:00",
+      "body": "We acknowledge PO-20260716. Production starts next week.\n\nNordwind Components"
+    },
+    {
+      "id": "e008",
+      "from": "ops@nordwind-components.example",
+      "subject": "PO-20260716 delivery confirmation",
+      "received_at": "2026-08-05T09:40:00+08:00",
+      "body": "Goods for PO-20260716 were delivered and signed for at your warehouse this morning.\n\nNordwind Components"
+    },
+    {
+      "id": "e009",
+      "from": "sales@delta-circuit.example",
+      "subject": "PO-20260722 acknowledged",
+      "received_at": "2026-07-22T16:00:00+08:00",
+      "body": "PO-20260722 acknowledged, lead time 15 working days.\n\nDelta Circuit Supply"
+    },
+    {
+      "id": "e010",
+      "from": "logistics@delta-circuit.example",
+      "subject": "PO-20260722 delivered",
+      "received_at": "2026-08-13T11:20:00+08:00",
+      "body": "PO-20260722 was delivered to your dock this morning.\n\nDelta Circuit Logistics"
+    },
+    {
+      "id": "e011",
+      "from": "qc@kaohsiung-precision.example",
+      "subject": "PO-20260818 已確認",
+      "received_at": "2026-08-19T10:30:00+08:00",
+      "body": "您好，\n\nPO-20260818 已確認接單，將依合約交期安排產線。\n\n高雄精密"
+    },
+    {
+      "id": "e012",
+      "from": "kaigai@osaka-metal.example",
+      "subject": "PO-20260814 の件",
+      "received_at": "2026-08-20T14:10:00+08:00",
+      "body": "PO-20260814 について、社内調整中です。詳細は追ってご連絡いたします。\n\n大阪メタル",
+      "expected": "解析失敗：PO 號碼與網域都對，但內容分類不出來（既非確認、也非出貨或延遲），需人工判讀"
+    }
+  ]
+}

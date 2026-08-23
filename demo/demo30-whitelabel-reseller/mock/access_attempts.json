@@ -1,0 +1,47 @@
+{
+  "note": "隔離演練用的存取嘗試清單。每一筆都會被實際重放一次，expected 欄位只是給人看的說明，程式不會拿它來放水——判定完全來自 tenancy.TenantStore。",
+  "attempts": [
+    {
+      "id": "A-01",
+      "actor": "acme-ops/north-mill",
+      "target": "acme-ops/north-mill",
+      "expected": "allow",
+      "why": "同租戶讀自己的資料，正常路徑"
+    },
+    {
+      "id": "A-02",
+      "actor": "acme-ops/north-mill",
+      "target": "brightpath-ai/north-mill",
+      "expected": "deny",
+      "why": "跨經銷商：子客戶 slug 同名但屬於不同經銷商，必須拒絕"
+    },
+    {
+      "id": "A-03",
+      "actor": "acme-ops/harbor-freight-co",
+      "target": "acme-ops/north-mill",
+      "expected": "deny",
+      "why": "同經銷商但跨子客戶，仍必須拒絕"
+    },
+    {
+      "id": "A-04",
+      "actor": "brightpath-ai/lakeside-clinic",
+      "target": "brightpath-ai/../acme-ops/north-mill",
+      "expected": "deny",
+      "why": "路徑跳脫字元，namespace 解析階段就要拒絕，不嘗試修正"
+    },
+    {
+      "id": "A-05",
+      "actor": "brightpath-ai/lakeside-clinic",
+      "target": "brightpath-ai",
+      "expected": "deny",
+      "why": "缺少子客戶層級，屬於 namespace 缺失"
+    },
+    {
+      "id": "A-06",
+      "actor": "brightpath-ai/lakeside-clinic",
+      "target": "brightpath-ai/lakeside-clinic",
+      "expected": "allow",
+      "why": "同租戶讀自己的資料，正常路徑"
+    }
+  ]
+}

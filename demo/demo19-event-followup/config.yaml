@@ -1,0 +1,117 @@
+# 模組 #19 — 活動與研討會跟進序列（Event & Webinar Follow-Up）
+# 書中數據：部署 1 Day｜每場活動回收 20 小時｜售價 $900 setup + $240/mo
+# 定價在第05章與附錄F 兩個來源完全一致，直接採用（見 SPEC-11-20.md 差異 1）。
+
+module:
+  id: "19"
+  name: "活動與研討會跟進序列"
+  deploy_minutes: 480          # 1 Day（以 8 小時工作日換算）
+  recovered_hours_per_month: 20  # 書中：每場活動回收 20 小時
+  client_setup_price: 900
+  client_monthly_price: 240
+
+runtime:
+  autonomy: draft            # read_only | draft | supervised_auto
+  approved_senders: []       # supervised_auto 必填白名單（email 或 "@domain"）
+  days_in_draft: 0           # 未滿 14 天就開 supervised_auto 會收到 AMBER 警告
+  notify_channel: console
+
+event:
+  # 活動基本資料（正式環境改為 event.ended Webhook 的 payload）
+  source: mock/event.json
+
+safety:
+  # 與會者一旦回覆，整個跟進序列立即中止。
+  # 這是本模組「不可停用」的設定之一：即使改成 false，程式仍會強制視為 true，
+  # 並透過 Diagnostics.amber 發出警告。誤發後續跟進對品牌信任的傷害不可逆。
+  stop_on_reply: true
+  # 退訂同樣不可停用。活動名單屬行銷聯繫，忽視退訂是法遵事故不是體驗問題。
+  respect_unsubscribe: true
+  timezone: "Asia/Taipei"
+  # Windows / 精簡容器可能缺 IANA 時區資料庫（zoneinfo 需要 tzdata），
+  # 此時退回固定 UTC 偏移，並發 AMBER 警告，不讓整支程式掛掉。
+  timezone_fallback_offset_hours: 8
+
+compliance:
+  # 行銷信法遵三件套：寄件人可識別、實體地址、可運作的退訂連結。
+  # 缺任何一項 -> 全部信件強制降為草稿（禁止自動送出）並發 AMBER。
+  sender_identity: "沛宇數位行銷有限公司 · 活動組 王思穎"
+  physical_address: "台北市信義區松高路 9 號 12 樓"
+  unsubscribe_url: "https://example.com/unsubscribe?token={{ATTENDEE_TOKEN}}"
+  reply_to: "events@example.com"
+
+segmentation:
+  # 高互動訊號：任一成立即視為「有互動」。
+  # 書中原文只點名「發問」，本實作額外納入「下載資料」——兩者都是主動行為，
+  # 且下載資料在無 Q&A 的錄播型活動是唯一可得的互動訊號。
+  engagement_signals:
+    - asked_question
+    - downloaded_resource
+  # 依序比對，第一個命中的分群勝出。因此 hot 必須排在 warm 前面。
+  segments:
+    - key: hot
+      label: "全程參與（Fully Engaged）"
+      min_attendance_pct: 80
+      requires_engagement_signal: true
+      is_crm_handover: true       # 只有這一群會在 30 分鐘內交棒業務
+      sequence:
+        - offset_minutes: 30      # 活動結束 30 分鐘內：趁記憶最熱
+          type: hot_personal
+          prompt: prompts/hot_01_personal.md
+        - offset_minutes: 1440    # Day 1
+          type: hot_meeting_offer
+          prompt: prompts/hot_02_meeting.md
+        - offset_minutes: 4320    # Day 3
+          type: hot_final_nudge
+          prompt: prompts/hot_03_final.md
+    - key: warm
+      label: "部分參與（Attended）"
+      min_attendance_pct: 40
+      requires_engagement_signal: false
+      is_crm_handover: false
+      sequence:
+        - offset_minutes: 120     # 活動結束 2 小時：錄影 + 重點摘要
+          type: warm_recap
+          prompt: prompts/warm_01_recap.md
+        - offset_minutes: 2880    # Day 2
+          type: warm_resource
+          prompt: prompts/warm_02_resource.md
+        - offset_minutes: 7200    # Day 5
+          type: warm_soft_offer
+          prompt: prompts/warm_03_soft_offer.md
+    - key: cold
+      label: "僅報名或早退（Registered Only）"
+      min_attendance_pct: 0
+      requires_engagement_signal: false
+      is_crm_handover: false
+      sequence:
+        - offset_minutes: 240     # 活動結束 4 小時：你錯過了什麼
+          type: reengage_recording
+          prompt: prompts/cold_01_recording.md
+        - offset_minutes: 4320    # Day 3
+          type: reengage_next_event
+          prompt: prompts/cold_02_next_event.md
+
+crm:
+  # 書中規格：活動結束 30 分鐘內把高熱度名單送到業務 Slack
+  handover_deadline_minutes: 30
+  slack_channel: "#sales-hot-leads"
+  hot_lead_score_floor: 70
+
+state:
+  # 進度狀態檔預設路徑（相對於本模組目錄）。可用 --state-file 覆寫。
+  path: state/event_state.json
+
+mock:
+  attendees: mock/attendees.json
+  # mock 模式的基準時間，讓 --mock 每次執行結果完全可重現（不受今天日期影響）
+  now: "2026-08-24T09:00:00+08:00"
+
+metrics:
+  # 書中：分眾跟進的線索轉換率比通用郵件高 3-4 倍
+  generic_conversion_multiplier: 1.0
+  segmented_conversion_multiplier_min: 3.0
+  segmented_conversion_multiplier_max: 4.0
+  # 書中：由具體負責人具名寄出可提升 30-40% 回覆率
+  named_sender_reply_lift_pct_min: 30
+  named_sender_reply_lift_pct_max: 40

@@ -1,0 +1,253 @@
+[
+  {
+    "id": "D-2201",
+    "company": "宏達智造",
+    "contact": "林郁婷",
+    "email": "lin.yuting@hongda-mfg.example.com",
+    "industry": "工業自動化",
+    "source": "inbound_form",
+    "stage": "lead_captured",
+    "stage_entered_at": "2026-08-24T08:30:00+08:00",
+    "amount_usd": "26000.00",
+    "pain_point": "詢價信件分散在三個信箱，業務常隔兩天才看到",
+    "steps_sent": {},
+    "has_replied": false,
+    "replied_at": null,
+    "note": "剛進站 30 分鐘，Enrichment 尚在 2 小時 SLA 內 -> 應產出 enrich_and_score"
+  },
+  {
+    "id": "D-2202",
+    "company": "群鴻材料",
+    "contact": "蔡孟樺",
+    "email": "tsai.menghua@qunhong-mat.example.com",
+    "industry": "特用化學",
+    "source": "webinar",
+    "stage": "lead_captured",
+    "stage_entered_at": "2026-08-24T04:00:00+08:00",
+    "amount_usd": "48000.00",
+    "pain_point": "海外經銷商詢價要等總部回覆規格書，平均 4 天",
+    "steps_sent": {},
+    "has_replied": false,
+    "replied_at": null,
+    "note": "進站已 5 小時仍未擴充 -> Enrichment SLA(120 分) 超時，必須發 AMBER 警報"
+  },
+  {
+    "id": "D-2203",
+    "company": "泓昇醫材",
+    "contact": "周映蓉",
+    "email": "chou.yingjung@hongsheng-med.example.com",
+    "industry": "醫療器材",
+    "source": "referral",
+    "stage": "lead_captured",
+    "stage_entered_at": "2026-08-23T14:00:00+08:00",
+    "amount_usd": "72000.00",
+    "pain_point": "法規文件版本控管靠人工，送審前才發現用錯版本",
+    "enrichment": {
+      "score": 82,
+      "tier": "A",
+      "enriched_at": "2026-08-23T14:40:00+08:00"
+    },
+    "steps_sent": {
+      "enrichment": [0]
+    },
+    "has_replied": false,
+    "replied_at": null,
+    "note": "已擴充完成；CRM 事件會把它推進 discovery -> 應產出 proposal_draft（SLA 內）"
+  },
+  {
+    "id": "D-2204",
+    "company": "安途物流",
+    "contact": "郭柏廷",
+    "email": "kuo.poting@antu-logistics.example.com",
+    "industry": "第三方物流",
+    "source": "outbound",
+    "stage": "discovery",
+    "stage_entered_at": "2026-08-24T05:00:00+08:00",
+    "discovery_call_at": "2026-08-24T05:00:00+08:00",
+    "amount_usd": "35000.00",
+    "pain_point": "客戶到貨查詢電話佔掉客服一半工時",
+    "discovery_notes": "客服 6 人，每天約 140 通查詢電話；旺季爆量無法加人",
+    "enrichment": {
+      "score": 71,
+      "tier": "B",
+      "enriched_at": "2026-08-23T09:20:00+08:00"
+    },
+    "steps_sent": {
+      "enrichment": [0]
+    },
+    "has_replied": false,
+    "replied_at": null,
+    "note": "通話後已 4 小時仍無提案 -> Proposal SLA(120 分) 超時，必須發 AMBER 警報"
+  },
+  {
+    "id": "D-2205",
+    "company": "柏森科技",
+    "contact": "黃思翰",
+    "email": "huang.szuhan@bosen-tech.example.com",
+    "industry": "半導體設備",
+    "source": "referral",
+    "stage": "proposal_sent",
+    "stage_entered_at": "2026-08-21T09:00:00+08:00",
+    "discovery_call_at": "2026-08-20T14:00:00+08:00",
+    "proposal_id": "PRP-5501",
+    "proposal_sent_at": "2026-08-21T09:00:00+08:00",
+    "amount_usd": "118000.00",
+    "pain_point": "設備稼動率報表每週手工合併，決策永遠慢一週",
+    "discovery_notes": "三廠區各一套 MES，資料格式不同；廠長要每日看板",
+    "enrichment": {
+      "score": 88,
+      "tier": "A",
+      "enriched_at": "2026-08-18T10:00:00+08:00"
+    },
+    "steps_sent": {
+      "enrichment": [0],
+      "proposal": [0]
+    },
+    "has_replied": false,
+    "replied_at": null,
+    "note": "提案寄出 3 天、未回覆 -> 5-touch 的 Day 2 gentle_check 已到期"
+  },
+  {
+    "id": "D-2206",
+    "company": "雅茂食品",
+    "contact": "許雅雯",
+    "email": "hsu.yawen@yamao-foods.example.com",
+    "industry": "食品加工",
+    "source": "inbound_form",
+    "stage": "proposal_sent",
+    "stage_entered_at": "2026-08-18T09:00:00+08:00",
+    "discovery_call_at": "2026-08-17T11:00:00+08:00",
+    "proposal_id": "PRP-5488",
+    "proposal_sent_at": "2026-08-18T09:00:00+08:00",
+    "amount_usd": "54000.00",
+    "pain_point": "原料批號追溯要翻紙本，稽核前全公司加班",
+    "discovery_notes": "年度稽核在 11 月；現行紙本追溯平均查一批要 40 分鐘",
+    "enrichment": {
+      "score": 76,
+      "tier": "A",
+      "enriched_at": "2026-08-15T09:00:00+08:00"
+    },
+    "steps_sent": {
+      "enrichment": [0],
+      "proposal": [0],
+      "follow_up": [2]
+    },
+    "has_replied": true,
+    "replied_at": "2026-08-21T10:30:00+08:00",
+    "note": "**安全機制主測案例**：客戶已回覆，CRM 階段仍是 proposal_sent -> 序列必須立即中止"
+  },
+  {
+    "id": "D-2207",
+    "company": "臨海重工",
+    "contact": "葉宗翰",
+    "email": "yeh.tsunghan@linhai-heavy.example.com",
+    "industry": "重機械",
+    "source": "trade_show",
+    "stage": "proposal_sent",
+    "stage_entered_at": "2026-07-25T09:00:00+08:00",
+    "discovery_call_at": "2026-07-24T13:00:00+08:00",
+    "proposal_id": "PRP-5402",
+    "proposal_sent_at": "2026-07-25T09:00:00+08:00",
+    "amount_usd": "96000.00",
+    "pain_point": "維修派工靠電話，備料常送錯工地",
+    "discovery_notes": "全台 11 個工地，派工單目前用 LINE 群組發",
+    "enrichment": {
+      "score": 69,
+      "tier": "B",
+      "enriched_at": "2026-07-22T09:00:00+08:00"
+    },
+    "steps_sent": {
+      "enrichment": [0],
+      "proposal": [0],
+      "follow_up": [2, 5, 9, 14, 21]
+    },
+    "has_replied": false,
+    "replied_at": null,
+    "note": "5-touch 全部送完仍無回覆 -> 中止（sequence_complete），等待人工判斷是否轉 Closed-Lost"
+  },
+  {
+    "id": "D-2208",
+    "company": "midori 商事",
+    "contact": "佐藤 美咲",
+    "email": "sato.misaki@midori-shoji.example.co.jp",
+    "industry": "貿易",
+    "source": "referral",
+    "stage": "proposal_sent",
+    "stage_entered_at": "2026-08-15T09:00:00+08:00",
+    "discovery_call_at": "2026-08-14T10:00:00+08:00",
+    "proposal_id": "PRP-5470",
+    "proposal_sent_at": "2026-08-15T09:00:00+08:00",
+    "amount_usd": "63500.00",
+    "pain_point": "跨境報關文件三種語言版本要人工核對",
+    "discovery_notes": "日文／英文／繁中三版；每月約 240 份文件",
+    "enrichment": {
+      "score": 79,
+      "tier": "A",
+      "enriched_at": "2026-08-12T09:00:00+08:00"
+    },
+    "steps_sent": {
+      "enrichment": [0],
+      "proposal": [0],
+      "follow_up": [2, 5]
+    },
+    "has_replied": true,
+    "replied_at": "2026-08-22T16:00:00+08:00",
+    "note": "CRM 事件會把它推進 closed_won -> Onboarding 不受 halt_on_reply 影響，應產出 welcome_pack"
+  },
+  {
+    "id": "D-2209",
+    "company": "東擎能源",
+    "contact": "邱士豪",
+    "email": "chiu.shihhao@dongching-energy.example.com",
+    "industry": "再生能源",
+    "source": "outbound",
+    "stage": "closed_lost",
+    "stage_entered_at": "2026-07-20T09:00:00+08:00",
+    "discovery_call_at": "2026-07-02T15:00:00+08:00",
+    "proposal_id": "PRP-5330",
+    "proposal_sent_at": "2026-07-05T09:00:00+08:00",
+    "closed_at": "2026-07-20T09:00:00+08:00",
+    "lost_reason": "年度預算已用罄，明年 Q1 重新評估",
+    "amount_usd": "41000.00",
+    "pain_point": "案場發電量異常要等月報才發現",
+    "discovery_notes": "18 個案場，目前每月人工彙整一次",
+    "enrichment": {
+      "score": 74,
+      "tier": "B",
+      "enriched_at": "2026-06-28T09:00:00+08:00"
+    },
+    "steps_sent": {
+      "enrichment": [0],
+      "proposal": [0],
+      "follow_up": [2, 5, 9, 14, 21]
+    },
+    "has_replied": false,
+    "replied_at": null,
+    "note": "結案已 35 天 -> 90 天重新培育的第 1 封（Day 30）到期"
+  },
+  {
+    "id": "D-2210",
+    "company": "凱納生技",
+    "contact": "羅怡君",
+    "email": "lo.yichun@kaina-bio.example.com",
+    "industry": "生技製藥",
+    "source": "referral",
+    "stage": "discovery",
+    "stage_entered_at": "2026-08-24T08:30:00+08:00",
+    "discovery_call_at": "2026-08-24T08:30:00+08:00",
+    "amount_usd": "88000.00",
+    "pain_point": "臨床試驗檢體流向靠 Excel 交接，稽核時追不回來",
+    "discovery_notes": "同時進行 4 個試驗案；檢體交接每天約 60 筆",
+    "enrichment": {
+      "score": 85,
+      "tier": "A",
+      "enriched_at": "2026-08-23T16:00:00+08:00"
+    },
+    "steps_sent": {
+      "enrichment": [0]
+    },
+    "has_replied": false,
+    "replied_at": null,
+    "note": "**非法轉移主測案例**：CRM 事件想把它從 discovery 直接跳到 closed_won（未經提案），必須被擋下；擋下後它仍在 discovery，proposal 節點照常產出"
+  }
+]

@@ -1,0 +1,20 @@
+{
+  "source": "linkedin",
+  "as_of": "2026-08-24",
+  "_comment": "職稱來源。只負責 job_title 與 employee_count（後者為次要來源，優先度低於 Apollo）。",
+  "records": {
+    "northwind-analytics.co.uk": {
+      "job_title": "VP of Operations"
+    },
+    "kitelabs.io": {
+      "job_title": "Head of Growth"
+    },
+    "vellumlegal.co.uk": {
+      "job_title": "General Counsel"
+    },
+    "orbitra.co.uk": {
+      "job_title": "Director of Ecommerce",
+      "employee_count": 150
+    }
+  }
+}

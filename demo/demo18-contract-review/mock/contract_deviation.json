@@ -1,0 +1,91 @@
+{
+  "contract_id": "MSA-2026-0417-VELLIS",
+  "title": "Master Services Agreement between Northgate Analytics Ltd and Vellis Cloud SA",
+  "counterparty": "Vellis Cloud SA",
+  "received_via": "google_drive_watch",
+  "received_at": "2026-08-24T10:41:00+01:00",
+  "jurisdiction": "england_wales",
+  "page_count": 61,
+  "financials": {
+    "currency": "GBP",
+    "annual_value": "120000.00"
+  },
+  "note": "14 條全部存在，但其中 6 條偏離企業基準立場（Deviation）。無紅旗、無缺失。",
+  "sections": [
+    {
+      "number": "1",
+      "heading": "Definitions and Interpretation",
+      "text": "In this Agreement the following terms shall have the meanings set out below. Deliverables means the items specified in the applicable Statement of Work."
+    },
+    {
+      "number": "2",
+      "heading": "Payment Terms",
+      "text": "The Client shall pay each undisputed invoice within ninety (90) days of the invoice date. No interest shall accrue on late payment."
+    },
+    {
+      "number": "3",
+      "heading": "Confidentiality",
+      "text": "Each party shall keep confidential all Confidential Information disclosed by the other party for a period of five (5) years from the date of disclosure."
+    },
+    {
+      "number": "4",
+      "heading": "Intellectual Property",
+      "text": "Each party retains ownership of its Background Intellectual Property. Title to the Deliverables shall transfer to the Client upon payment in full of all sums due under this Agreement."
+    },
+    {
+      "number": "5",
+      "heading": "Data Protection",
+      "text": "Each party shall comply with the UK GDPR and the Data Protection Act 2018. The Supplier shall notify the Client of any personal data breach without undue delay and in any event within seventy-two (72) hours."
+    },
+    {
+      "number": "6",
+      "heading": "Warranties",
+      "text": "The Supplier warrants that the Services shall be performed with reasonable skill and care and that the Deliverables shall be free from material defects for ninety (90) days following acceptance."
+    },
+    {
+      "number": "7",
+      "heading": "Limitation of Liability",
+      "text": "The aggregate liability of the Supplier under this Agreement shall not exceed GBP 360,000. Neither party shall be liable for indirect or consequential loss."
+    },
+    {
+      "number": "8",
+      "heading": "Indemnities",
+      "text": "Each party shall indemnify the other against third party claims arising from its own breach of this Agreement, subject always to the limitations set out in clause 7."
+    },
+    {
+      "number": "9",
+      "heading": "Insurance",
+      "text": "The Supplier shall maintain professional indemnity insurance of not less than GBP 500,000 for each and every claim throughout the Term."
+    },
+    {
+      "number": "10",
+      "heading": "Termination",
+      "text": "Either party may terminate this Agreement for convenience on one hundred and eighty (180) days prior written notice to the other party."
+    },
+    {
+      "number": "11",
+      "heading": "Assignment",
+      "text": "The Supplier may assign or novate this Agreement to any third party without the prior written consent of the Client."
+    },
+    {
+      "number": "12",
+      "heading": "Force Majeure",
+      "text": "Neither party shall be liable for any failure to perform caused by a Force Majeure Event. If a Force Majeure Event continues for more than sixty (60) consecutive days, either party may terminate this Agreement on written notice."
+    },
+    {
+      "number": "13",
+      "heading": "Non-Solicitation",
+      "text": "Neither party shall solicit for employment any employee of the other party during the Term and for thirty-six (36) months following termination of this Agreement."
+    },
+    {
+      "number": "14",
+      "heading": "Governing Law",
+      "text": "This Agreement shall be governed by and construed in accordance with the laws of England and Wales."
+    },
+    {
+      "number": "15",
+      "heading": "Dispute Resolution",
+      "text": "The parties shall first seek to resolve any dispute by good faith negotiation for thirty (30) days. Failing resolution, the courts of England and Wales shall have exclusive jurisdiction."
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "source": "crm",
+  "week_id": "2026-W33",
+  "_comment": "新增名單 120 → 144（+20%）：異常標記會亮，但 RAG 是綠燈——異常不等於壞消息。",
+  "metrics": {
+    "new_leads": "144",
+    "qualified_opportunities": "35",
+    "pipeline_value": "210000.00",
+    "win_rate": "24.00",
+    "avg_deal_cycle_days": "38"
+  }
+}

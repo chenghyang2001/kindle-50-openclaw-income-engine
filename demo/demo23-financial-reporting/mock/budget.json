@@ -1,0 +1,16 @@
+{
+  "source": "budget_csv",
+  "scope": "local_file.read",
+  "period": "2026-07",
+  "currency": "USD",
+  "note": "對應 apxG_p08 的 BUDGET_CSV_PATH；--live 時改讀同語意的 CSV（code,label,amount）",
+  "lines": [
+    { "code": "4000", "label": "訂閱營收", "amount": "400000.00" },
+    { "code": "4100", "label": "專案與導入營收", "amount": "165000.00" },
+    { "code": "5000", "label": "雲端與託管成本", "amount": "91000.00" },
+    { "code": "6100", "label": "薪資與人事成本", "amount": "265000.00" },
+    { "code": "6200", "label": "行銷費用", "amount": "60000.00" },
+    { "code": "6300", "label": "差旅與辦公費用", "amount": "22000.00" },
+    { "code": "6900", "label": "專業服務費", "amount": "12000.00" }
+  ]
+}

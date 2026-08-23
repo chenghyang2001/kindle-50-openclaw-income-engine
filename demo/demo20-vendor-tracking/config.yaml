@@ -1,0 +1,89 @@
+# demo20 — 供應商通訊與訂單追蹤（Supplier Tracking）
+# 書中數據（第05章 ch05_p13 / 附錄F apxF_p14，兩來源一致）：
+#   部署 1 Day｜每週回收 18 小時｜缺貨事件減少 60-80%
+#   售價 $1,000 設置費 + $270/月 訂閱
+
+module:
+  id: "20"
+  name: "供應商通訊與訂單追蹤"
+  # 書中寫「1 Day」；CONTRACT §7 的欄位單位是分鐘，以 8 小時工作日換算為 480。
+  deploy_minutes: 480
+  # 書中寫「每週回收 18 小時」；本欄單位是「每月」，以 18 × 4.33 週換算後取整 = 78。
+  recovered_hours_per_month: 78
+  client_setup_price: 1000
+  client_monthly_price: 270
+
+runtime:
+  # 催辦信是**寄給供應商的對外信件**，語氣直接影響商業關係與後續議價籌碼。
+  # 因此預設一律 draft：草稿只印在本機等採購人員過目，絕不自動送到供應商信箱。
+  autonomy: draft
+  approved_senders: []
+  days_in_draft: 0
+  notify_channel: console
+  # 內部彙整報告的收件人（給採購/生管看的，不是寄給供應商的）
+  internal_recipient: "procurement@yourcompany.example"
+  # 逾期天數的判定基準時區。Windows 沒有系統 tz database，
+  # 未安裝 tzdata 時 zoneinfo 會失敗，屆時退回下面的固定偏移並發 AMBER
+  # （絕不靜默改用機器本地時間——那會讓同一批資料在不同機器算出不同的逾期時數）。
+  timezone: "Asia/Taipei"
+  utc_offset_hours: 8
+
+tracking:
+  # ── 各階段時限（逾期偵測的核心）──────────────────────────────
+  # 下單後多久內供應商必須確認。書中原文：「監控供應商 24hr 內確認」，
+  # 對應附錄F 的 UNACKNOWLEDGED_PO_HOURS。
+  unacknowledged_po_hours: 24
+  # 預計交貨前多久開始主動追蹤。書中原文：「預計交貨前 48hr 自動追蹤」。
+  chase_before_eta_hours: 48
+  # 交期前多久仍未出貨就視為有風險。**書中未規定**，本專案自訂為 72 小時，可調整。
+  ship_before_eta_hours: 72
+  # 過了交期多久仍未到貨就判定逾期。**書中未規定**，本專案自訂為 24 小時寬限，可調整。
+  deliver_after_eta_grace_hours: 24
+  # 同一張 PO 兩次催辦的最短間隔。避免每天排程都對同一個供應商轟炸同一件事。
+  chaser_cooldown_hours: 48
+
+  # ── 資料來源（mock 模式）────────────────────────────────────
+  # 相對路徑一律相對於本 demo 目錄解析（程式內以 Path(__file__).parent 處理，不硬編碼）
+  erp_orders_file: "mock/purchase_orders.json"
+  mailbox_file: "mock/supplier_replies.json"
+  state_file: "state/orders.json"
+  # mock 模式的「現在時刻」。固定值才能讓逾期判斷可重現；
+  # live 模式改用 datetime.now(tz)。
+  mock_now: "2026-08-24T09:00:00+08:00"
+
+  # ── 資料來源（live 模式）────────────────────────────────────
+  # 憑證一律走環境變數，不寫在設定檔：
+  #   ERP_API_TOKEN / SUPPLIER_MAILBOX_USER / SUPPLIER_MAILBOX_PASSWORD
+  erp_api_url: "https://api.xero.example/purchase-orders?status=open"
+  imap_host: "imap.yourcompany.example"
+  imap_port: 993
+  imap_folder: "INBOX"
+  imap_fetch_limit: 50
+  request_timeout_seconds: 20
+
+  # ── 計分卡 ─────────────────────────────────────────────────
+  scorecard_period: "2026-08"
+  # 零小數幣別：JPY / KRW 沒有輔幣單位，強制兩位小數會讓 ERP 對帳看起來很怪。
+  zero_decimal_currencies: ["JPY", "KRW", "VND"]
+
+# 供應商名冊。domain 必須以 "@" 開頭：
+# 裸網域結尾比對會讓 "sales@fake-delta-circuit.example" 誤判命中，
+# 冒名者只要註冊含目標網域的網域名就能讓系統把假的「已確認」寫進狀態機。
+# 這條規則與 _shared/autonomy.py 的白名單比對紀律一致。
+suppliers:
+  - id: "nordwind"
+    name: "Nordwind Components GmbH"
+    domain: "@nordwind-components.example"
+    contact: "ops@nordwind-components.example"
+  - id: "kaohsiung"
+    name: "Kaohsiung Precision Works"
+    domain: "@kaohsiung-precision.example"
+    contact: "sales@kaohsiung-precision.example"
+  - id: "delta"
+    name: "Delta Circuit Supply"
+    domain: "@delta-circuit.example"
+    contact: "sales@delta-circuit.example"
+  - id: "osaka"
+    name: "Osaka Metal Trading"
+    domain: "@osaka-metal.example"
+    contact: "kaigai@osaka-metal.example"

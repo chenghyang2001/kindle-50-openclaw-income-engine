@@ -1,0 +1,24 @@
+{
+  "id": "WB-2026-0820",
+  "name": "製造業 AI 排程實戰工作坊",
+  "platform": "Zoom Webinar",
+  "host": "王思穎",
+  "host_title": "沛宇數位行銷 · 活動負責人",
+  "started_at": "2026-08-20T19:30:00+08:00",
+  "ended_at": "2026-08-20T21:00:00+08:00",
+  "duration_minutes": 90,
+  "registered_count": 9,
+  "recording_url": "https://example.com/webinar/wb-2026-0820/replay",
+  "slides_url": "https://example.com/webinar/wb-2026-0820/slides.pdf",
+  "key_takeaways": [
+    "排程瓶頸多半不在演算法，而在換線資訊沒有數位化",
+    "先量測換線時間分布，再談自動排程，否則優化的是錯的東西",
+    "導入順序：資料收集 → 規則引擎 → 最佳化模型，跳步是最常見的失敗原因"
+  ],
+  "next_event": {
+    "name": "換線時間量測工作坊（實作場）",
+    "starts_at": "2026-09-10T19:30:00+08:00",
+    "registration_url": "https://example.com/webinar/wb-2026-0910"
+  },
+  "note": "本檔案模擬 event.ended Webhook 的 payload；正式環境由活動平台推送。"
+}

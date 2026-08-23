@@ -1,0 +1,18 @@
+{
+  "namespace": "brightpath-ai/north-mill",
+  "period": "2026-08",
+  "automations_live": [
+    "client-onboarding",
+    "crm-enrichment",
+    "performance-dashboard",
+    "support-triage"
+  ],
+  "metrics": {
+    "tasks_completed": 954,
+    "human_review_items": 41,
+    "sla_breaches": 0,
+    "uptime_pct": 99.88
+  },
+  "incidents": [],
+  "notes": "與 acme-ops/north-mill 同名但完全無關的另一家公司——這正是隔離必須看兩層的原因。"
+}

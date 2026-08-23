@@ -1,0 +1,138 @@
+# demo23 — 董事會級財務報表自動化（Level 3 模組 #23）
+#
+# 金額與比率一律用「字串」寫（"412500.00" 而非 412500.00）：YAML 的裸數字會被解析成
+# float，進到 12 個月滾動預測時二進位誤差會被放大，董事會會看到對不起來的尾差。
+# 讀進 Python 後統一走 Decimal(str(...))。
+
+module:
+  id: "23"
+  name: "董事會級財務報表自動化"
+  # 簡報寫「部署時間 1 週」（ch07_p03 / apxG_p08）。deploy_minutes 為契約 §7 必填欄位，
+  # 這裡以 5 個工作天 × 8 小時換算，真正的權威數字是 deploy_days。
+  deploy_minutes: 2400
+  deploy_days: 7
+  # ⚠️ 36 張投影片中沒有任何一頁提供「顧問自己的內部建置工時回收」數字，
+  # 一律標記「原簡報未提供」，不推估。ROI 全部是客戶端節省（見下方 client_*）。
+  recovered_hours_per_month: null
+  client_setup_price: 3500
+  client_monthly_price: 1500
+  # 客戶端節省（apxG_p08 逐字）：每月省下資深財務 2-3 天。
+  client_recovered_days_per_month: "2-3"
+
+runtime:
+  # 財務報表對外發送，依第 04 章自主權階梯鐵律預設一律 draft。
+  # 即使日後改成 supervised_auto，approval 閘門仍獨立生效（兩者是不同層次的守門）。
+  autonomy: draft
+  approved_senders: []
+  days_in_draft: 0
+  notify_channel: console
+
+reporting:
+  # 報告期間。填 "auto" 代表「上一個月」（月結後才跑得出本模組的報表）；
+  # 這裡固定寫死一個期間，讓 `python main.py --mock` 的示範輸出可重現。
+  period: "2026-07"
+  # apxG_p08：`openclaw config set MONTH_END_DAY=last`
+  month_end_day: "last"
+  timezone: "Asia/Taipei"
+  # Windows 未安裝 tzdata 時 zoneinfo 會找不到時區，改用固定 UTC 偏移後備（+8 = 台北）。
+  fallback_utc_offset_hours: 8
+  currency: "USD"
+
+delivery:
+  # apxG_p08：`openclaw config set FD_EMAIL=<email>`、`BOARD_EMAILS=<comma-separated>`
+  # 正式部署改成 "${FD_EMAIL}" / "${BOARD_EMAILS}" 由環境變數注入；
+  # 這裡保留範例信箱，讓 `--mock` 零憑證即可跑完。
+  fd_email: "fd@example.com"
+  board_emails:
+    - "chair@example.com"
+    - "director-a@example.com"
+    - "director-b@example.com"
+
+approval:
+  # 鐵律 2：未經財務總監核准，董事會信箱一封都不會收到。
+  required: true
+  # apxG_p08：T+1 財務總監草稿審核，SLA < 2 小時；T+3 董事會正式報告發布。
+  sla_hours: "2"
+  review_offset_days: 1
+  publish_offset_days: 3
+  draft_watermark: "草稿・待財務總監審核"
+  # 相對路徑以模組目錄為基準；`--state-file` 可覆寫（測試與多客戶部署用）。
+  state_file: "state/approval.json"
+
+audit:
+  # 稽核軌跡 JSONL。`--audit-file` 或環境變數 OPENCLAW_AUDIT_LOG 可覆寫。
+  file: "audit/audit-log.jsonl"
+
+variance:
+  # apxG_p09：自動辨識變異數 Variance > 5%，並強制 AI 解釋時間差的逆轉時間點。
+  material_pct: "5"
+
+liquidity:
+  # apxG_p08：LIQUIDITY ALERT: CLOSING CASH < 60 DAYS
+  min_days_cash: 60
+
+# 五個財務資料源。scope 全部唯讀（apxG_p08 逐字），任何含 write/create/update/
+# delete/post/modify/full/admin/manage 字樣的 scope 都會被 sources.assert_read_only_scope
+# 擋下並中止流程——這不是警告，是紅線。
+sources:
+  - id: xero
+    display_name: "Xero"
+    scope: "accounting.transactions.read"
+    mock_file: "mock/xero.json"
+  - id: quickbooks
+    display_name: "QuickBooks"
+    scope: "com.intuit.quickbooks.accounting (read)"
+    mock_file: "mock/quickbooks.json"
+  - id: sage
+    display_name: "Sage"
+    scope: "sales_invoices (all read)"
+    mock_file: "mock/sage.json"
+  - id: budget
+    display_name: "年度預算檔"
+    scope: "local_file.read"
+    mock_file: "mock/budget.json"
+    # --live 時改讀 BUDGET_CSV_PATH 指向的 CSV（欄位 code,label,amount[,currency]）：
+    # openclaw config set BUDGET_CSV_PATH=./budget_2026.csv
+    live_file: "${BUDGET_CSV_PATH}"
+  - id: payroll
+    display_name: "BambooHR 薪資"
+    scope: "employees.payroll.read"
+    mock_file: "mock/payroll.json"
+
+forecast:
+  # apxG_p09：FORECAST_MODEL parameters: base, upside, downside scenarios
+  horizon_months: 12
+  scenarios:
+    base:
+      label: "Base"
+      pipeline_conversion: "1.0"
+      cost_assumption: "flat"
+    upside:
+      label: "Upside"
+      pipeline_conversion: "1.2"
+      cost_assumption: "controlled_growth"
+    downside:
+      label: "Downside"
+      pipeline_conversion: "0.8"
+      cost_assumption: "cost_reduction"
+  # ⚠️ 簡報只給了 cost_assumption 的「標籤」，沒有給對應的月成本增減率。
+  # 以下三個數字是本實作定義的預設假設，不是簡報數字；導入時應由財務總監覆寫。
+  cost_growth:
+    flat: "0.000"
+    controlled_growth: "0.015"
+    cost_reduction: "-0.020"
+
+prompts:
+  executive_summary: "prompts/executive_summary.md"
+  variance_narrative: "prompts/variance_narrative.md"
+
+live:
+  # --live 時缺少這些環境變數要明確報錯退出，不可靜默退回 mock。
+  # 全部都是唯讀憑證：本模組沒有任何寫入財務系統的程式路徑。
+  required_env:
+    - ANTHROPIC_API_KEY
+    - XERO_ACCESS_TOKEN
+    - QUICKBOOKS_ACCESS_TOKEN
+    - SAGE_ACCESS_TOKEN
+    - BAMBOOHR_API_KEY
+    - BUDGET_CSV_PATH

@@ -1,0 +1,47 @@
+{
+  "source_system": "mock/policies.json（離線示範用內部政策登錄簿，非真實客戶資料）",
+  "exported_at": "2026-08-24T08:55:00+08:00",
+  "policies": [
+    {
+      "policy_id": "POL-DP-01",
+      "policy_name": "Data protection & retention policy",
+      "owner": "compliance_officer",
+      "last_reviewed": "2026-03-01",
+      "review_cycle_days": 365,
+      "approval_body": "Risk Committee",
+      "review_clause": "This policy is reviewed annually by the Risk Committee.",
+      "clause_confidence": 0.95
+    },
+    {
+      "policy_id": "POL-AML-02",
+      "policy_name": "Anti-money-laundering procedures",
+      "owner": "compliance_officer",
+      "last_reviewed": "2025-02-10",
+      "review_cycle_days": 365,
+      "approval_body": "Board",
+      "review_clause": "Procedures must be reviewed at least every 12 months and after any regulatory change.",
+      "clause_confidence": 0.93
+    },
+    {
+      "policy_id": "POL-IS-03",
+      "policy_name": "Information security policy",
+      "owner": "it_director",
+      "last_reviewed": "2025-10-01",
+      "review_cycle_days": 365,
+      "approval_body": "Security Working Group",
+      "review_clause": "Reviewed annually or upon material change to the information estate.",
+      "clause_confidence": 0.91
+    },
+    {
+      "policy_id": "POL-WB-04",
+      "policy_name": "Whistleblowing policy",
+      "owner": "hr_director",
+      "last_reviewed": null,
+      "review_cycle_days": null,
+      "approval_body": "Board",
+      "review_clause": "Reviewed periodically in line with prevailing guidance.",
+      "clause_confidence": 0.42,
+      "clause_note": "「periodically」未定義週期，且登錄簿沒有 last_reviewed 日期"
+    }
+  ]
+}

@@ -1,0 +1,200 @@
+{
+  "system": "SAP",
+  "endpoint": "https://mes.sap.example/odata/v2/QualityShiftSet",
+  "polled_at": "2026-08-22T05:41:00+08:00",
+  "lines": [
+    {
+      "line_id": "L3",
+      "status": "ok",
+      "shifts": [
+        {
+          "shift_id": "L3-2026-08-19-A",
+          "shift_date": "2026-08-19",
+          "shift_code": "A",
+          "shift_start": "2026-08-19T08:00:00+08:00",
+          "shift_end": "2026-08-19T16:00:00+08:00",
+          "supervisor": "蔡宜家",
+          "units_produced": 995,
+          "units_defective": 3,
+          "readings": [
+            "4.5216",
+            "4.4836",
+            "4.5116",
+            "4.4766",
+            "4.5186",
+            "4.4926",
+            "4.5146",
+            "4.4856"
+          ]
+        },
+        {
+          "shift_id": "L3-2026-08-19-B",
+          "shift_date": "2026-08-19",
+          "shift_code": "B",
+          "shift_start": "2026-08-19T16:00:00+08:00",
+          "shift_end": "2026-08-20T00:00:00+08:00",
+          "supervisor": "鄭博文",
+          "units_produced": 1002,
+          "units_defective": 4,
+          "readings": [
+            "4.5203",
+            "4.4823",
+            "4.5103",
+            "4.4753",
+            "4.5173",
+            "4.4913",
+            "4.5133",
+            "4.4843"
+          ]
+        },
+        {
+          "shift_id": "L3-2026-08-19-C",
+          "shift_date": "2026-08-19",
+          "shift_code": "C",
+          "shift_start": "2026-08-20T00:00:00+08:00",
+          "shift_end": "2026-08-20T08:00:00+08:00",
+          "supervisor": "謝欣怡",
+          "units_produced": 988,
+          "units_defective": 3,
+          "readings": [
+            "4.5221",
+            "4.4841",
+            "4.5121",
+            "4.4771",
+            "4.5191",
+            "4.4931",
+            "4.5151",
+            "4.4861"
+          ]
+        },
+        {
+          "shift_id": "L3-2026-08-20-A",
+          "shift_date": "2026-08-20",
+          "shift_code": "A",
+          "shift_start": "2026-08-20T08:00:00+08:00",
+          "shift_end": "2026-08-20T16:00:00+08:00",
+          "supervisor": "蔡宜家",
+          "units_produced": 1005,
+          "units_defective": 2,
+          "readings": [
+            "4.5198",
+            "4.4818",
+            "4.5098",
+            "4.4748",
+            "4.5168",
+            "4.4908",
+            "4.5128",
+            "4.4838"
+          ]
+        },
+        {
+          "shift_id": "L3-2026-08-20-B",
+          "shift_date": "2026-08-20",
+          "shift_code": "B",
+          "shift_start": "2026-08-20T16:00:00+08:00",
+          "shift_end": "2026-08-21T00:00:00+08:00",
+          "supervisor": "鄭博文",
+          "units_produced": 992,
+          "units_defective": 4,
+          "readings": [
+            "4.5214",
+            "4.4834",
+            "4.5114",
+            "4.4764",
+            "4.5184",
+            "4.4924",
+            "4.5144",
+            "4.4854"
+          ]
+        },
+        {
+          "shift_id": "L3-2026-08-20-C",
+          "shift_date": "2026-08-20",
+          "shift_code": "C",
+          "shift_start": "2026-08-21T00:00:00+08:00",
+          "shift_end": "2026-08-21T08:00:00+08:00",
+          "supervisor": "謝欣怡",
+          "units_produced": 1010,
+          "units_defective": 3,
+          "readings": [
+            "4.5206",
+            "4.4826",
+            "4.5106",
+            "4.4756",
+            "4.5176",
+            "4.4916",
+            "4.5136",
+            "4.4846"
+          ]
+        },
+        {
+          "shift_id": "L3-2026-08-21-A",
+          "shift_date": "2026-08-21",
+          "shift_code": "A",
+          "shift_start": "2026-08-21T08:00:00+08:00",
+          "shift_end": "2026-08-21T16:00:00+08:00",
+          "supervisor": "蔡宜家",
+          "units_produced": 997,
+          "units_defective": 3,
+          "readings": [
+            "4.5219",
+            "4.4839",
+            "4.5119",
+            "4.4769",
+            "4.5189",
+            "4.4929",
+            "4.5149",
+            "4.4859"
+          ]
+        },
+        {
+          "shift_id": "L3-2026-08-21-B",
+          "shift_date": "2026-08-21",
+          "shift_code": "B",
+          "shift_start": "2026-08-21T16:00:00+08:00",
+          "shift_end": "2026-08-22T00:00:00+08:00",
+          "supervisor": "鄭博文",
+          "units_produced": 1001,
+          "units_defective": 4,
+          "readings": [
+            "4.5201",
+            "4.4821",
+            "4.5101",
+            "4.4751",
+            "4.5171",
+            "4.4911",
+            "4.5131",
+            "4.4841"
+          ]
+        },
+        {
+          "shift_id": "L3-2026-08-21-C",
+          "shift_date": "2026-08-21",
+          "shift_code": "C",
+          "shift_start": "2026-08-22T00:00:00+08:00",
+          "shift_end": "2026-08-22T08:00:00+08:00",
+          "supervisor": "謝欣怡",
+          "units_produced": 986,
+          "units_defective": 3,
+          "readings": [
+            "4.5212",
+            "4.4832",
+            "4.5112",
+            "4.4762",
+            "4.5182",
+            "4.4922",
+            "4.5142",
+            "4.4852"
+          ]
+        }
+      ]
+    },
+    {
+      "line_id": "L4",
+      "status": "no_data",
+      "reason": "MES 塗裝線邊緣節點自 2026-08-20T18:00+08:00 起無回應（OPC UA gateway 逾時）",
+      "last_seen_at": "2026-08-20T18:00:00+08:00",
+      "shifts": []
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "channel": "instagram",
+  "fetched_at": "2026-08-24T09:00:00+08:00",
+  "messages": [
+    {
+      "message_id": "ig-20260824-001",
+      "customer_name": "林湘瑜",
+      "customer_contact": "vip.lin@brightleaf-partners.com",
+      "subject": "",
+      "text": "下週三的沙發配送想改成上午時段，麻煩幫我確認一下。",
+      "received_at": "2026-08-24T08:20:00+08:00",
+      "locale": "zh-TW"
+    },
+    {
+      "message_id": "ig-20260824-002",
+      "customer_name": "Nolan Reeve",
+      "customer_contact": "nolan.reeve@example.com",
+      "subject": "",
+      "text": "你們有跟室內設計師合作嗎？我這邊想談長期配合。",
+      "received_at": "2026-08-24T08:38:00+08:00",
+      "locale": "zh-TW"
+    }
+  ]
+}

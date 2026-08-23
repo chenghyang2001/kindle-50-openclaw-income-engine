@@ -1,0 +1,94 @@
+# ============================================================================
+# brand_context.yml — Orchestrator Agent 持有的「單一真理來源」
+# 來源：apxG_p03 The Swarm Architecture（Level 3 最重要的架構頁）
+#
+# 這個檔案是整個蜂群唯一的品牌事實來源。五個 Sub-agent 初始化時都帶
+# `INHERIT_FROM_ORCHESTRATOR: true`（見 config.yaml），因此不得在任何
+# Sub-agent 端重複維護品牌資料——重複就是品牌衝突的來源。
+#
+# 為什麼整個檔案要能「整組抽換」：
+# 這份 brand_context 是 #30 白牌 AI 營運部門的共同技術底座。經銷商替
+# 每個下游客戶掛一份自己的 brand_context.yml（多租戶隔離），蜂群程式碼
+# 一行都不用改。因此本檔案禁止出現任何與程式邏輯耦合的欄位。
+# ============================================================================
+
+context_version: 1              # 每次 Orchestrator 更新會 +1，並級聯至所有 Sub-agent
+updated_at: "2026-09-06"
+tenant_slug: "torresmark"       # 多租戶隔離用的租戶代號（#30 白牌沿用同一欄位）
+
+brand:
+  name: "Torresmark 手沖咖啡工作室"
+  legal_name: "Torresmark Coffee Studio Ltd."
+  category: "精品咖啡豆訂閱與器材零售"
+  founded_year: 2019
+  positioning: "把烘焙日期當成產品規格在賣的咖啡品牌"
+  # 這三個是全渠道共用的證據，任何 Sub-agent 引用數字只能從這裡取
+  proof_points:
+    - "本季出貨豆平均烘焙後 5.2 天內送達客戶手上"
+    - "庫存週轉壓在 7 天內，滯銷豆不進訂閱箱"
+    - "訂閱制續訂率 68%（2026 上半年，樣本 1,240 位訂戶）"
+
+voice:
+  persona: "親自跑過烘豆機、講得出量測條件的經營者"
+  pronoun: "我們"
+  tone_keywords: ["具體", "克制", "有觀點", "不販賣焦慮"]
+  reading_level: "高中程度可讀"
+  # 語氣樣本少於 3 則時，Orchestrator 會發 amber（對應契約的 tone_mismatch）
+  tone_examples:
+    - "淺焙不等於酸，是萃取沒做完。把水溫從 88 度提到 93 度就知道了。"
+    - "我們把烘焙日印在袋子最顯眼的地方，等於逼自己把庫存週轉壓到七天。"
+    - "這批豆子我們自己喝了兩週才決定上架，慢是慢，但退貨率是 1.2%。"
+
+audience:
+  primary: "25-45 歲、家裡有手沖器材、一個月買 2 包以上咖啡豆的自煮族"
+  secondary: "獨立咖啡店採購（B2B 小批量）"
+  pain_points:
+    - "買到不新鮮的豆子卻無從得知烘焙日"
+    - "沖不出店裡的味道，以為是自己技術差"
+  channels_of_trust: ["Instagram", "電子報", "同好社群口碑"]
+
+# 品牌護欄：這是全渠道一致性的硬規則，違反者由 Orchestrator 標記為待修正。
+# 之所以放在 brand_context 而不是各 agent 的提示詞裡——放在提示詞裡就會有
+# 五份副本，五份副本必然在某次更新後不同步，那正是本模組要消滅的問題。
+guardrails:
+  banned_terms:
+    - "業界第一"
+    - "唯一"
+    - "保證"
+    - "最便宜"
+    - "療效"
+  required_disclosures:
+    - "促銷貼文須標示活動起訖日"
+  claim_policy: "所有數字必須附量測條件；brand.proof_points 以外的數字一律不得出現"
+  max_emoji_per_post: 3
+  requires_human_approval: true   # 對應 apxG_p05 的 approval_required: true
+
+compliance:
+  data_regions: ["TW"]
+  pii_in_prompts: false           # 名單類資料只傳雜湊 ID，不把個資餵進提示詞
+  audit_trail_required: true      # Level 3 稽核軌跡要求
+
+# STAGE_MAP：Orchestrator 持有的第二份全域狀態（apxG_p03）。
+# 決定「本週處在哪個行銷階段 -> 哪些 Sub-agent 被啟用、優先做什麼」。
+# 與 brand_context 一起級聯下去，Sub-agent 不自行決定自己該不該動。
+STAGE_MAP:
+  awareness:
+    label: "認知擴散"
+    active_agents: ["content", "social", "analytics"]
+    primary_kpi: "reach"
+    directive: "擴大觸及，先講觀點不推產品"
+  nurture:
+    label: "培育轉換"
+    active_agents: ["content", "social", "email", "analytics"]
+    primary_kpi: "email_ctr"
+    directive: "把觀點收斂成可行動建議，導向電子報訂閱"
+  conversion:
+    label: "轉換收單"
+    active_agents: ["content", "social", "email", "lead_gen", "analytics"]
+    primary_kpi: "qualified_leads"
+    directive: "全渠道推促銷，名單交付業務跟進"
+  retention:
+    label: "留存續訂"
+    active_agents: ["email", "analytics"]
+    primary_kpi: "repeat_rate"
+    directive: "只對既有訂戶溝通，社群減量避免疲乏"

@@ -1,0 +1,58 @@
+{
+  "provider": "shopify",
+  "shop": "brightleaf-living",
+  "fetched_at": "2026-08-24T09:00:00+08:00",
+  "note": "live 模式時由 Shopify Admin API 取得。欄位名稱刻意與回覆模板一致，避免回覆時再做一層對照。",
+  "orders": [
+    {
+      "order_id": "BL-20817",
+      "customer_name": "周于瑄",
+      "status": "in_transit",
+      "status_text": "已出貨，配送中",
+      "carrier": "黑貓宅急便",
+      "tracking_no": "8812-3345-9901",
+      "eta": "2026-08-26（三）14:00-18:00",
+      "items": ["橡木餐桌 160cm", "餐椅 ×4"]
+    },
+    {
+      "order_id": "BL-20911",
+      "customer_name": "David Lin",
+      "status": "preparing",
+      "status_text": "倉庫備貨中",
+      "carrier": "大型家具專車",
+      "tracking_no": "",
+      "eta": "預計 2026-08-29 出貨，出貨後專人電話確認時段",
+      "items": ["三人布沙發 Ash Grey"]
+    },
+    {
+      "order_id": "BL-20733",
+      "customer_name": "Amelia Wong",
+      "status": "delivered",
+      "status_text": "已於 2026-08-22 完成配送並簽收",
+      "carrier": "大型家具專車",
+      "tracking_no": "SP-20733-01",
+      "eta": "已送達",
+      "items": ["獨立筒床墊 King", "床架 King"]
+    },
+    {
+      "order_id": "BL-20958",
+      "customer_name": "郭柏睿",
+      "status": "backorder",
+      "status_text": "缺貨中，待補貨後出貨",
+      "carrier": "大型家具專車",
+      "tracking_no": "",
+      "eta": "預計 2026-09-10 入庫，入庫後 2 個工作天內出貨",
+      "items": ["核桃木書櫃 200cm"]
+    },
+    {
+      "order_id": "BL-21004",
+      "customer_name": "Priya Raman",
+      "status": "packed",
+      "status_text": "已包裝完成，等待物流取件",
+      "carrier": "黑貓宅急便",
+      "tracking_no": "8812-4471-2280",
+      "eta": "2026-08-25（二）09:00-13:00",
+      "items": ["邊桌 ×2"]
+    }
+  ]
+}

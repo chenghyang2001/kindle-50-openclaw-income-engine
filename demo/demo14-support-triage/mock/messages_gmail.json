@@ -1,0 +1,42 @@
+{
+  "channel": "gmail",
+  "fetched_at": "2026-08-24T09:00:00+08:00",
+  "messages": [
+    {
+      "message_id": "gm-20260824-001",
+      "customer_name": "周于瑄",
+      "customer_contact": "yuhsuan.chou@example.com",
+      "subject": "床墊試睡的問題",
+      "text": "請問你們的床墊可以先試睡嗎？我怕買回去躺起來不合適，想先確認有沒有補救的方式。",
+      "received_at": "2026-08-24T08:41:00+08:00",
+      "locale": "zh-TW"
+    },
+    {
+      "message_id": "gm-20260824-002",
+      "customer_name": "周于瑄",
+      "customer_contact": "yuhsuan.chou@example.com",
+      "subject": "訂單 BL-20817 出貨了嗎",
+      "text": "想問一下訂單 BL-20817 出貨了嗎？家裡這幾天有人在，希望能盡快收到。",
+      "received_at": "2026-08-24T08:52:00+08:00",
+      "locale": "zh-TW"
+    },
+    {
+      "message_id": "gm-20260824-003",
+      "customer_name": "許鎮宇",
+      "customer_contact": "chenyu.hsu@example.com",
+      "subject": "要求退款",
+      "text": "餐桌收到時桌面有明顯裂痕，我要求全額退款 NT$48,000。如果一週內沒有具體回覆，我會請律師處理。",
+      "received_at": "2026-08-24T07:10:00+08:00",
+      "locale": "zh-TW"
+    },
+    {
+      "message_id": "gm-20260824-004",
+      "customer_name": "Ken Sato",
+      "customer_contact": "ken.sato@example.com",
+      "subject": "好奇問一下",
+      "text": "你們客服是機器人在回，還是真人？只是好奇，沒有別的意思。",
+      "received_at": "2026-08-24T08:05:00+08:00",
+      "locale": "zh-TW"
+    }
+  ]
+}

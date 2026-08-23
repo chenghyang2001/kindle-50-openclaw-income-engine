@@ -1,0 +1,70 @@
+{
+  "generated_at": "2026-08-24T09:00:00+00:00",
+  "note": "離線測試資料：2 個經銷商，各 2 個終端客戶。brightpath-ai 底下刻意也有一個 north-mill，用來證明隔離是「經銷商 + 子客戶」兩層而非只看子客戶名稱。",
+  "resellers": [
+    {
+      "reseller_slug": "acme-ops",
+      "legal_name": "Acme Operations Partners LLC",
+      "contract_signed_at": "2026-04-02",
+      "agreement_template": "reseller-agreement-v3",
+      "brand_overrides": {
+        "display_name": "Acme Operations Cloud",
+        "legal_entity": "Acme Operations Partners LLC",
+        "support_email": "ops@acme-ops.example",
+        "primary_color": "#0B3D2E",
+        "accent_color": "#12B886",
+        "logo_asset": "assets/acme-ops-mark.svg",
+        "tone": "務實、以數字說話，面向製造與物流客戶",
+        "footer": "Acme Operations Cloud — 由您的 AI 營運部自動產出"
+      },
+      "sub_clients": [
+        {
+          "sub_client_slug": "north-mill",
+          "display_name": "North Mill Manufacturing",
+          "monthly_fee": 1500,
+          "onboarded_at": "2026-05-11",
+          "stack_tier": "tier3_anchor_automation"
+        },
+        {
+          "sub_client_slug": "harbor-freight-co",
+          "display_name": "Harbor Freight Co.",
+          "monthly_fee": 2000,
+          "onboarded_at": "2026-06-03",
+          "stack_tier": "tier2_ops_infrastructure"
+        }
+      ]
+    },
+    {
+      "reseller_slug": "brightpath-ai",
+      "legal_name": "BrightPath AI Ltd.",
+      "contract_signed_at": "2026-05-20",
+      "agreement_template": "reseller-agreement-v3",
+      "brand_overrides": {
+        "display_name": "BrightPath Operations Suite",
+        "legal_entity": "BrightPath AI Ltd.",
+        "support_email": "care@brightpath-ai.example",
+        "primary_color": "#1B1464",
+        "accent_color": "#F59F00",
+        "logo_asset": "assets/brightpath-mark.svg",
+        "tone": "溫和、面向醫療與專業服務客戶，避免誇張用語",
+        "footer": "BrightPath Operations Suite — 由您的 AI 營運部自動產出"
+      },
+      "sub_clients": [
+        {
+          "sub_client_slug": "lakeside-clinic",
+          "display_name": "Lakeside Family Clinic",
+          "monthly_fee": 1200,
+          "onboarded_at": "2026-06-18",
+          "stack_tier": "tier1_quick_wins"
+        },
+        {
+          "sub_client_slug": "north-mill",
+          "display_name": "North Mill Logistics (BrightPath)",
+          "monthly_fee": 1800,
+          "onboarded_at": "2026-07-01",
+          "stack_tier": "tier2_ops_infrastructure"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "description": "demo15 離線測試用的 CRM 交易（3 筆）。對應 SPEC #15 的 Input：CRM Deals、Meeting Notes、Company Profile。金額相關欄位一律以字串保存，避免 JSON 解析成 float 而損失精度。三筆分別涵蓋：標準案件、需折扣的大案、超出自動報價範圍需人工介入的案件。",
+  "deals": [
+    {
+      "deal_id": "NWL-2026-041",
+      "company": "Northwind Logistics",
+      "industry": "第三方物流（3PL）",
+      "contact_name": "Elena Marsh",
+      "contact_title": "營運總監",
+      "contact_email": "elena.marsh@northwind-logistics.example",
+      "company_profile": "英國中部的第三方物流商，48 名員工，主要服務電商出貨。客服與調度共用同一個信箱。",
+      "recent_news": "上季宣布與兩家跨境電商簽下三年合約，出貨量預估成長 40%。",
+      "meeting_notes": "調度團隊每天早上要手動比對三個系統的出貨異常；異常回報散在 email 與 WhatsApp，每週約有 6 小時花在追進度。營運總監希望先解決異常通報，再談報表。IT 只有一名兼任人員，不接受需要自建伺服器的方案。決策者是營運總監本人，預算需董事會月會確認。",
+      "requested_services": [
+        { "code": "discovery_workshop", "quantity": 1 },
+        { "code": "automation_module", "quantity": 2 }
+      ],
+      "narrative_fixture": "NWL-2026-041.md",
+      "case_note": "標準案件：金額未達折扣門檻，三個方案皆在自動報價範圍內。"
+    },
+    {
+      "deal_id": "HRG-2026-088",
+      "company": "Halcyon Retail Group",
+      "industry": "多品牌零售",
+      "contact_name": "Daniel Okafor",
+      "contact_title": "商務副總",
+      "contact_email": "daniel.okafor@halcyon-retail.example",
+      "company_profile": "經營 5 個服飾品牌、37 間門市與 3 個電商站台，總部行銷與營運各自使用不同的 CRM。",
+      "recent_news": "宣布合併旗下兩個電商站台，並在年底前導入統一的客戶資料平台。",
+      "meeting_notes": "五個品牌的客戶資料分散在兩套 CRM，行銷活動要人工比對名單，每檔活動前置作業約 12 小時。商務副總希望一次把五個品牌都納入，並要求整合現有 CRM。已明確表示採購量大、要求比標準價更好的條件。導入時間點必須避開年底旺季。",
+      "requested_services": [
+        { "code": "discovery_workshop", "quantity": 2 },
+        { "code": "automation_module", "quantity": 6 },
+        { "code": "crm_integration", "quantity": 2 }
+      ],
+      "requested_discount_rate": "0.12",
+      "narrative_fixture": "HRG-2026-088.md",
+      "case_note": "大案：命中 10% 折扣級距，業務另要求 12%（未超過 20% 上限，照給）。敘事 fixture 刻意含模型自行寫出的金額，用來驗證遮蔽機制。"
+    },
+    {
+      "deal_id": "MGH-2026-102",
+      "company": "Meridian Global Holdings",
+      "industry": "跨國控股（製造 + 金融服務）",
+      "contact_name": "Priya Raghunathan",
+      "contact_title": "集團數位轉型長",
+      "contact_email": "priya.raghunathan@meridian-global.example",
+      "company_profile": "橫跨 6 個國家、11 個事業體的控股集團，各事業體資訊系統彼此獨立，法遵要求高。",
+      "recent_news": "集團宣布三年數位轉型計畫，第一階段鎖定共用服務中心。",
+      "meeting_notes": "數位轉型長希望一次涵蓋 11 個事業體的流程自動化，並把過去 7 年的歷史資料全部遷移。要求三個 CRM 系統整合、六個國家的團隊各辦一場教育訓練。採購部門開口就要三成折扣。法遵要求所有對外文件必須經法務會簽。",
+      "requested_services": [
+        { "code": "discovery_workshop", "quantity": 4 },
+        { "code": "automation_module", "quantity": 10 },
+        { "code": "crm_integration", "quantity": 3 },
+        { "code": "data_migration", "quantity": 2 },
+        { "code": "training_session", "quantity": 6 }
+      ],
+      "requested_discount_rate": "0.30",
+      "narrative_fixture": "MGH-2026-102.md",
+      "case_note": "超出自動報價範圍：折扣 30% 超過 20% 上限、方案 C 的教育訓練與資料遷移數量超過 RATE_CARD 上限、方案 C 含稅建置費超過天花板。三個理由都必須被抓到並轉人工核價。"
+    }
+  ]
+}

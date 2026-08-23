@@ -1,0 +1,6 @@
+{
+  "source": "meta",
+  "week_id": "2026-W33",
+  "_comment": "「某源故障週」情境：把 config.yaml 的 sources[meta].mock_file 指到本檔即可重現。error 欄位存在時，fetch_source() 會拋 SourceError，走部分資料路徑。",
+  "error": "Meta Marketing API 回應 500（Internal Server Error），重試 3 次仍失敗"
+}

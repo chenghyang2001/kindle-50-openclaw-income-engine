@@ -1,0 +1,39 @@
+[
+  {
+    "id": "EV-9001",
+    "deal_id": "D-2203",
+    "from_stage": "lead_captured",
+    "to_stage": "discovery",
+    "occurred_at": "2026-08-24T08:00:00+08:00",
+    "source": "crm_webhook",
+    "fields": {
+      "discovery_call_at": "2026-08-24T08:00:00+08:00",
+      "discovery_notes": "品保部 5 人，送審文件每月約 30 份；上季有一次用錯版本被退件"
+    },
+    "note": "合法轉移：lead_captured -> discovery（進站條件 enrichment.score 已具備）"
+  },
+  {
+    "id": "EV-9002",
+    "deal_id": "D-2208",
+    "from_stage": "proposal_sent",
+    "to_stage": "closed_won",
+    "occurred_at": "2026-08-23T09:00:00+08:00",
+    "source": "crm_webhook",
+    "fields": {
+      "closed_at": "2026-08-23T09:00:00+08:00"
+    },
+    "note": "合法轉移：proposal_sent -> closed_won（進站條件 proposal_id + closed_at 齊備）"
+  },
+  {
+    "id": "EV-9003",
+    "deal_id": "D-2210",
+    "from_stage": "discovery",
+    "to_stage": "closed_won",
+    "occurred_at": "2026-08-24T08:45:00+08:00",
+    "source": "crm_webhook",
+    "fields": {
+      "closed_at": "2026-08-24T08:45:00+08:00"
+    },
+    "note": "**非法轉移**：discovery 不可跳過 proposal_sent 直接成交。必須被擋下並發 AMBER，交易維持在 discovery。"
+  }
+]

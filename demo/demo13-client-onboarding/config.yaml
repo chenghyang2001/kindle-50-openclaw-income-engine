@@ -1,0 +1,219 @@
+# demo13 客戶入職工作流（Client Onboarding Workflow）設定檔
+# 來源：《The OpenClaw Income Engine》第 05 章 p06 + 附錄 F p10
+#
+# 定價說明（重要）：原著兩個來源的數字不一致，本檔以**附錄 F** 為準（主 Claude 裁決），
+# 第 05 章的較高月費保留在 premium_tier 供業務端選用。詳見 README。
+
+module:
+  id: "13"
+  name: "客戶入職工作流"
+  deploy_minutes: 480              # 書中：1 Day（兩來源一致），以 8 小時工作日換算
+  recovered_hours_per_client: 8    # 書中：每位客戶回收 8 小時
+  # 以下三項是本 demo 為了換算月度數字所加的假設值，原簡報**未提供**：
+  new_clients_per_month: 4         # 假設：每月 4 位新客戶
+  hourly_rate: 75                  # 假設：內部時薪基準 $75/hr（與 Level 1 各模組一致）
+  recovered_hours_per_month: 32    # = recovered_hours_per_client × new_clients_per_month
+  # 附錄 F 定價（本模組採用）
+  client_setup_price: 900
+  client_monthly_price: 180
+  pricing_source: "appendix_f"
+  premium_tier:                    # 第 05 章定價，設置費相同、月費較高
+    client_setup_price: 900
+    client_monthly_price: 250
+    source: "chapter_05"
+
+runtime:
+  autonomy: draft                  # read_only | draft | supervised_auto
+  approved_senders: []             # supervised_auto 的白名單（完整 email 或 "@domain"）
+  days_in_draft: 0
+  notify_channel: console
+
+crm:
+  # 書中 Input：CRM Webhook 觸發 — 當交易階段變更為「Closed Won（成交）」
+  webhook_event: "deal.stage_changed"
+  trigger_deal_stage: "Closed Won"
+  # 書中 After：轉為 Closed Won 瞬間觸發，60 秒內寄出專屬歡迎包與預約連結
+  welcome_sla_seconds: 60
+
+scheduling:
+  # 書中架構關鍵：串接 Calendly 消除排程摩擦
+  calendly_base_url: "https://calendly.com"
+  kickoff_event_slug: "kickoff-30min"
+  kickoff_duration_minutes: 30
+  timezone_label: "Asia/Taipei"
+
+notifications:
+  agency_name: "OpenClaw Agency"
+  # 書中 Output：通知內部 Slack #new-clients 頻道
+  slack_channel: "#new-clients"
+  # 書中 Output：以專屬客戶經理的名義發送高度個人化的首封歡迎信（Day 0）
+  sender_role: account_manager
+
+onboarding:
+  # mock 模式的「現在」。固定時間才能讓 --mock 每次輸出一致（可重現的 demo）
+  reference_now: "2026-09-30T09:00:00"
+
+  # ONBOARDING_SEQUENCE（書中原名）：Day 0 到 Day 30 的時間軸。
+  # 順序必須與 state_machine.STAGE_EVENTS 一致，day 不可倒退（啟動時會驗證）。
+  sequence:
+    - key: welcome_pack
+      name: "Day 0 歡迎包"
+      day: 0
+      owner_role: account_manager
+      required_fields:
+        - company
+        - contact_name
+        - contact_email
+        - sales_notes
+        - account_manager.name
+        - account_manager.email
+      deliverables:
+        - "個人化歡迎信（以專屬客戶經理名義具名發出）"
+        - "《歡迎手冊》Welcome Pack（WELCOME_PACK_TEMPLATE 動態插入客戶資料）"
+        - "Slack #new-clients 內部通知"
+      templates: [welcome_pack, slack_new_client]
+
+    - key: kickoff_booking
+      name: "Day 0 啟動會議預約連結"
+      day: 0
+      owner_role: account_manager
+      required_fields:
+        - contact_email
+        - account_manager.name
+        - account_manager.calendly_slug
+      deliverables:
+        - "對應負責人的 Calendly 啟動會議連結"
+      templates: [kickoff_invite]
+
+    - key: kickoff_meeting
+      name: "啟動會議（Kick-off）"
+      # 原簡報只說明 Day 0 -> Day 30 時間軸，未指定啟動會議的確切天數。
+      # 本 demo 取 Day 3；代理商依客戶節奏調整即可，不需改程式碼。
+      day: 3
+      owner_role: account_manager
+      required_fields:
+        - kickoff_booked_at
+        - account_manager.name
+      deliverables:
+        - "啟動會議紀錄與後續行動項"
+      templates: [kickoff_meeting]
+
+    - key: day7_checkin
+      name: "Day 7 主動關心"
+      day: 7                       # 書中：第 7 天自動關心
+      owner_role: account_manager
+      required_fields:
+        - contact_email
+        - account_manager.name
+      deliverables:
+        - "第 7 天主動關心信（三個問題，回信一句話即可）"
+      templates: [day7_checkin]
+
+    - key: day30_review
+      name: "Day 30 成效回顧提醒"
+      day: 30                      # 書中：第 30 天提醒
+      owner_role: account_manager
+      required_fields:
+        - contact_email
+        - account_manager.name
+        - account_manager.calendly_slug
+      deliverables:
+        - "30 天成效回顧邀約 + 下一階段優先順序確認"
+      templates: [day30_review]
+
+# 書中架構關鍵：使用 WELCOME_PACK_TEMPLATE 動態插入客戶資料。
+# 樣板放設定檔而非程式碼——換客戶只改 YAML，不動 .py，也不必重跑測試。
+templates:
+  welcome_pack: |
+    主旨：{company} × {agency_name}｜歡迎加入，我是你的專屬窗口 {am_name}
+
+    {contact_name} 你好：
+
+    很高興 {company} 正式成為我們的客戶。我是 {am_name}，
+    接下來 {onboarding_days} 天的入職由我全程負責，你只需要對我一個人。
+
+    你在洽談時提到的重點，我已經整理進這次的《歡迎手冊》：
+    {sales_notes}
+
+    接下來的時間軸（每一步我都會主動找你，不用你追）：
+    {timeline}
+
+    第一步：挑一個方便的時間，我們開 {kickoff_minutes} 分鐘的啟動會議。
+    {kickoff_link}
+
+    有任何問題直接回這封信，我看得到。
+
+    {am_name}
+    {am_email}
+
+  slack_new_client: |
+    [Slack {slack_channel}] 新客戶成交｜{company}
+    聯絡人：{contact_name} <{contact_email}>
+    專屬客戶經理：{am_name}
+    成交時間：{closed_won_at}｜方案：{plan}
+    歡迎包：{delivery_label}（自主權層級：{autonomy_level}）
+    啟動會議連結：{kickoff_link}
+
+  kickoff_invite: |
+    主旨：{company}｜啟動會議預約連結（{kickoff_minutes} 分鐘）
+
+    {contact_name} 你好：
+
+    這是我的專屬預約連結，挑一個方便的時段即可，系統會自動送出會議邀請，
+    不需要我們來回對時間。
+
+    {kickoff_link}
+
+    {am_name}
+
+  kickoff_meeting: |
+    [內部] {company} 啟動會議提醒（{stage_name}，Day {stage_day}）
+    負責人：{am_name}
+    預約時間：{kickoff_booked_at}
+    會議連結：{kickoff_link}
+    議程：確認目標與成功指標、交付節奏、雙方窗口、第一個里程碑
+
+  day7_checkin: |
+    主旨：{company}｜第 7 天了，一切都順利嗎？
+
+    {contact_name} 你好：
+
+    合作滿一週，想跟你確認三件事：
+      1. 目前的交付節奏對你來說合適嗎？
+      2. 有沒有卡住、需要我去協調的窗口？
+      3. 你最希望在第 30 天看到的成果是什麼？
+
+    回信一句話就好，我來安排。
+
+    {am_name}
+
+  day30_review: |
+    主旨：{company}｜30 天成效回顧與下一階段規劃
+
+    {contact_name} 你好：
+
+    今天是合作的第 30 天。我整理好了這段期間的執行紀錄，
+    想跟你約 {kickoff_minutes} 分鐘做一次成效回顧，同時確認下一季的優先順序。
+
+    預約連結：{kickoff_link}
+
+    {am_name}
+
+state:
+  # 相對於本模組目錄（main.py 以 Path(__file__).parent 展開，禁止硬編碼絕對路徑）。
+  # 這個檔案就是冪等性的實體憑據：刪了它，所有客戶都會被重寄一次歡迎信。
+  store_file: "state/onboarding.json"
+
+mock:
+  clients_file: "mock/clients.json"
+
+prompts:
+  welcome_file: "prompts/welcome_pack.md"
+  checkin_file: "prompts/checkin.md"
+
+channel:
+  telegram:
+    bot_token: "${TELEGRAM_BOT_TOKEN}"
+    chat_id: "${TELEGRAM_CHAT_ID_CHENGHYANG2001BOT}"
+  line:
+    channel_token: "${LINE_CHANNEL_TOKEN}"

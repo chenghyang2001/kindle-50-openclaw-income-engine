@@ -1,0 +1,53 @@
+{
+  "registry_version": "2026-08-24",
+  "currency": "TWD",
+  "period_label": "2026-W34（08/17–08/23）",
+  "_note": "LOCATION_REGISTRY：異質 API 的據點名冊。adapter 決定用哪個標準化器，minor_unit_scale 決定金額要除以 10^n（Square 回傳最小貨幣單位整數）。",
+  "locations": [
+    {
+      "site_id": "tpe-xinyi",
+      "display_name": "台北信義旗艦店",
+      "region": "北區",
+      "manager_actor": "mgr.xinyi@example.com",
+      "adapter": "shopify",
+      "minor_unit_scale": 0,
+      "mock_file": "mock/site-tpe-xinyi.json"
+    },
+    {
+      "site_id": "tpe-zhongshan",
+      "display_name": "台北中山店",
+      "region": "北區",
+      "manager_actor": "mgr.zhongshan@example.com",
+      "adapter": "square",
+      "minor_unit_scale": 2,
+      "mock_file": "mock/site-tpe-zhongshan.json"
+    },
+    {
+      "site_id": "txg-fengjia",
+      "display_name": "台中逢甲店",
+      "region": "中區",
+      "manager_actor": "mgr.fengjia@example.com",
+      "adapter": "pos",
+      "minor_unit_scale": 0,
+      "mock_file": "mock/site-txg-fengjia.json"
+    },
+    {
+      "site_id": "khh-boai",
+      "display_name": "高雄博愛店",
+      "region": "南區",
+      "manager_actor": "mgr.boai@example.com",
+      "adapter": "shopify",
+      "minor_unit_scale": 0,
+      "mock_file": "mock/site-khh-boai.json"
+    },
+    {
+      "site_id": "tnn-east",
+      "display_name": "台南東區店",
+      "region": "南區",
+      "manager_actor": "mgr.tnneast@example.com",
+      "adapter": "pos",
+      "minor_unit_scale": 0,
+      "mock_file": "mock/site-tnn-east.json"
+    }
+  ]
+}

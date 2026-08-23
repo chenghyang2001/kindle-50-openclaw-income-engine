@@ -1,0 +1,168 @@
+# demo14 多渠道客服分流 — 設定檔
+# 所有路徑都相對於本檔所在目錄，禁止硬編碼絕對路徑。
+# 金鑰一律只寫「環境變數名稱」，不寫值。
+
+module:
+  id: "14"
+  name: "多渠道客服分流"
+  # 書中部署時間為 1 Day，以 8 小時工作日換算
+  deploy_minutes: 480
+  # 書中：每週回收 25+ 小時（客服團隊合計）→ 25 × 4.33 週 ≈ 108 小時/月
+  recovered_hours_per_month: 108
+  # 定價以附錄 F 為準（第 05 章另有一組較高的 $1,100 + $300，見 README「定價來源不一致」）
+  client_setup_price: 800
+  client_monthly_price: 190
+
+runtime:
+  # 預設 draft：自動回覆一律先當草稿，等人審過。
+  # 要真的做到書中「2 分鐘內回覆」必須調成 supervised_auto 並填白名單，
+  # 且書中鐵律要求先跑滿 14 天草稿模式（days_in_draft）。
+  autonomy: draft
+  approved_senders: []
+  days_in_draft: 0
+  notify_channel: console
+
+# ── 兩條安全鐵律：設成 false 也會被程式強制覆寫回 true，並發出琥珀警示 ──
+safety:
+  # 退款/爭議一律 DO NOT PROCESS（apxF_p12）
+  refund_dispute_do_not_process: true
+  # 自動回覆必須誠實揭露 AI 身分，不得冒充真人
+  never_claim_human: true
+
+persona:
+  agent_name: "Nova"
+  brand_name: "Brightleaf Living"
+  tone: "簡潔、有禮、直接給答案；不過度道歉，不用罐頭句"
+  language: "繁體中文"
+  greeting: "{NAME} 您好，這裡是 Brightleaf Living 客服："
+  # never_claim_human 的正面要求：每一則自動回覆都必須帶這句
+  ai_disclosure: "（我是 Brightleaf Living 的 AI 客服助理 Nova，需要真人協助請回覆「真人」，我會立刻轉接。）"
+  # never_claim_human 的反面防線：回覆中出現以下任一措辭就取消自動回覆、改升級真人
+  human_impersonation_phrases:
+    - "我是真人"
+    - "我不是機器人"
+    - "本人親自"
+    - "專員親自回覆"
+    - "由我本人處理"
+    - "我這邊幫您人工"
+    - "真人客服為您服務"
+    - "i am a human"
+    - "i'm a human"
+    - "not a bot"
+    - "speaking with a real person"
+  # 退款/爭議專用。只確認收到、只給時限；不認責、不談金額、不說處理結果。
+  holding_response_template: |
+    {NAME} 您好，我們已收到您關於退款／款項爭議的來訊，並已轉交專責同事處理。
+    此類案件一律由真人審閱，我們會在一個工作日內與您聯繫說明後續。
+
+triage:
+  # 書中規格：一般問題 2 分鐘內回覆
+  response_target_minutes: 2
+  # 一般問題回覆長度上限（書中：< 100 字）。身分揭露句不計入。
+  reply_max_words: 100
+  # live 模式各渠道抓取間隔秒數（程式強制不得低於 1.0）
+  fetch_delay_seconds: 1.0
+  # 去重狀態檔名；實際路徑由程式以 Path(__file__).parent 推算
+  handled_state_file: ".handled.json"
+  # 訂單編號格式（正規表達式，第一個捕捉群組即編號）
+  order_id_pattern: "\\b(BL-\\d{5})\\b"
+  # 書中 ESCALATION_RULES 的金額門檻：達此金額的爭議升為高優先。
+  # 注意：門檻只影響「優先度」，不影響「是否自動回覆」——退款永遠不自動回覆。
+  refund_amount_threshold: 3000
+  # VIP 名單（比對 customer_contact 完整字串，不分大小寫）
+  vip_contacts:
+    - "vip.lin@brightleaf-partners.com"
+    - "chen.enterprise@brightleaf-partners.com"
+
+  signals:
+    # 退款 / 爭議：命中即 DO NOT PROCESS。寧可誤升級，不可誤自動回覆。
+    refund_dispute:
+      - "退款"
+      - "退費"
+      - "退錢"
+      - "退貨"
+      - "爭議款"
+      - "拒付"
+      - "重複扣款"
+      - "扣款錯誤"
+      - "刷退"
+      - "申訴"
+      - "refund"
+      - "chargeback"
+      - "dispute"
+    # 負面情緒 / VIP / 法務：命中即 Immediate Flag，高優先升級
+    negative_vip_legal:
+      - "律師"
+      - "法務"
+      - "訴訟"
+      - "提告"
+      - "告你們"
+      - "消保官"
+      - "消基會"
+      - "投訴"
+      - "客訴"
+      - "詐騙"
+      - "太誇張"
+      - "最爛"
+      - "失望透頂"
+      - "再也不"
+      - "legal"
+      - "lawyer"
+      - "sue"
+    # 訂單狀態：查訂單系統後自動回覆
+    order_status:
+      - "到哪"
+      - "到貨"
+      - "出貨"
+      - "物流"
+      - "宅配"
+      - "配送進度"
+      - "運送"
+      - "追蹤"
+      - "訂單編號"
+      - "什麼時候到"
+      - "何時送達"
+      - "tracking"
+      - "shipped"
+
+knowledge_base:
+  # 書中規格：30-50 條常見問答（少於 30 或多於 50 會發琥珀警示）
+  file: "mock/knowledge_base.json"
+  # 至少要命中幾個關鍵字才算比對成功；未達門檻一律升級真人，不猜答案
+  match_min_score: 2
+
+orders:
+  provider: "shopify"
+  mock_file: "mock/orders.json"
+  api_url: "https://brightleaf-living.myshopify.com/admin/api/2024-07/orders.json"
+  token_env: "SHOPIFY_ADMIN_TOKEN"
+
+# 多渠道統一收件（apxF_p11）。單一渠道失敗不會中斷其他渠道。
+channels:
+  - id: gmail
+    name: "客服信箱（Gmail）"
+    enabled: true
+    mock_file: "mock/messages_gmail.json"
+    api_url: "https://gmail.googleapis.com/gmail/v1/users/me/messages"
+    token_env: "GMAIL_ACCESS_TOKEN"
+
+  - id: intercom
+    name: "網站即時客服（Intercom）"
+    enabled: true
+    mock_file: "mock/messages_intercom.json"
+    api_url: "https://api.intercom.io/conversations"
+    token_env: "INTERCOM_ACCESS_TOKEN"
+
+  - id: whatsapp
+    name: "WhatsApp Business"
+    enabled: true
+    mock_file: "mock/messages_whatsapp.json"
+    api_url: "https://graph.facebook.com/v20.0/PHONE_NUMBER_ID/messages"
+    token_env: "WHATSAPP_ACCESS_TOKEN"
+
+  - id: instagram
+    name: "Instagram 私訊"
+    enabled: true
+    mock_file: "mock/messages_instagram.json"
+    api_url: "https://graph.facebook.com/v20.0/IG_USER_ID/conversations"
+    token_env: "INSTAGRAM_ACCESS_TOKEN"

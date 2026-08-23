@@ -1,0 +1,51 @@
+{
+  "source_system": "mock/licences.json（離線示範用執照台帳，非真實客戶資料）",
+  "exported_at": "2026-08-24T08:55:00+08:00",
+  "licences": [
+    {
+      "licence_id": "LIC-FCA-2211",
+      "licence_name": "Financial services intermediary permission",
+      "issuing_authority": "Financial Conduct Authority",
+      "jurisdiction": "UK",
+      "issued_date": "2024-07-01",
+      "expiry_date": "2027-06-30",
+      "owner": "compliance_officer",
+      "renewal_clause": "Permission remains valid until 30 June 2027 subject to annual fee payment.",
+      "clause_confidence": 0.94
+    },
+    {
+      "licence_id": "LIC-ISO-27001",
+      "licence_name": "ISO/IEC 27001 certification",
+      "issuing_authority": "BSI Assurance UK Ltd",
+      "jurisdiction": "UK",
+      "issued_date": "2023-10-09",
+      "expiry_date": "2026-10-08",
+      "owner": "it_director",
+      "renewal_clause": "Certificate expires 08 October 2026. Recertification audit must be completed before expiry.",
+      "clause_confidence": 0.92
+    },
+    {
+      "licence_id": "LIC-HAZ-0071",
+      "licence_name": "Hazardous substances storage permit",
+      "issuing_authority": "Environment Agency",
+      "jurisdiction": "UK",
+      "issued_date": "2025-09-02",
+      "expiry_date": "2026-09-01",
+      "owner": "facilities_lead",
+      "renewal_clause": "Permit valid to 01 September 2026. Operating without a valid permit is a criminal offence.",
+      "clause_confidence": 0.97
+    },
+    {
+      "licence_id": "LIC-EXP-5540",
+      "licence_name": "Dual-use export licence",
+      "issuing_authority": null,
+      "jurisdiction": "EU",
+      "issued_date": "2025-11-30",
+      "expiry_date": "2026-11-30",
+      "owner": "procurement_head",
+      "renewal_clause": "Licence expires 30 November 2026.",
+      "clause_confidence": 0.9,
+      "clause_note": "匯出檔缺 issuing_authority，無法判斷送件窗口"
+    }
+  ]
+}

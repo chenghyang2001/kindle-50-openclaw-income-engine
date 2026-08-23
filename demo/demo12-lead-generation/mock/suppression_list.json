@@ -1,0 +1,14 @@
+[
+  {
+    "entry": "sun.chiawei@taiwen-precision.com",
+    "scope": "email",
+    "reason": "2026-07-02 回信要求停止聯繫並刪除既有資料（GDPR 第 17 條 / 個資法第 11 條）",
+    "added_at": "2026-07-02"
+  },
+  {
+    "entry": "@quitclaim-holdings.com",
+    "scope": "domain",
+    "reason": "2026-05-18 法務來函要求整個網域列入拒絕聯繫名單",
+    "added_at": "2026-05-18"
+  }
+]

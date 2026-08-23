@@ -1,0 +1,14 @@
+{
+  "_schema": "square-payments-summary",
+  "location_id": "SQ-TPE-ZS-001",
+  "labor": {"hours": "715"},
+  "payments_summary": [
+    {"date": "2026-08-17", "amount_money": {"amount": 11800000, "currency": "TWD"}, "refunded_money": {"amount": 200000, "currency": "TWD"}, "payment_count": 340, "customer_count": 2050},
+    {"date": "2026-08-18", "amount_money": {"amount": 12500000, "currency": "TWD"}, "refunded_money": {"amount": 180000, "currency": "TWD"}, "payment_count": 355, "customer_count": 2120},
+    {"date": "2026-08-19", "amount_money": {"amount": 13200000, "currency": "TWD"}, "refunded_money": {"amount": 220000, "currency": "TWD"}, "payment_count": 375, "customer_count": 2250},
+    {"date": "2026-08-20", "amount_money": {"amount": 14000000, "currency": "TWD"}, "refunded_money": {"amount": 250000, "currency": "TWD"}, "payment_count": 395, "customer_count": 2380},
+    {"date": "2026-08-21", "amount_money": {"amount": 13500000, "currency": "TWD"}, "refunded_money": {"amount": 230000, "currency": "TWD"}, "payment_count": 382, "customer_count": 2300},
+    {"date": "2026-08-22", "amount_money": {"amount": 12800000, "currency": "TWD"}, "refunded_money": {"amount": 210000, "currency": "TWD"}, "payment_count": 360, "customer_count": 2180},
+    {"date": "2026-08-23", "amount_money": {"amount": 11700000, "currency": "TWD"}, "refunded_money": {"amount": 210000, "currency": "TWD"}, "payment_count": 313, "customer_count": 1920}
+  ]
+}

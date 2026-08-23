@@ -1,0 +1,152 @@
+{
+  "property": "https://www.northfield-wms.example.com/",
+  "source": "Google Search Console — 成效報表（查詢維度）匯出",
+  "date_range": {
+    "start": "2026-07-27",
+    "end": "2026-08-23",
+    "days": 28
+  },
+  "notes": "離線示範樣本。position 為期間平均排名，difficulty 為 SEMrush KD（0-100）。刻意混入三類資料：位置 8-20 的可攻擊字、位置 1-7 的已排名字、位置 20 之後的遠端字，另有兩筆會被曝光量/難度門檻擋下，用來示範篩選邏輯。",
+  "rows": [
+    {
+      "query": "wms 是什麼",
+      "position": 4.6,
+      "impressions": 5400,
+      "clicks": 620,
+      "difficulty": 41
+    },
+    {
+      "query": "倉儲管理系統",
+      "position": 6.9,
+      "impressions": 4800,
+      "clicks": 310,
+      "difficulty": 58
+    },
+    {
+      "query": "北原倉儲科技",
+      "position": 1.2,
+      "impressions": 3200,
+      "clicks": 1580,
+      "difficulty": 8
+    },
+    {
+      "query": "erp 系統 比較",
+      "position": 22.8,
+      "impressions": 2900,
+      "clicks": 14,
+      "difficulty": 66
+    },
+    {
+      "query": "庫存盤點 表格 範本",
+      "position": 15.2,
+      "impressions": 2480,
+      "clicks": 63,
+      "difficulty": 29
+    },
+    {
+      "query": "庫存週轉率 怎麼算",
+      "position": 8.3,
+      "impressions": 2110,
+      "clicks": 96,
+      "difficulty": 27
+    },
+    {
+      "query": "倉儲管理系統 費用",
+      "position": 12.4,
+      "impressions": 1840,
+      "clicks": 41,
+      "difficulty": 38
+    },
+    {
+      "query": "智慧倉儲 解決方案",
+      "position": 27.5,
+      "impressions": 1750,
+      "clicks": 8,
+      "difficulty": 52
+    },
+    {
+      "query": "wms 與 erp 差異",
+      "position": 11.1,
+      "impressions": 1560,
+      "clicks": 72,
+      "difficulty": 45
+    },
+    {
+      "query": "wms 系統 導入 流程",
+      "position": 9.7,
+      "impressions": 1320,
+      "clicks": 58,
+      "difficulty": 34
+    },
+    {
+      "query": "倉儲 kpi 指標",
+      "position": 10.5,
+      "impressions": 1290,
+      "clicks": 47,
+      "difficulty": 36
+    },
+    {
+      "query": "庫存管理 app 推薦",
+      "position": 25.1,
+      "impressions": 1180,
+      "clicks": 5,
+      "difficulty": 55
+    },
+    {
+      "query": "倉儲管理系統 推薦",
+      "position": 19.4,
+      "impressions": 980,
+      "clicks": 12,
+      "difficulty": 61
+    },
+    {
+      "query": "第三方物流 3pl 選擇",
+      "position": 29.3,
+      "impressions": 870,
+      "clicks": 3,
+      "difficulty": 44
+    },
+    {
+      "query": "條碼揀貨 效率",
+      "position": 18.6,
+      "impressions": 640,
+      "clicks": 9,
+      "difficulty": 31
+    },
+    {
+      "query": "揀貨路徑 最佳化 演算法",
+      "position": 34.2,
+      "impressions": 520,
+      "clicks": 1,
+      "difficulty": 47
+    },
+    {
+      "query": "小型倉庫 管理 方法",
+      "position": 16.8,
+      "impressions": 410,
+      "clicks": 6,
+      "difficulty": 24
+    },
+    {
+      "query": "出貨單 自動化",
+      "position": 21.6,
+      "impressions": 340,
+      "clicks": 2,
+      "difficulty": 26
+    },
+    {
+      "query": "倉庫 溫濕度 監控",
+      "position": 41.0,
+      "impressions": 260,
+      "clicks": 0,
+      "difficulty": 33
+    },
+    {
+      "query": "wms 導入 失敗 原因",
+      "position": 13.9,
+      "impressions": 95,
+      "clicks": 2,
+      "difficulty": 22
+    }
+  ]
+}

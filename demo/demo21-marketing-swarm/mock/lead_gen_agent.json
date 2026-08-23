@@ -1,0 +1,46 @@
+{
+  "agent_id": "lead_gen",
+  "produced": 63,
+  "unit": "名單/週",
+  "source_breakdown": {
+    "landing_page": 24,
+    "instagram_dm": 18,
+    "event": 12,
+    "referral": 9
+  },
+  "score_distribution": {
+    "75_plus": 21,
+    "40_to_74": 42,
+    "below_40_dropped": 11
+  },
+  "samples": [
+    {
+      "id": "L-001",
+      "lead_ref": "sha256:8f21c4d0a7",
+      "segment": "自煮族",
+      "source": "landing_page",
+      "score": 82,
+      "signals": ["下載手沖參數表", "30 天內回訪 4 次"],
+      "has_consent": true
+    },
+    {
+      "id": "L-018",
+      "lead_ref": "sha256:31be99f402",
+      "segment": "獨立咖啡店採購",
+      "source": "event",
+      "score": 74,
+      "signals": ["展場索取小批量報價", "詢問固定烘焙排程"],
+      "has_consent": true
+    },
+    {
+      "id": "L-047",
+      "lead_ref": "sha256:c05a17e6bb",
+      "segment": "自煮族",
+      "source": "referral",
+      "score": 61,
+      "signals": ["既有訂戶推薦", "尚未造訪落地頁"],
+      "has_consent": true
+    }
+  ],
+  "blockers": ["展場名單的同意紀錄是紙本，需人工補建檔後才可進 CRM"]
+}

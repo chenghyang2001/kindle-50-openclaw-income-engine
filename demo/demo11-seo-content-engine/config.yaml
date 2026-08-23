@@ -1,0 +1,148 @@
+# 模組 #11：SEO 內容引擎（SEO Content Engine）— 設定檔
+#
+# 這份檔案等同附錄F p04 所說的 `context.json`（環境與規則）：
+# 觸發條件（trigger）、整合金鑰（*_env）、商業變數（SEED_TOPICS / 選字門檻 / 定價）。
+# 角色與任務（apxF 的 `prompt.txt`）則放在 prompts/*.md。
+#
+# 所有路徑都相對於本檔所在目錄，禁止硬編碼絕對路徑。
+
+module:
+  id: "11"
+  name: "SEO 內容引擎"
+  # 書中兩來源都寫「1 Day」；以 8 小時工作日換算成分鐘
+  deploy_minutes: 480
+  # 每週回收 15+ 小時 × 4.33 週 ≈ 65 小時/月。
+  # 用 $75/hr 回推，正好對上書中「內部價值 $4,125–$4,875/mo」的上緣（65 × 75 = 4,875）。
+  recovered_hours_per_month: 65
+  # 定價以附錄F（apxF_p05）為準 —— 這是主線報價
+  client_setup_price: 750
+  client_monthly_price: 200
+  pricing_source: "附錄F apxF_p05"
+  # 第05章（ch05_p04）另有一組較高的報價，本專案列為 premium tier 並存不取捨
+  premium_setup_price: 1500
+  premium_monthly_price: 400
+  premium_pricing_source: "第05章 ch05_p04"
+
+runtime:
+  # 預設 draft：SEO 文章掛上客戶網域就是對外發言，錯字、錯誤數據、幻覺案例
+  # 都會被 Google 索引後長期留存。撤稿成本遠高於每週一次的人工審閱。
+  autonomy: draft
+  approved_senders: []
+  days_in_draft: 0
+  notify_channel: console
+
+trigger:
+  # apxF_p04 的 context.json 範例逐字：{"type": "cron", "schedule": "0 8 * * 1"}
+  type: cron
+  schedule: "0 8 * * 1"
+  # 原書未指定時區；台灣客戶部署時填 Asia/Taipei，週一上班前簡報就在信箱裡
+  timezone: "Asia/Taipei"
+
+search_data:
+  # apxF_p05 Input：Google Search Console / SEMrush / Webflow-WordPress
+  provider: google_search_console
+  # live 模式要串真實 GSC API 時，網址從這個環境變數讀（不寫死在檔案裡）
+  property_url_env: "GSC_PROPERTY_URL"
+  # 目前的資料來源是 GSC「成效報表」匯出檔；API 直連尚未實作（見 README 已知限制）
+  export_file: "mock/search_console.json"
+  lookback_days: 28
+  # ch05_p04：Agent 自動抓取 Top 12 關鍵字
+  top_keywords: 12
+  striking_distance:
+    # apxF_p04 的 prompt.txt 逐字：prefer keywords where the site ranks position 8-20
+    # 為何是 8-20：已經有排名但在第一頁外，補一篇好內容就有機會擠進前段；
+    # 位置 1-7 再寫增量有限，位置 20 以後多半是內容以外的問題（權重、外鏈）。
+    position_min: 8
+    position_max: 20
+  # 曝光量太低的字寫了也沒人看；難度太高的字單靠一篇文章追不上
+  min_impressions: 120
+  max_difficulty: 55
+
+content_settings:
+  # apxF_p04 的 context.json 逐字：{"content_settings": {"articles_per_week": 3}}
+  articles_per_week: 3
+  # apxF_p05 Phase 2：根據 H2 大綱草擬 1500 字文章（包含 FAQ 結構）
+  target_words: 1500
+  min_words: 1200
+  # 上限不是 1500 的 hard cap：字數是手段不是目的，2600 是「編輯還願意審」的實務上限，
+  # 超過就代表模型在鋪陳。--mock 的離線組稿每段都寫滿，本來就會落在 2000 上下。
+  max_words: 2600
+  faq_questions: 4
+  h2_sections: 5
+
+  brand_profile_file: "mock/brand_profile.json"
+
+  # SEED_TOPICS：apxF_p05 Processing 的核心商業變數。
+  # 這是客戶唯一需要維護的欄位，決定 Agent 往哪個方向擴長尾字。
+  seed_topics:
+    - "倉儲管理系統"
+    - "庫存盤點"
+    - "條碼揀貨"
+    - "庫存週轉率"
+    - "WMS 導入"
+
+  # 種子主題 × 修飾詞 = 長尾字擴展。只有在 GSC 既有字不夠用時才會動用，
+  # 因為這些字沒有實際曝光數據，屬於推測性題目。
+  long_tail_modifiers:
+    - "怎麼做"
+    - "費用"
+    - "流程"
+    - "範本"
+    - "常見錯誤"
+
+  # H2 大綱樣板。kind 決定離線組稿要用哪一套段落邏輯，heading 是實際標題。
+  outline_patterns:
+    - kind: definition
+      heading: "{keyword}是什麼？先把範圍定義清楚"
+    - kind: pain
+      heading: "為什麼{seed}總是卡住：三個最常見的瓶頸"
+    - kind: howto
+      heading: "{keyword}的實際做法：從現況盤點到上線"
+    - kind: cost
+      heading: "導入成本與時程怎麼估"
+    - kind: mistakes
+      heading: "常見錯誤，以及怎麼避開"
+
+  faq_patterns:
+    - "{keyword}大概要準備多少預算？"
+    - "{keyword}從評估到上線要多久？"
+    - "只有一個小倉庫，也需要處理{seed}嗎？"
+    - "{keyword}會跟現有的 ERP 衝突嗎？"
+
+  internal_links:
+    # apxF_p05：產出完整草稿與「內部連結建議」
+    site_pages_file: "mock/site_pages.json"
+    max_per_article: 3
+    min_per_article: 2
+
+cms:
+  # apxF_p05 Output：草稿推送至 CMS 待發布
+  provider: wordpress
+  api_base_env: "WORDPRESS_API_BASE"
+  token_env: "WORDPRESS_APP_PASSWORD"
+  # 推送 API 尚未實作，本模組產出 payload 供人工或後續整合使用（見 README 已知限制）
+  push_enabled: false
+  default_status: draft
+  category: "倉儲知識庫"
+  author: "編輯台"
+
+state:
+  # 已產出過的關鍵字，避免每週一又選到同一題。
+  # 檔名以 . 開頭且在專案 .gitignore 內；要換位置用 --state-file。
+  published_file: ".state.json"
+  # 同一個關鍵字幾天後可以再寫一次（改版、補充）
+  cooldown_days: 90
+
+prompts:
+  topic_selection: "prompts/topic_selection.md"
+  article_drafting: "prompts/article_drafting.md"
+
+economics:
+  # 客戶端價值換算用的時薪（與 bundle-quickstart 的口徑一致）
+  hourly_rate: 75
+  # ch05_p04 原文：內部價值 $4,125–$4,875/mo
+  internal_value_low: 4125
+  internal_value_high: 4875
+  # ch05_p04 原文痛點：完整內容行銷外包每月 $3k–$5k
+  outsourcing_monthly_low: 3000
+  outsourcing_monthly_high: 5000

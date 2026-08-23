@@ -1,0 +1,150 @@
+# 模組 #22 — 全漏斗業務自動化（Full Sales Pipeline Automation）
+# 定價以「附錄G 模組頁 / 第07章矩陣」為準：$4,500 setup + $2,000/mo
+# （apxG_p20 的 Commercial Matrix 把 #21–#30 十欄全填 $8,000-$10,000 + $4,000-$6,000，
+#   十欄同值＝模板佔位，只作銷售話術用的價格帶，不採用為本模組定價。）
+# 內部回收工時：原簡報未提供，不推估。
+
+module:
+  id: "22"
+  name: "全漏斗業務自動化"
+  deploy_minutes: 2400          # 書中「1 週」部署，以每日 8 小時 × 5 天估算的分鐘數
+  recovered_hours_per_month: 0  # 原簡報未提供「顧問端內部回收」；0 代表未知而非零
+  client_setup_price: 4500
+  client_monthly_price: 2000
+
+runtime:
+  autonomy: draft               # read_only | draft | supervised_auto
+  approved_senders: []          # supervised_auto 必填白名單（email 或 "@domain"）
+  days_in_draft: 0              # 未滿 14 天就開 supervised_auto 會收到 AMBER 警告
+  notify_channel: console
+
+safety:
+  timezone: "Asia/Taipei"
+  # Windows / 精簡容器可能缺 IANA 時區資料庫（zoneinfo 需要 tzdata），
+  # 此時退回固定 UTC 偏移，並發 AMBER 警告，不讓整支程式掛掉。
+  timezone_fallback_offset_hours: 8
+  # 全域安全閥（apxG_p03）：所有對外 API 呼叫前必經 --dry-run 內部通訊測試。
+  # --live 若查不到對應設定指紋的 dry-run 收據，直接 RED 中止。
+  require_dry_run_receipt: true
+  # 稽核軌跡（JSONL）：企業級模組的必要條件，預設一律開啟
+  audit_enabled: true
+
+integrations:
+  # 以下為端點位址（非機密）。正式部署以同名環境變數覆寫；
+  # API token 一律走 os.environ（ANTHROPIC_API_KEY / CRM_API_TOKEN），不進設定檔。
+  crm_base_url: "https://crm.internal.example"
+  crm_update_path: "/v1/deals/{deal_id}"
+  proposal_service_url: "https://proposals.internal.example/v1/proposals"
+  outreach_service_url: "https://outreach.internal.example/v1/messages"
+  onboarding_service_url: "https://onboarding.internal.example/v1/welcome-packs"
+  llm_endpoint: "https://api.anthropic.com/v1/messages"
+
+pipeline:
+  # 階段路由（apxG_p07 的 stage_map）：CRM 即時狀態 -> 內部階段 -> 觸發鏈路
+  stage_map:
+    CRM_STAGE_LEAD:
+      stage: lead_captured
+      chain: enrichment
+    CRM_STAGE_DISCOVERY:
+      stage: discovery
+      chain: proposal
+    CRM_STAGE_PROPOSAL:
+      stage: proposal_sent
+      chain: follow_up
+    CRM_STAGE_WON:
+      stage: closed_won
+      chain: onboarding
+    CRM_STAGE_LOST:
+      stage: closed_lost
+      chain: renurture
+
+  # 五條鏈路。anchor＝計算到期日的錨點欄位；day＝錨點後第幾天。
+  chains:
+    enrichment:
+      label: "Lead Enrichment (#12)"
+      anchor: stage_entered_at
+      sla_minutes: 120          # apxG_p07 硬性門檻：Enrichment < 2 小時
+      outbound: false           # 寫回 CRM，不對外發訊
+      steps:
+        - day: 0
+          type: enrich_and_score
+          prompt: prompts/enrichment_scoring.md
+
+    proposal:
+      label: "Proposal Engine (#15)"
+      anchor: discovery_call_at
+      sla_minutes: 120          # 書中：通話後 2 小時內產出提案
+      outbound: false
+      steps:
+        - day: 0
+          type: proposal_draft
+          prompt: prompts/proposal_brief.md
+
+    follow_up:
+      label: "Follow-Up Sequence (#10)"
+      anchor: proposal_sent_at
+      sla_minutes: null         # 追蹤序列以到期日排程，不設 SLA 門檻
+      outbound: true
+      # halt_on_reply 在程式中被強制為 true。此處寫 false 不會生效，
+      # 只會觸發 Diagnostics AMBER 並記入 warnings（見 README 第三節）。
+      halt_on_reply: true
+      steps:                    # 5-touch（apxG_p06：5-touch follow-up on every proposal）
+        - day: 2
+          type: gentle_check
+          prompt: prompts/followup_touch.md
+        - day: 5
+          type: value_recap
+          prompt: prompts/followup_touch.md
+        - day: 9
+          type: case_study
+          prompt: prompts/followup_touch.md
+        - day: 14
+          type: objection_probe
+          prompt: prompts/followup_touch.md
+        - day: 21
+          type: final_check
+          prompt: prompts/followup_touch.md
+
+    onboarding:
+      label: "Onboarding Chain (#13)"
+      anchor: closed_at
+      sla_minutes: null
+      outbound: true
+      halt_on_reply: false      # 簽約後的交付流程，不是追單，不受回覆中止影響
+      steps:
+        - day: 0
+          type: welcome_pack
+          prompt: prompts/onboarding_welcome.md
+
+    renurture:
+      label: "90-Day Re-Nurture"
+      anchor: closed_at
+      sla_minutes: null
+      outbound: true
+      halt_on_reply: true       # 同 follow_up，程式強制 true
+      steps:                    # apxG_p07：Closed-Lost -> 90 天重新培育（3 封信件）
+        - day: 30
+          type: renurture_1
+          prompt: prompts/renurture_letter.md
+        - day: 60
+          type: renurture_2
+          prompt: prompts/renurture_letter.md
+        - day: 90
+          type: renurture_3
+          prompt: prompts/renurture_letter.md
+
+mock:
+  deals: mock/deals.json
+  crm_events: mock/crm_events.json
+  # mock 模式的基準時間，讓 --mock 每次執行結果完全可重現（不受今天日期影響）
+  today: "2026-08-24T09:00:00+08:00"
+
+metrics:
+  # 以下皆為「客戶端」成效（apxG_p07 ROI Dashboard + Priya Nair 案例）。
+  # 顧問自身的內部回收工時，原簡報未提供，故不列。
+  baseline_close_rate: 0.14
+  target_close_rate: 0.22
+  annual_pipeline_uplift_usd: 380000
+  deal_velocity_reduction: "30-50%"
+  conversion_lift: "+8-12%"
+  sales_admin_time_reduction: "60%"

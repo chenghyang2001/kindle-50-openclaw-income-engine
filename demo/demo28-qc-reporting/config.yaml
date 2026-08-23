@@ -1,0 +1,139 @@
+# demo28 — 預測性品管與階層報告鏈（模組 #28，Level 3 企業級）
+#
+# 數值一律用「字串」寫（"1.50" 而非 1.50）：YAML 的裸數字會被解析成 float，
+# 良率／不良率在跨班、跨週累加時二進位誤差會被放大，稽核時對不起來。
+# 讀進 Python 後統一走 Decimal(str(...))。
+
+module:
+  id: "28"
+  name: "預測性品管與階層報告鏈"
+  # Level 3 的部署時間以「天」為單位（原簡報：1 週），非分鐘級。
+  deploy_days: 7
+  deploy_minutes: null
+  # 「內部回收」欄位原簡報未提供（36 張投影片皆無顧問端工時回收數字），
+  # 一律留 null 並在 README 標「（原簡報未提供）」，禁止推估。
+  recovered_hours_per_month: null
+  # 定價以各模組頁的逐案報價為準（ch07_p11 / apxG_p16），
+  # 不採用 apxG_p20 Commercial Matrix 的模板價格帶 $8,000-$10,000 / $4,000-$6,000。
+  client_setup_price: 4200
+  client_monthly_price: 1900
+
+runtime:
+  # 品管報告會對外發送給客戶端的班長／廠長／品質經理／董事會，
+  # 依第 04 章自主權階梯鐵律，預設一律 draft。
+  autonomy: draft
+  approved_senders: []
+  days_in_draft: 0
+  notify_channel: console
+  # 四階各自的收件對象。實務上每一階都有自己的 cron 與收件群組；
+  # 這裡集中列出，由自主權閘門逐一比對白名單決定能不能自動送出。
+  recipients:
+    - "supervisor@example.com"      # 第 1 階 班末 → 現場領班
+    - "ops.director@example.com"    # 第 2 階 每日 06:00 → 營運總監 / 廠長
+    - "quality.manager@example.com" # 第 3 階 每週 → 品質經理
+    - "board@example.com"           # 第 4 階 每月 → 董事會
+
+chain:
+  # 四階報告鏈的固定排程（apxG_p16 逐字）。
+  # 排程本身由外部 cron 觸發，這裡只作為報告抬頭與稽核紀錄用。
+  shift_end_trigger: "each_shift_end"
+  daily_deliver_at: "06:00"
+  weekly_deliver_at: "Mon 07:00"
+  monthly_deliver_at: "1st 09:00"
+  timezone: "Asia/Taipei"
+  # zoneinfo 在部分 Windows 環境缺 tzdata，抓不到時區時退回這個固定偏移，
+  # 並記一筆琥珀燈——不可靜默改用 UTC，那會讓「06:00 報告」整整早 8 小時。
+  utc_offset_hours: 8
+  # mock 模式的固定基準時間，讓 `python main.py --mock` 每次輸出一致。
+  # --live 或指定 --as-of 時忽略此值。
+  as_of: "2026-08-22T06:00:00"
+  # 預設要發送哪一階；all 代表四階全發（實務上四階各自有 cron，不會同時發）。
+  notify_tier: daily
+
+sources:
+  # MES API 輪詢（apxG_p16：Plex / SAP）。單一 MES 失聯只降級為「資料缺漏」，
+  # 不讓整條報告鏈失敗——但缺漏本身會變成 CRITICAL 警報往上浮，不會被當成 0%。
+  - id: plex
+    system: "Plex"
+    display_name: "Plex MES"
+    mock_file: "mock/mes-plex.json"
+  - id: sap
+    system: "SAP"
+    display_name: "SAP MES"
+    mock_file: "mock/mes-sap.json"
+
+registry:
+  lines_file: "mock/lines.json"
+  history_file: "mock/history.json"
+
+spc:
+  # 控制圖三線（UCL / Mean / LCL）由 lines.json 的 baseline_mean / baseline_sigma 推出，
+  # 不從當期資料反算——用當期資料算控制界限，製程整體偏移時界限會跟著飄，
+  # 於是「全部都在管制內」，這正是 SPC 最典型的自欺。
+  sigma_multiplier: "3"
+  # Nelson Rules 各條的嚴重度分級。rule 1（單點超出 3σ）永遠 critical。
+  nelson_severity:
+    "1": critical
+    "2": major
+    "3": major
+    "4": minor
+    "5": major
+    "6": major
+    "7": minor
+    "8": minor
+  # 要啟用哪幾條 Nelson Rules（apxG_p16：套用 Nelson Rules 偵測異常趨勢）。
+  enabled_rules: [1, 2, 3, 4, 5, 6, 7, 8]
+
+trend:
+  # 預測性警告（ch07_p11 逐字：「在產生瑕疵的 3-5 個班次前發出趨勢警告」）。
+  # 以最近 window_shifts 個班別的不良率做最小平方線性回歸，
+  # 推算再幾個班會撞到該線的 defect_rate_limit_pct。
+  window_shifts: 6
+  # 預估 <= warn_within_shifts 個班次撞線就發預警（對應書中的「3-5 個班次前」上緣）。
+  warn_within_shifts: 5
+  # 預估 <= critical_within_shifts 個班次撞線就升為 critical（「3-5 個班次前」下緣）。
+  critical_within_shifts: 3
+  # 斜率小於這個值視為雜訊，不做外推——避免平的資料被浮點雜訊推出假預警。
+  min_slope_pct_per_shift: "0.01"
+
+thresholds:
+  # 單班不良率超過 lines.json 的 defect_rate_limit_pct 即為超標（major）。
+  # 這裡是額外的「即刻升級」門檻：單班不良率達限值的幾倍就直接 critical。
+  critical_defect_multiplier: "2.0"
+  # 單班良率低於目標良率幾個百分點就標記。
+  yield_shortfall_pct: "0.50"
+  # 量測值超出規格上下限（USL / LSL）一律 critical——超規是出貨風險，不是統計現象。
+  out_of_spec_severity: critical
+
+escalation:
+  # 本模組的鐵律：警報只做聯集（union），永遠不做平均。
+  # 任何一階偵測到的警報，上面每一階都必須看得見；
+  # 缺一個就拋 AlertSuppressionError 讓整條鏈失敗，而不是安靜地少報一條。
+  enforce_no_suppression: true
+  # 高階報告即使平均值落在容忍區間，只要仍有未結案警報就必須印出警示橫幅。
+  banner_when_average_looks_fine: true
+  # 未結案警報跨執行沿用（寫進 state file），直到人工結案為止。
+  carry_forward_open_alerts: true
+
+state:
+  # --state-file 可覆寫。存放上次處理到哪個班別 + 未結案警報。
+  path: "state/qc-state.json"
+
+audit:
+  # --audit-file 可覆寫；環境變數 OPENCLAW_QC_AUDIT_LOG 優先於 config。
+  # JSONL 逐行雜湊串接（prev_hash -> entry_hash），事後可驗證有無被竄改／刪行。
+  log_path: "audit/qc-audit.jsonl"
+  enabled: true
+
+prompts:
+  shift_end: "prompts/shift-end.md"
+  daily: "prompts/daily-ops.md"
+  weekly: "prompts/weekly-quality.md"
+  monthly: "prompts/monthly-board.md"
+
+live:
+  # --live 時缺少這些環境變數要明確報錯退出，不可靜默退回 mock。
+  required_env:
+    - ANTHROPIC_API_KEY
+    - MES_PLEX_API_KEY
+    - MES_SAP_API_KEY

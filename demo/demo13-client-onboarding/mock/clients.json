@@ -1,0 +1,141 @@
+{
+  "description": "CRM webhook 觸發佇列（離線重播用）。每筆代表一次 deal.stage_changed 事件。",
+  "reference_now": "2026-09-30T09:00:00",
+  "note": "第 4 筆是 CRM 對 CL-1001 的重送（retry），用來驗證同一批次內的冪等性；client_id 重複是刻意的。",
+  "triggers": [
+    {
+      "event": "deal.stage_changed",
+      "deal_stage": "Closed Won",
+      "scenario": "brand_new",
+      "scenario_note": "全新客戶：成交 40 秒，Day 0 兩個階段都要在本輪交付",
+      "crm_state": {
+        "state": "new",
+        "completed_stages": {}
+      },
+      "client": {
+        "client_id": "CL-1001",
+        "company": "Brightleaf Living",
+        "contact_name": "林佩珊",
+        "contact_email": "peishan@brightleaf-living.example",
+        "plan": "Growth Retainer（12 個月）",
+        "closed_won_at": "2026-09-30T08:59:20",
+        "kickoff_booked_at": "",
+        "sales_notes": "痛點是每季家飾新品上架時，社群與電子報素材永遠慢兩週；決策者是行銷總監，最在意上架當週的曝光。已答應第一個月先做 Q4 主打系列。",
+        "account_manager": {
+          "name": "陳彥廷",
+          "email": "yenting@openclaw-agency.example",
+          "calendly_slug": "yenting-openclaw"
+        }
+      }
+    },
+    {
+      "event": "deal.stage_changed",
+      "deal_stage": "Closed Won",
+      "scenario": "mid_sequence",
+      "scenario_note": "進行到一半：已完成前三階段，本輪剛好輪到 Day 7 關心",
+      "crm_state": {
+        "state": "kickoff_held",
+        "completed_stages": {
+          "welcome_pack": "2026-09-22T10:00:47",
+          "kickoff_booking": "2026-09-22T10:00:52",
+          "kickoff_meeting": "2026-09-25T14:00:00"
+        }
+      },
+      "client": {
+        "client_id": "CL-1002",
+        "company": "Northgate Dental",
+        "contact_name": "吳孟哲",
+        "contact_email": "mengche@northgate-dental.example",
+        "plan": "Local SEO + 預約自動化",
+        "closed_won_at": "2026-09-22T10:00:00",
+        "kickoff_booked_at": "2026-09-25T14:00:00",
+        "sales_notes": "三家分院共用一組電話，尖峰時段接不完預約電話。最在意的是新患者初診轉換率，不是流量。",
+        "account_manager": {
+          "name": "黃詩涵",
+          "email": "shihan@openclaw-agency.example",
+          "calendly_slug": "shihan-openclaw"
+        }
+      }
+    },
+    {
+      "event": "deal.stage_changed",
+      "deal_stage": "Closed Won",
+      "scenario": "already_completed",
+      "scenario_note": "已完成：五個階段全部交付過，本輪必須完全靜默（冪等性主證）",
+      "crm_state": {
+        "state": "completed",
+        "completed_stages": {
+          "welcome_pack": "2026-08-25T09:00:38",
+          "kickoff_booking": "2026-08-25T09:00:44",
+          "kickoff_meeting": "2026-08-28T11:00:00",
+          "day7_checkin": "2026-09-01T09:05:00",
+          "day30_review": "2026-09-24T09:05:00"
+        }
+      },
+      "client": {
+        "client_id": "CL-1003",
+        "company": "Sable & Roe Legal",
+        "contact_name": "張文瑄",
+        "contact_email": "wenhsuan@sableroe-legal.example",
+        "plan": "合約審查 + 內容行銷組合包",
+        "closed_won_at": "2026-08-25T09:00:00",
+        "kickoff_booked_at": "2026-08-28T11:00:00",
+        "sales_notes": "合夥人親自談的案子，要求所有對外文件先經法遵確認。窗口只用 email，不用 Slack。",
+        "account_manager": {
+          "name": "陳彥廷",
+          "email": "yenting@openclaw-agency.example",
+          "calendly_slug": "yenting-openclaw"
+        }
+      }
+    },
+    {
+      "event": "deal.stage_changed",
+      "deal_stage": "Closed Won",
+      "scenario": "duplicate_webhook",
+      "scenario_note": "CRM 重送同一筆 CL-1001（webhook retry）。不可再寄一次歡迎信、不可再建一次資料夾。",
+      "crm_state": {
+        "state": "new",
+        "completed_stages": {}
+      },
+      "client": {
+        "client_id": "CL-1001",
+        "company": "Brightleaf Living",
+        "contact_name": "林佩珊",
+        "contact_email": "peishan@brightleaf-living.example",
+        "plan": "Growth Retainer（12 個月）",
+        "closed_won_at": "2026-09-30T08:59:20",
+        "kickoff_booked_at": "",
+        "sales_notes": "痛點是每季家飾新品上架時，社群與電子報素材永遠慢兩週；決策者是行銷總監，最在意上架當週的曝光。已答應第一個月先做 Q4 主打系列。",
+        "account_manager": {
+          "name": "陳彥廷",
+          "email": "yenting@openclaw-agency.example",
+          "calendly_slug": "yenting-openclaw"
+        }
+      }
+    },
+    {
+      "event": "deal.stage_changed",
+      "deal_stage": "Closed Won",
+      "scenario": "incomplete_data",
+      "scenario_note": "資料缺漏：業務只填了公司名就按成交。缺 email / 銷售筆記 / 負責人 email 與 Calendly，Day 0 直接卡住。",
+      "crm_state": {
+        "state": "new",
+        "completed_stages": {}
+      },
+      "client": {
+        "client_id": "CL-1004",
+        "company": "Harborview Fitness",
+        "contact_name": "Danny Ko",
+        "contact_email": "   ",
+        "plan": "會員招募自動化",
+        "closed_won_at": "2026-09-29T16:20:00",
+        "kickoff_booked_at": "",
+        "sales_notes": "",
+        "account_manager": {
+          "name": "",
+          "calendly_slug": ""
+        }
+      }
+    }
+  ]
+}

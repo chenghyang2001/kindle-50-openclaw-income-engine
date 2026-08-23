@@ -1,0 +1,209 @@
+# demo24 — 無偏見人資招募篩選管線（模組 #24，Level 3 企業級）
+#
+# ⚠️ 反偏見四鐵律（SPEC #24 / ch07_p07 / apxG_p10）——這四項不是可調參數：
+#   1. anonymisation_pass=true                  匿名化必須在評分「之前」完成
+#   2. structured_criteria_only=true            只依本檔明列的結構化條件評分
+#   3. shortlist_presentation=identifiers_only  短名單只出現匿名識別碼
+#   4. reveal_identity 需招募經理人工確認         且必寫入稽核日誌
+# 把任何一項改成別的值，main.py 會直接紅色警報停機（不是警告、不會降級續跑）。
+# 理由：這四項是本模組唯一的法遵防線，「可被設定關掉的防線」等於沒有防線。
+
+module:
+  id: "24"
+  name: "無偏見人資招募篩選管線"
+  # 書中部署時間為「1 週」= 7 × 24 × 60 分鐘（Level 1/2 模組以小時計，此處刻意換算成分鐘）
+  deploy_minutes: 10080
+  # 原簡報 36 張投影片皆未提供「顧問端內部回收工時」，一律不推估 → 保持 null
+  recovered_hours_per_month: null
+  # 定價以模組頁（ch07_p03 / apxG_p10）為準：$3,200 setup + $1,200/mo
+  # apxG_p20 的 Commercial Matrix 對十個模組一律寫 $8,000-$10,000 + $4,000-$6,000/mo，
+  # 該頁為模板佔位值，不採用（差異說明見 README「定價依據」）。
+  client_setup_price: 3200
+  client_monthly_price: 1200
+  # 客戶端節省（ch07_p07 ROI Dashboard，逐字照抄）：每職缺 15-20 小時
+  client_hours_saved_per_requisition_min: 15
+  client_hours_saved_per_requisition_max: 20
+
+runtime:
+  # 本模組會對「求職者本人」發出拒絕信——寄錯一封就是雇主品牌事故且無法收回。
+  # 依第 04 章自主權階梯鐵律預設 draft：產出草稿等人審，不自動外送。
+  autonomy: draft
+  approved_senders: []
+  days_in_draft: 0
+  notify_channel: console
+  # 短名單報告的收件人（招募經理）。是否自動送出仍由 AutonomyGate 決定。
+  report_recipient: "recruiting-manager@example.com"
+  # 拒絕信一律經 ATS 代發——本管線不持有求職者信箱（匿名化把它拿掉了）。
+  # 這個位址只是自主權閘門的比對鍵，不是真的收件人。
+  ats_dispatch_address: "dispatch@ats.example.com"
+
+# BIAS_MITIGATION 開關（值被 main.py 強制檢查，改動即停機）
+bias_mitigation:
+  anonymisation_pass: true
+  structured_criteria_only: true
+  shortlist_presentation: identifiers_only
+  reveal_requires_manager_approval: true
+
+anonymisation:
+  # 直接移除的欄位：本身即為受保護特徵，或足以直接推斷受保護特徵。
+  remove_fields:
+    - name
+    - preferred_name
+    - gender
+    - pronouns
+    - date_of_birth
+    - age
+    - nationality
+    - ethnicity
+    - marital_status
+    - photo_url
+    - email
+    - phone
+    - home_address
+    - graduation_year   # 可反推年齡，屬年齡歧視的常見代理變數
+    - university        # 校名夾帶社經與地域訊號（殘餘偏見說明見 README）
+  # 保留欄位：法遵必需或屬「能力證據」，且單獨不足以識別身分。
+  # 注意：application_id 刻意「不」保留在匿名資料中，只留在 IdentityVault 內。
+  # 匿名件一旦帶著 ATS 主鍵，任何拿到匿名件的人都能自己去 ATS 對回姓名。
+  keep_fields:
+    - role_applied
+    - years_experience
+    - right_to_work     # 法定查核項；與 nationality 不同：只記可/不可，不記哪一國
+    - notice_period_weeks
+    - skills
+    - experience
+    - certifications
+    - personal_statement
+  # 自由文字欄位要逐一把「移除欄位的值」從內文洗掉——
+  # 自我介紹寫一句「Hi, I'm Amara」就讓整套匿名化破功，這是最常見的破口。
+  free_text_fields:
+    - personal_statement
+    - experience
+    - certifications
+    - skills
+  # 這些欄位除了整串比對，還要拆成單字逐一洗（「Amara Okoye」要連「Amara」也洗掉）。
+  # 只對姓名 / 校名 / 地址做拆字：像 pronouns 這種短字拆完會誤傷內文（"her" 會打到 "there"）。
+  tokenised_fields:
+    - name
+    - preferred_name
+    - university
+    - home_address
+  redaction_token: "[REDACTED]"
+  identifier_prefix: "CAND"
+  # 識別碼 = sha256(application_id + salt) 前 8 碼，避免由 ID 順序反推投遞順序。
+  # salt 不是機密金鑰（只防止識別碼被暴力對照），但正式部署仍請設環境變數，
+  # 讓不同客戶／不同職缺的識別碼互不重疊。
+  identifier_salt: "${HR_ANON_SALT}"
+  identifier_fallback_salt: "openclaw-demo24-mock-salt"
+  # 掃描自由文字時，短於此長度的字串不做取代：兩位數的年齡會誤傷「34%」這類數字。
+  # 年齡欄位本身仍被完整移除，此處只是不對內文做高風險的數字比對。
+  min_scrub_length: 3
+
+scoring:
+  # 權重乘數（ch07_p07 逐字）：Must-have x3、Preferred x1、Behavioural x2
+  weight_multipliers:
+    must_have: 3
+    preferred: 1
+    behavioural: 2
+  thresholds:
+    shortlist_min: 75   # 高分 >75 → 進入 Shortlist
+    rejection_max: 40   # 低分 <40 → 觸發延遲 48 小時的溫和拒絕信
+  # ⚠️ structured_criteria_only 的實作落點：
+  # 只有列在 evidence_fields 的欄位會被讀進評分器。任何未列出的欄位
+  # （即使通過匿名化保留下來）一律不參與計分，模型也不得「憑感覺」加減分。
+  evidence_fields: [skills, experience, certifications]
+  criteria:
+    must_have:
+      - id: python_backend
+        label: "Python 後端框架的實作證據"
+        keywords: [python, django, fastapi, flask]
+        required_hits: 2
+      - id: cloud_scale
+        label: "雲端／容器化規模化營運證據"
+        keywords: [kubernetes, docker, aws, terraform]
+        required_hits: 2
+      - id: relational_db
+        label: "關聯式資料庫設計與調校證據"
+        keywords: [postgresql, mysql, sql server, sqlalchemy]
+        required_hits: 2
+    preferred:
+      - id: observability
+        label: "可觀測性工具鏈經驗"
+        keywords: [prometheus, grafana, opentelemetry, datadog]
+        required_hits: 1
+      - id: ci_cd
+        label: "CI/CD 管線建置經驗"
+        keywords: [github actions, jenkins, gitlab ci, argo cd]
+        required_hits: 1
+    behavioural:
+      # 行為面一樣只認「寫在履歷上的具體事件」，不做人格特質推測。
+      - id: mentoring_evidence
+        label: "指導與同儕審查的具體事件"
+        keywords: [mentored, code review, onboarded, pairing]
+        required_hits: 2
+      - id: incident_ownership
+        label: "線上事故的當責證據"
+        keywords: [on-call, postmortem, incident review, root cause]
+        required_hits: 2
+  # Disqualifier 分支：命中即「立即標記不符合」，不進入計分排名。
+  # 只允許三種規則型別（is_false / less_than / missing），避免規則語言長成迷你 DSL。
+  disqualifiers:
+    - id: no_right_to_work
+      label: "不具該職缺所在地的合法工作權"
+      field: right_to_work
+      rule: is_false
+    - id: below_minimum_experience
+      label: "年資低於職缺公告門檻（3 年）"
+      field: years_experience
+      rule: less_than
+      value: 3
+
+video_interview:
+  # ch07_p07：自動邀請「前 20%」進行非同步影片面試
+  top_percent: 20
+  # 百分比的分母：received = 全體收到的申請；scored = 扣除 disqualified 後
+  # 書中寫的是申請人母體，故預設 received（改成 scored 會讓名額變少）。
+  percent_basis: received
+  # apxG_p11：挑選 4 題客製化面試題
+  question_count: 4
+
+rejection:
+  # apxG_p11 / 安全注意：拒絕信刻意延遲 48 小時，避免「秒拒」損害雇主品牌
+  delay_hours: 48
+  # 拒絕信必須提及至少 N 個具體優點（來自結構化證據，不得虛構）
+  mention_strengths_min: 1
+
+safety:
+  # 全域安全閥（apxG_p03）：所有對外 API 呼叫前必經 --dry-run 內部通訊測試。
+  require_dry_run_preflight: true
+  # 前置測試的有效期。超過就要重跑一次——憑證與收件設定會在這段期間被人改掉。
+  preflight_valid_hours: 24
+
+output:
+  # 相對路徑一律以本模組目錄為基準；可用 --state-file / --audit-file 覆寫。
+  state_file: "state/screening-state.json"
+  audit_file: "state/audit-log.jsonl"
+
+prompts:
+  screening_rubric: "prompts/screening_rubric.md"
+  interview_questions: "prompts/interview_questions.md"
+  warm_rejection: "prompts/warm_rejection.md"
+
+llm:
+  model: claude-sonnet-5
+  max_tokens: 1200
+  # CONTEXT_NOTE：第 04 章實測可減少 40% 不相關輸出
+  context_note: "輸入已完成匿名化。禁止臆測或提及任何個人背景特徵。只根據提供的結構化證據行文。"
+
+mock:
+  applications: "mock/applications.json"
+  fixtures:
+    interview_questions: "mock/fixture_interview_questions.md"
+    warm_rejection: "mock/fixture_warm_rejection.md"
+
+live:
+  # --live 時缺少這些環境變數要明確報錯退出，不可靜默退回 mock。
+  required_env:
+    - ANTHROPIC_API_KEY
+    - GREENHOUSE_API_KEY
+    - GREENHOUSE_WEBHOOK_SECRET

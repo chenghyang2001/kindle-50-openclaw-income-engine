@@ -27,5 +27,10 @@ demo/**/.usage.jsonl
 demo/**/.seen.json
 demo/**/.state.json
 demo/**/state/
+demo/**/audit/
+demo/**/registry/
+demo/**/*.audit.jsonl
+demo/**/.compliance-state.json
+demo/**/.handled.json
 demo/**/mock/posted.json
 demo/dist/

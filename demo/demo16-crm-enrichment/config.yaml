@@ -1,0 +1,150 @@
+# demo16 — CRM 數據豐富化與評分（模組 #16）
+#
+# 金額一律用「字串」寫（"1000000.00" 而非 1000000.00）：YAML 的裸數字會被解析成
+# float，營收級距比較時二進位誤差會讓邊界值忽上忽下。讀進 Python 後統一走
+# Decimal(str(...))。
+
+module:
+  id: "16"
+  name: "CRM 數據豐富化與評分"
+  deploy_minutes: 480          # 書中：1 Day
+  recovered_hours_per_month: 60  # 書中：每週回收 15 小時
+  # 定價以附錄 F（apxF_p08）為準：$850 首付 + $180/月。
+  # 第 05 章另有一套較高定價（$1,000 + $280/月），差異見 README 的 premium tier 段落。
+  client_setup_price: 850
+  client_monthly_price: 180
+
+runtime:
+  # 本模組會「寫回客戶的 CRM」——是全套模組中破壞力最高的動作之一。
+  # 依第 04 章自主權階梯鐵律預設 draft：產出變更計畫等人審，不自動寫入。
+  # 連續穩定運行滿 14 天且客戶簽核後，才改 supervised_auto 並填 approved_senders。
+  autonomy: draft
+  approved_senders: []
+  days_in_draft: 0
+  notify_channel: console
+
+schedule:
+  # 書中：每晚 2AM 掃描 CRM。時區只用於報表顯示，實際觸發由外部 cron 負責。
+  run_at: "02:00"
+  timezone: "Asia/Taipei"
+  # 全流程的「現在」基準日：mock 示範資料以固定日期為基準，結果才永遠可重現
+  # （90 天未聯絡、refresh_days 都吃這個值）。正式部署請設為 null，改用系統當前日期。
+  reference_date: "2026-08-24"
+  recipients:
+    - "sales-ops@example.com"
+
+enrichment:
+  contacts_file: "mock/crm_contacts.json"
+
+  # 只有列在這裡的欄位允許被自動補值。沒列到的欄位即使外部有資料也不碰——
+  # 白名單而非黑名單，是因為 CRM 欄位會被客戶隨時新增，黑名單永遠追不上。
+  target_fields:
+    - industry
+    - sic_code
+    - employee_count
+    - annual_revenue
+    - tech_stack
+    - job_title
+    - company_country
+
+  # 保護欄位：永遠不自動改，即使目前是空白。
+  # owner（業務歸屬）與 email 一旦被機器改錯，追不回來也沒人會發現。
+  protected_fields:
+    - owner
+    - email
+    - lifecycle_stage
+
+  # 已在 N 天內豐富化過的聯絡人本次跳過，省下外部 API 額度。
+  refresh_days: 30
+
+  # 寫回 CRM 是不可逆動作，因此當成「對外送出」交給自主權閘門管制：
+  # 這個位址要出現在 runtime.approved_senders 且 autonomy=supervised_auto，
+  # 系統才會真的寫回；否則只產出變更計畫等人審（見 README 的自主權段落）。
+  write_target: "crm@client.example"
+
+  # 外部 API 呼叫間隔（秒）。低於 1.0 會被強制拉回 1.0 並記琥珀燈：
+  # Companies House 與 Apollo 都會對高頻請求直接 429，被 ban 一次要等 24 小時。
+  # mock 模式不算外部呼叫，因此不套用間隔（見 enricher.collect_providers 註解）。
+  rate_limit_seconds: 1.0
+
+  # 資料源順序 = 欄位權威順序：同一欄位由排在前面的資料源優先提供。
+  # Companies House 是官方登記資料，優先於商業資料庫的推估值。
+  providers:
+    - id: companies_house
+      display_name: "Companies House"
+      mock_file: "mock/companies_house.json"
+      fields: [sic_code, industry, company_country]
+    - id: apollo
+      display_name: "Apollo"
+      mock_file: "mock/apollo.json"
+      fields: [employee_count, annual_revenue, industry, tech_stack]
+    - id: linkedin
+      display_name: "LinkedIn"
+      mock_file: "mock/linkedin.json"
+      fields: [job_title, employee_count]
+
+scoring:
+  # ⚠️ 權重全部在這裡，程式碼中不得寫死任何一個數字。
+  # 客戶第一週就會想調（每個產業的 ICP 不同），改這份受版控的檔案即可，不必動 .py。
+  # 權重不必加總為 100：總分會除以權重總和再乘 100 正規化。
+  weights:
+    industry_match: 30      # 產業是否落在 ICP 白名單（SIC 代碼）
+    company_size: 25        # 員工數
+    revenue_band: 20        # 年營收級距
+    tech_stack: 15          # 技術棧訊號（用同類工具 = 買得起、會用）
+    title_seniority: 10     # 聯絡人職稱層級
+
+  # 書中 SCORE_THRESHOLDS：Hot 75-100、Warm 50-74，其餘為 Cool。
+  bands:
+    hot: 75
+    warm: 50
+
+  # 書中：標記 90 天未聯絡的潛在機會。
+  # Stale 是「時間維度」不是「分數維度」，因此與 band 分開計算後再合併成 grade。
+  stale_days: 90
+
+  criteria:
+    industry_match:
+      # UK SIC 代碼：62012 商用軟體開發、62020 IT 顧問、58290 其他軟體出版
+      sic_whitelist: ["62012", "62020", "58290", "63110"]
+      # 沒有 SIC 時退而用產業名稱關鍵字比對（僅供加分，不做反向扣分）
+      industry_keywords: ["software", "saas", "it services", "資訊", "軟體"]
+      # 關鍵字命中只是次要證據，不給滿分——公司自填的產業名稱可信度低於官方 SIC
+      keyword_ratio: "0.6"
+    company_size:
+      # 低於 min 不加分、達到 ideal 給滿分、中間線性內插
+      min_employees: 25
+      ideal_employees: 200
+    revenue_band:
+      min_annual_revenue: "1000000.00"
+      ideal_annual_revenue: "10000000.00"
+    tech_stack:
+      signals: ["hubspot", "salesforce", "shopify", "stripe", "zendesk"]
+      required_hits: 2
+    title_seniority:
+      # 由上往下比對，第一個命中的 tier 生效
+      tiers:
+        - ratio: "1.0"
+          titles: ["ceo", "founder", "cto", "coo", "cfo", "vp", "chief"]
+        - ratio: "0.6"
+          titles: ["head", "director", "principal"]
+        - ratio: "0.3"
+          titles: ["manager", "lead", "經理"]
+
+output:
+  # CSV 報告：書中 Output 明列「產出完整的豐富化 CSV 報告」。
+  # 相對路徑以本模組目錄為基準；--csv-out 可覆寫（測試一律指到暫存目錄）。
+  csv_file: "state/enrichment-report.csv"
+  # 狀態檔：記錄每個聯絡人上次豐富化時間，供 refresh_days 判斷。
+  state_file: "state/enrichment-state.json"
+
+prompts:
+  summary: "prompts/enrichment_summary.md"
+  conflict_review: "prompts/conflict_review.md"
+
+live:
+  # --live 時缺少這些環境變數要明確報錯退出，不可靜默退回 mock。
+  required_env:
+    - ANTHROPIC_API_KEY
+    - CRM_API_KEY
+    - APOLLO_API_KEY

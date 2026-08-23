@@ -1,0 +1,13 @@
+{
+  "_schema": "pos-business-days",
+  "terminal_group": "POS-TXG-FJ",
+  "business_days": [
+    {"date": "2026-08-17", "net_sales": "68000", "tickets": 245, "door_count": 1580, "hours_worked": "92"},
+    {"date": "2026-08-18", "net_sales": "72000", "tickets": 255, "door_count": 1650, "hours_worked": "90"},
+    {"date": "2026-08-19", "net_sales": "75000", "tickets": 265, "door_count": 1720, "hours_worked": "91"},
+    {"date": "2026-08-20", "net_sales": "80000", "tickets": 285, "door_count": 1850, "hours_worked": "95"},
+    {"date": "2026-08-21", "net_sales": "82000", "tickets": 290, "door_count": 1880, "hours_worked": "96"},
+    {"date": "2026-08-22", "net_sales": "78000", "tickets": 275, "door_count": 1780, "hours_worked": "94"},
+    {"date": "2026-08-23", "net_sales": "65000", "tickets": 235, "door_count": 1540, "hours_worked": "82"}
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "namespace": "acme-ops/north-mill",
+  "period": "2026-08",
+  "automations_live": [
+    "full-sales-pipeline",
+    "support-triage",
+    "crm-enrichment",
+    "morning-briefing",
+    "review-monitor"
+  ],
+  "metrics": {
+    "tasks_completed": 1842,
+    "human_review_items": 37,
+    "sla_breaches": 0,
+    "uptime_pct": 99.94
+  },
+  "incidents": [],
+  "notes": "第三個月，已從 Tier 1 升級到 Tier 3 錨定自動化。"
+}

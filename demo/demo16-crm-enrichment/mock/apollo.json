@@ -1,0 +1,31 @@
+{
+  "source": "apollo",
+  "as_of": "2026-08-24",
+  "_comment": "商業資料庫，員工數與營收多為推估值——因此排在官方登記資料之後。金額一律字串。",
+  "records": {
+    "northwind-analytics.co.uk": {
+      "employee_count": 320,
+      "annual_revenue": "12000000.00",
+      "industry": "Software Development",
+      "tech_stack": ["hubspot", "stripe", "zendesk"]
+    },
+    "kitelabs.io": {
+      "employee_count": 60,
+      "annual_revenue": "2400000.00",
+      "industry": "IT Consultancy",
+      "tech_stack": ["salesforce"]
+    },
+    "vellumlegal.co.uk": {
+      "employee_count": 800,
+      "annual_revenue": "45000000.00",
+      "industry": "Software",
+      "tech_stack": ["salesforce", "stripe"],
+      "_note": "刻意與 CRM 既有值衝突：這筆是 Apollo 把同名的另一家公司對錯了。若自動覆蓋，這個聯絡人會從 Cool 一路跳到 Hot，業務會照著錯的名單打電話。"
+    },
+    "orbitra.co.uk": {
+      "employee_count": 150,
+      "annual_revenue": "8000000.00",
+      "tech_stack": ["shopify", "stripe"]
+    }
+  }
+}

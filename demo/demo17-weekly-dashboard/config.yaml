@@ -1,0 +1,223 @@
+# demo17 — 每週績效儀表板（模組 #17）
+#
+# 數值一律用「字串」寫（"4800.00" 而非 4800.00）：YAML 的裸數字會被解析成 float，
+# 週對週百分比與四週移動平均會把二進位誤差放大成 14.999999999999998。
+# 讀進 Python 後統一走 Decimal(str(...))。
+#
+# 定價與部署時間採用「附錄 F」版本（$1,200 首付 + $250/月、5-6 小時）。
+# 第 05 章另有一套（$850 + $220/月、1 Day），取捨理由見 README「原著資料衝突」一節。
+
+module:
+  id: "17"
+  name: "每週績效儀表板"
+  # 附錄 F：5-6 小時（全書最高複雜度）。取中位數 5.5 小時 = 330 分鐘。
+  deploy_minutes: 330
+  recovered_hours_per_month: 12
+  client_setup_price: 1200
+  client_monthly_price: 250
+
+runtime:
+  # 報表會寄給客戶的管理層，依第 04 章自主權階梯鐵律，預設一律 draft。
+  # 連續穩定運行滿 14 天且客戶簽核後，才改成 supervised_auto 並填 approved_senders。
+  autonomy: draft
+  approved_senders: []
+  days_in_draft: 0
+  notify_channel: console
+
+report:
+  # 發送時點：附錄 F 寫「每週一 07:00」，第 05 章寫「週五 18:00」。
+  # 本實作採附錄 F，但兩個欄位都可設定——不同客戶的週會時間本來就不同，
+  # 寫死在程式碼裡會逼著每個客戶改一次原始碼。
+  deliver_day: "monday"
+  deliver_at: "07:00"
+  timezone: "Asia/Taipei"
+  currency: "USD"
+  # 附錄 F：3 個「本週行動建議（Focus Actions）」。
+  focus_action_count: 3
+  recipients:
+    - "leadership@example.com"
+    - "ops@example.com"
+
+# 六個資料源，對應附錄 F 的 Input 清單：GA4 / Google Ads / Meta / CRM / Xero / QuickBooks。
+# 任一個掛掉都只讓它負責的 KPI 標成「無資料」，整份報表照常產出（見 README「部分失敗」）。
+sources:
+  - id: ga4
+    display_name: "GA4"
+    mock_file: "mock/ga4.json"
+  - id: google_ads
+    display_name: "Google Ads"
+    mock_file: "mock/google-ads.json"
+  - id: meta
+    display_name: "Meta Ads"
+    mock_file: "mock/meta.json"
+  - id: crm
+    display_name: "CRM"
+    mock_file: "mock/crm.json"
+  - id: xero
+    display_name: "Xero"
+    mock_file: "mock/xero.json"
+  - id: quickbooks
+    display_name: "QuickBooks"
+    mock_file: "mock/quickbooks.json"
+
+# METRICS_MAP（附錄 F 的架構關鍵）：每個區塊只准 4-5 個 KPI。
+# 超過 max_kpis_per_block 會被截斷並記琥珀燈——書中這條限制是刻意的：
+# 儀表板一旦超過 20 個數字，管理層就不會讀，等於回到沒有儀表板的狀態。
+#
+# direction: up   = 數值越高越好（營收、流量）
+#            down = 數值越低越好（廣告花費、每筆開發成本、成交週期）
+metrics_map:
+  blocks:
+    - id: traffic
+      display_name: "流量與轉換"
+      kpis:
+        - id: ga4_sessions
+          display_name: "工作階段"
+          source: ga4
+          metric: sessions
+          unit: count
+          direction: up
+        - id: ga4_users
+          display_name: "不重複使用者"
+          source: ga4
+          metric: users
+          unit: count
+          direction: up
+        - id: ga4_conversion_rate
+          display_name: "轉換率"
+          source: ga4
+          metric: conversion_rate
+          unit: percent
+          direction: up
+        - id: ga4_avg_session_seconds
+          display_name: "平均停留時間"
+          source: ga4
+          metric: avg_session_seconds
+          unit: seconds
+          direction: up
+
+    - id: advertising
+      display_name: "廣告投放"
+      kpis:
+        - id: google_ads_spend
+          display_name: "Google Ads 花費"
+          source: google_ads
+          metric: spend
+          unit: money
+          direction: down
+        - id: google_ads_cpl
+          display_name: "每筆名單成本"
+          source: google_ads
+          metric: cost_per_lead
+          unit: money
+          direction: down
+        - id: google_ads_roas
+          display_name: "廣告投報率 ROAS"
+          source: google_ads
+          metric: roas
+          unit: ratio
+          direction: up
+        - id: meta_spend
+          display_name: "Meta 花費"
+          source: meta
+          metric: spend
+          unit: money
+          direction: down
+        - id: meta_ctr
+          display_name: "Meta 點擊率"
+          source: meta
+          metric: ctr
+          unit: percent
+          direction: up
+
+    - id: pipeline
+      display_name: "銷售管線"
+      kpis:
+        - id: crm_new_leads
+          display_name: "新增名單"
+          source: crm
+          metric: new_leads
+          unit: count
+          direction: up
+        - id: crm_qualified_opportunities
+          display_name: "合格商機"
+          source: crm
+          metric: qualified_opportunities
+          unit: count
+          direction: up
+        - id: crm_pipeline_value
+          display_name: "管線總值"
+          source: crm
+          metric: pipeline_value
+          unit: money
+          direction: up
+        - id: crm_win_rate
+          display_name: "成交率"
+          source: crm
+          metric: win_rate
+          unit: percent
+          direction: up
+        - id: crm_avg_deal_cycle_days
+          display_name: "平均成交天數"
+          source: crm
+          metric: avg_deal_cycle_days
+          unit: count
+          direction: down
+
+    - id: finance
+      display_name: "財務營收"
+      kpis:
+        - id: xero_revenue
+          display_name: "本週營收"
+          source: xero
+          metric: revenue
+          unit: money
+          direction: up
+        - id: xero_gross_margin
+          display_name: "毛利率"
+          source: xero
+          metric: gross_margin
+          unit: percent
+          direction: up
+        - id: quickbooks_expenses
+          display_name: "本週支出"
+          source: quickbooks
+          metric: expenses
+          unit: money
+          direction: down
+        - id: quickbooks_cash_balance
+          display_name: "現金餘額"
+          source: quickbooks
+          metric: cash_balance
+          unit: money
+          direction: up
+
+# 全部門檻都在這裡，程式碼中不得寫死任何數字。
+thresholds:
+  # ANOMALY_THRESHOLD：附錄 F 預設 15%。週對週變動絕對值超過此值即標記異常。
+  # 注意「異常」不等於「壞消息」——名單暴增 20% 同樣要標，那通常代表活動檔期
+  # 或追蹤碼重複觸發，兩種都需要人看一眼。
+  anomaly_pct: 15
+  # RAG 燈號：以「對客戶不利的方向」計算。不利變動超過 5% 亮黃燈、超過 15% 亮紅燈。
+  rag_amber_pct: 5
+  rag_red_pct: 15
+  # 每個區塊的 KPI 上限（書中：4-5 個）。
+  max_kpis_per_block: 5
+
+history:
+  # 週對週比較與四週移動平均需要歷史值。
+  # --mock 預設讀這份唯讀種子檔，不寫回（避免 git 工作區被跑一次就弄髒）。
+  # 要真的累積歷史，執行時加 --state-file <路徑>：優先讀該檔，跑完寫回該檔。
+  mock_file: "mock/history.json"
+  moving_average_weeks: 4
+  # 狀態檔只留最近 N 週，避免無限增長。
+  keep_weeks: 12
+
+prompts:
+  dashboard: "prompts/dashboard.md"
+  focus_actions: "prompts/focus-actions.md"
+
+live:
+  # --live 時缺這些環境變數要明確報錯退出，不可靜默退回 mock。
+  required_env:
+    - ANTHROPIC_API_KEY

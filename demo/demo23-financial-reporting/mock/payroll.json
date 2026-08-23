@@ -1,0 +1,14 @@
+{
+  "source": "bamboohr",
+  "scope": "employees.payroll.read",
+  "period": "2026-07",
+  "currency": "USD",
+  "payroll": {
+    "code": "6100",
+    "label": "薪資與人事成本",
+    "category": "opex",
+    "actual": "268400.00",
+    "prior_year": "241000.00",
+    "headcount": 42
+  }
+}

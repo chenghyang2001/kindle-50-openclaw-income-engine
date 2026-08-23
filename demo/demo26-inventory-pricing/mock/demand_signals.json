@@ -1,0 +1,32 @@
+{
+  "_comment": "需求訊號快照（模擬 Google Trends 的 TREND_KEYWORDS 查詢結果）。刻意只當作報告與促銷企劃的參考脈絡，不直接驅動自動調價 —— 外部趨勢指數是雜訊最多的資料來源，讓它有權改動線上售價風險過高。",
+  "captured_at": "2026-08-24T01:30:00Z",
+  "source": "google-trends (mock snapshot)",
+  "window_days": 30,
+  "categories": {
+    "bedding": {
+      "trend_keywords": ["linen bedding", "cooling duvet"],
+      "index": 78,
+      "delta_30d_percent": "+14",
+      "note": "換季需求上升，熱銷品有提價空間"
+    },
+    "lighting": {
+      "trend_keywords": ["table lamp", "floor lamp"],
+      "index": 52,
+      "delta_30d_percent": "+1",
+      "note": "持平"
+    },
+    "furniture": {
+      "trend_keywords": ["oak side table", "rattan armchair"],
+      "index": 31,
+      "delta_30d_percent": "-18",
+      "note": "需求走弱，滯銷品不建議等待自然消化"
+    },
+    "tableware": {
+      "trend_keywords": ["stoneware mug", "speckled ceramics"],
+      "index": 44,
+      "delta_30d_percent": "-6",
+      "note": "緩降"
+    }
+  }
+}

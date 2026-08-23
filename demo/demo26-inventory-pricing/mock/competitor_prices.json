@@ -1,0 +1,16 @@
+{
+  "_comment": "對手價格快照（模擬 PRICE_WATCH 的 CSS selector 監控結果）。缺少某個 sku_id 代表當日抓不到對手價 —— 程式必須因此「不動價」，而不是當成對手沒變。",
+  "captured_at": "2026-08-24T01:40:00Z",
+  "source": "PRICE_WATCH css-selector monitor (mock snapshot)",
+  "check_frequency": "daily",
+  "prices": {
+    "SKU-1001": "149.00",
+    "SKU-1002": "90.00",
+    "SKU-1003": "220.00",
+    "SKU-1004": "39.00",
+    "SKU-1005": "62.00",
+    "SKU-1006": "82.00",
+    "SKU-1007": "110.00",
+    "SKU-1008": "35.00"
+  }
+}

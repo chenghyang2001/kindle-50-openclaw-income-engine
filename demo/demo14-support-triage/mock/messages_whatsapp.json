@@ -1,0 +1,24 @@
+{
+  "channel": "whatsapp",
+  "fetched_at": "2026-08-24T09:00:00+08:00",
+  "messages": [
+    {
+      "message_id": "wa-20260824-001",
+      "customer_name": "Amelia Wong",
+      "customer_contact": "+886912345678",
+      "subject": "",
+      "text": "BL-20733 什麼時候到？我這週都在家，麻煩了。",
+      "received_at": "2026-08-24T08:12:00+08:00",
+      "locale": "zh-TW"
+    },
+    {
+      "message_id": "wa-20260824-002",
+      "customer_name": "范育誠",
+      "customer_contact": "+886987654321",
+      "subject": "",
+      "text": "收到的沙發顏色跟照片差太多，我想退貨，款項要怎麼拿回來？",
+      "received_at": "2026-08-24T08:26:00+08:00",
+      "locale": "zh-TW"
+    }
+  ]
+}

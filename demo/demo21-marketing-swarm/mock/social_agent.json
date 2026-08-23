@@ -1,0 +1,41 @@
+{
+  "agent_id": "social",
+  "produced": 28,
+  "unit": "貼文/週",
+  "channel_targets": {
+    "instagram": 7,
+    "facebook": 7,
+    "linkedin": 7,
+    "threads": 7
+  },
+  "samples": [
+    {
+      "id": "S-001",
+      "objective_id": "OBJ-3",
+      "channel": "instagram",
+      "slot": "MON 12:30",
+      "text": "袋子正面那行小字是烘焙日期。我們把它放大，因為那是這包豆子最誠實的規格。",
+      "emoji_count": 1,
+      "hashtags": ["#手沖咖啡", "#烘焙日期"]
+    },
+    {
+      "id": "S-014",
+      "objective_id": "OBJ-1",
+      "channel": "linkedin",
+      "slot": "WED 08:30",
+      "text": "我們把庫存週轉壓在七天，代價是每週要多做一次備貨判斷。換來的是本季平均烘焙後 5.2 天送到客戶手上。",
+      "emoji_count": 0,
+      "hashtags": ["#供應鏈"]
+    },
+    {
+      "id": "S-022",
+      "objective_id": "OBJ-1",
+      "channel": "facebook",
+      "slot": "FRI 19:00",
+      "text": "秋季試喝申請開放中，活動期間 2026-09-08 至 2026-09-21。填完手沖參數表就能申請。",
+      "emoji_count": 2,
+      "hashtags": ["#試喝"]
+    }
+  ],
+  "blockers": []
+}

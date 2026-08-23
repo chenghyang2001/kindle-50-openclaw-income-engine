@@ -1,0 +1,180 @@
+# 模組 #12 — 潛在客戶生成管線（Lead Generation Pipeline）
+# 原著：《The OpenClaw Income Engine》第 05 章 p05 + 附錄 F p06
+#
+# 定價以「附錄 F」為準（$900 首付 + $220/月）——這是主 Claude 的裁決。
+# 第 05 章另有一組較高定價（$1,200 + $350/月），原著兩處不一致，
+# 本檔兩套都保留（見 pricing 區段），不做取捨、不做平均。
+
+module:
+  id: "12"
+  name: "潛在客戶生成管線"
+  # 原著寫「1 Day」；此處以一個 8 小時工作日換算成分鐘，供 bundle 統計用
+  deploy_minutes: 480
+  # 原著寫「每週回收 20+ 小時」；以 4 週換算為每月 80 小時
+  recovered_hours_per_month: 80
+  client_setup_price: 900      # 附錄 F 為準
+  client_monthly_price: 220    # 附錄 F 為準
+
+pricing:
+  # 附錄 F（apxF_p06）— 本模組採用的正式報價
+  source: "apxF_p06"
+  setup_usd: 900
+  monthly_usd: 220
+  premium_tier:
+    # 第 05 章（ch05_p05）— README 另列為 premium tier
+    source: "ch05_p05"
+    setup_usd: 1200
+    monthly_usd: 350
+    note: "原著兩處定價不一致；未取捨、未平均，兩套並列"
+  # 客戶端估算 ROI 用（工時單價）。金額運算一律走 Decimal。
+  client_hourly_rate_usd: 65
+
+runtime:
+  autonomy: draft            # read_only | draft | supervised_auto
+  approved_senders: []       # supervised_auto 必填白名單（完整 email 或 "@domain"）
+  days_in_draft: 0           # 未滿 14 天就開 supervised_auto 會收到 AMBER 警告
+  notify_channel: console
+
+# ---------------------------------------------------------------------------
+# ICP（Ideal Customer Profile）判準
+# 原著 ch05_p05：「設定 ICP_CRITERIA（產業、規模、技術特徵）」
+# 原著 apxF_p06：「ICP Scoring Engine 根據權重計算 0-100 分
+#                （產業匹配度、公司規模、觸發事件）」
+# 兩者聯集 = 下列四個面向。
+# ---------------------------------------------------------------------------
+icp:
+  target_industries:
+    - "SaaS"
+    - "電子商務"
+    - "精密製造"
+    - "專業服務"
+    - "B2B 軟體"
+  # 鄰接產業只給一半分數，強迫人工再確認一次，避免評分引擎自作主張擴張 ICP
+  adjacent_industries:
+    - "數位行銷"
+    - "資訊服務"
+    - "物流"
+  employee_range:
+    ideal_min: 50
+    ideal_max: 500
+    acceptable_min: 20
+    acceptable_max: 1500
+  preferred_tech:
+    - "HubSpot"
+    - "Salesforce"
+    - "Shopify"
+    - "Snowflake"
+    - "Pipedrive"
+  # 觸發事件型別 -> 貢獻比例（0-1）。原著舉例「募資、新高管上任」，其餘為實作補充。
+  trigger_events:
+    funding_round: 1.0
+    exec_hire: 0.9
+    expansion: 0.75
+    product_launch: 0.6
+    hiring_surge: 0.5
+  # 超過此天數的觸發事件視為過期，計 0 分。
+  # 理由：破冰話題的價值來自「時效」，引用兩個月前的募資新聞反而顯得在敷衍。
+  trigger_recency_days: 45
+
+scoring:
+  # 權重總和應為 100。不是 100 時程式會等比正規化並發出 AMBER 警告，
+  # 而不是靜默照算——分數會被拿去對客戶解釋，來源必須說得清楚。
+  weights:
+    industry: 35
+    company_size: 25
+    trigger_event: 25
+    tech_stack: 15
+  thresholds:
+    # 原著 #12 只寫「評分 1-100」與「Hot Leads 推送至 CRM」，未給門檻數字。
+    # 此處沿用同書 #16（ch05_p09）的 SCORE_THRESHOLDS：Hot 75-100 / Warm 50-74。
+    hot: 75
+    warm: 50
+  # 低於此分數不進外聯序列（原著：銷售 40% 時間浪費在不會買的人身上）
+  min_score_for_outreach: 50
+  # 評分所需的最小資料集。缺太多欄位的線索送去補資料，不是直接丟掉，
+  # 也不是硬著頭皮寄信——寄一封基於殘缺資料的個人化信比不寄更傷。
+  required_fields:
+    - "industry"
+    - "employee_count"
+    - "trigger_event.type"
+    - "tech_stack"
+    - "email"
+    - "company"
+  min_completeness: 0.6
+
+# ---------------------------------------------------------------------------
+# 三階段外聯節奏（原著 ch05_p05：「草擬專屬破冰信並啟動 3 階段跟進」）
+# 天數（Day 0 / 4 / 9）為實作補充，原著未指定。
+# max_chars 150 取自 apxF_p06：「發送高度個人化的 150 字開發信」。
+# ---------------------------------------------------------------------------
+cadence:
+  - day: 0
+    type: icebreaker
+    prompt: prompts/stage1_icebreaker.md
+    max_chars: 150
+  - day: 4
+    type: value_proof
+    prompt: prompts/stage2_value_proof.md
+    max_chars: 180
+  - day: 9
+    type: breakup
+    prompt: prompts/stage3_breakup.md
+    max_chars: 120
+
+# ---------------------------------------------------------------------------
+# 法遵設定（⚠️ 實作補充，非原著內容 — 主 Claude 要求補充）
+# 原簡報完全沒有提到冷開發信的法律風險。但這是「對外主動發送」型自動化，
+# 沒有這一段就不能上線。詳見 README 第六節。
+# ---------------------------------------------------------------------------
+compliance:
+  # 允許的聯絡資訊取得依據。不在清單內的線索一律不得外送。
+  # purchased_list（購買名單）刻意不在清單內：GDPR 下幾乎不可能成立合法利益。
+  allowed_source_bases:
+    - "public_company_data"   # 公司公開登記/官網公開的職務信箱
+    - "opt_in_event"          # 對方在活動/表單主動留下並同意聯繫
+    - "referral"              # 既有客戶具名轉介
+    - "inbound_enquiry"       # 對方主動來信詢問
+  # 事前同意（opt-in）法域：這些地區沒有明確同意紀錄就不寄，不用「合法利益」硬闖。
+  consent_required_regions:
+    - "DE"
+    - "AT"
+    - "FR"
+    - "NL"
+  # 抑制名單（退訂 / 要求刪除 / 客訴）。命中即永久不得再聯繫。
+  suppression_list_file: mock/suppression_list.json
+  # ⚠️ 不可停用的硬規則。改成 false 也會被程式強制覆寫為 true 並發出 AMBER 警告。
+  require_unsubscribe: true
+  # 寄件人識別（CAN-SPAM 要求可辨識的寄件人、有效回覆管道與實體郵寄地址）。
+  # 任一欄位空白或仍是未展開的 ${ENV} -> 本次執行一律不自動外送，全部降級為草稿。
+  # 正式部署請改成客戶的真實資訊，或用環境變數覆寫（例：${OUTREACH_POSTAL_ADDRESS}）。
+  sender_identity:
+    sender_name: "示範業務代表"
+    company_name: "示範顧問有限公司"
+    postal_address: "台北市信義區示範路 1 號 8 樓"
+    reply_to_email: "hello@example-demo.invalid"
+    unsubscribe_url: "https://example-demo.invalid/unsubscribe"
+
+crm:
+  # Hot Lead 推送目標（原著：自動推送至 HubSpot/Salesforce）。
+  # 本 demo 不含實際寫回，僅在結果中標記，見 README 第十一節。
+  hot_lead_destination: "hubspot"
+  owner_queue: "#sales-hot-leads"
+
+mock:
+  leads: mock/leads.json
+  # mock 模式的基準時間，讓 --mock 每次執行結果完全可重現（不受今天日期影響）
+  today: "2026-08-24T09:00:00+08:00"
+
+safety:
+  timezone: "Asia/Taipei"
+  # Windows / 精簡容器可能缺 IANA 時區資料庫（zoneinfo 需要 tzdata），
+  # 此時退回固定 UTC 偏移，並發 AMBER 警告，不讓整支程式掛掉。
+  timezone_fallback_offset_hours: 8
+  # 外聯進度狀態檔（可用 --state-file 覆寫）
+  state_file: state/outreach_state.json
+
+metrics:
+  # 原著 ch05_p05 / apxF_p06 的成效數字
+  sales_research_time_share_before: 0.40   # 銷售 40% 時間花在不會買的人身上
+  pipeline_capacity_multiplier: 3.5        # 管線容量提升 3-4x（取中位數）
+  internal_value_usd_per_month: 5200       # 內部價值 $5,200/mo

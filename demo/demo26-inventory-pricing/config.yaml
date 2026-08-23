@@ -1,0 +1,101 @@
+# demo26 — 電商庫存與定價最佳化（Level 3 企業級 · 自動化 #26）
+# 書中數據：部署 1 週｜內部回收（原簡報未提供）｜售價 $3,800 setup + $1,600/mo
+# 來源：第07章 ch07_p09、附錄G apxG_p13 / apxG_p14
+
+module:
+  id: "26"
+  name: "電商庫存與定價最佳化"
+  # 1 週 = 7 x 24 x 60 分鐘。書中部署時間以「週」為單位，這裡換算成契約要求的分鐘數。
+  deploy_minutes: 10080
+  # 36 張投影片中沒有任何一頁提供顧問自己的內部回收工時，
+  # 依 Level 3 裁決「原簡報未提供者一律留白、禁止推估」，此欄固定為 null。
+  recovered_hours_per_month: null   # （原簡報未提供）
+  client_setup_price: 3800
+  client_monthly_price: 1600
+
+runtime:
+  # 本模組持有 write_products 權限、會直接改動線上售價，
+  # 因此自主權**永遠**從 draft 起跳，且不建議升到 supervised_auto。
+  autonomy: draft
+  approved_senders: []
+  days_in_draft: 0
+  notify_channel: console
+  alert_recipient: "ops@yourstore.example"
+
+# ── 定價安全鐵律（本模組風險最高的區塊，改動前請先讀 README 的「定價安全鐵律」）──
+pricing:
+  currency: "USD"
+  # 單次調價幅度上限（百分比）。超過即拒絕自動執行並升級人工。
+  # 一個小數點錯誤就可能虧本賣光庫存，這個值請往小的方向設。
+  max_price_change_percent: 10
+  # 允許 max_price_change_percent 被設到多大；超過此天花板視為「安全閥被關掉」，
+  # 啟動時直接擋下。設兩層是為了讓「調鬆閾值」這件事本身也要被審查。
+  max_price_change_ceiling: 30
+  # 建議售價至少要高於成本價的百分比。低於此值但仍高於成本 -> 拒絕並升級人工；
+  # 低於或等於成本 -> 一律拒絕並發 RED（程式層硬檢查，不受本設定影響）。
+  min_margin_percent: 5
+
+  # 決策矩陣（apxG_p14）各動作的幅度
+  undercut_match_delta_percent: 1    # 「建議降價匹配對手 -1%」
+  fast_mover_increase_percent: 5     # 「建議調漲」
+  overstock_clearance_percent: 20    # 「建議清理」
+  promo_discount_percent: 10         # 促銷企劃建議的折扣幅度（僅寫進企劃，不直接改價）
+
+  # 對手定價相對位置的分帶門檻
+  competitor_neutral_band_percent: 3         # |差距| <= 3% 視為 Neutral
+  competitor_undercut_threshold_percent: 5   # 對手低於我方 >= 5% 才算 Undercut
+
+  # pricing_rules 三條規則的數值門檻（預設就是 apxG_p14 上的字面值 5 / 14 / 3）
+  reduce_if_below_pct: 5
+  increase_if_days_of_stock_under: 14
+  hold_if_within_pct: 3
+
+  # 逐字照抄 apxG_p14 的 Pricing Rules JSON。程式以 pricer.evaluate_pricing_rules()
+  # 實作同樣的邏輯，這裡保留原文供稽核比對（規格與實作必須看得出是同一件事）。
+  pricing_rules:
+    reduce_if: "slow_mover AND competitor_price_below_ours_by_pct > 5"
+    increase_if: "fast_mover AND days_of_stock < 14 AND competitor_price_above_ours"
+    hold_if: "velocity_neutral AND competitor_within_3pct"
+
+# ── 庫存分類（Daily SKU Analysis Prompt 的 STATUS 五級參數）──
+inventory:
+  # ⚠️ 原著兩處數字衝突：ch07_p09 寫「滯銷品在第 21 天觸發促銷」，
+  # apxG_p14 寫「滯銷 14 天以上 -> 觸發 promotional_brief_generator」。
+  # 本專案採 14（理由見 README「原著衝突與採用理由」），並保留為可設定值。
+  slow_mover_days: 14
+  slow_mover_percentile: 30      # {{SLOW_MOVER_PERCENTILE}}：流速後 30% 視為滯銷帶
+  fast_mover_percentile: 20      # 流速前 20% 視為熱銷帶（定價矩陣的 Fast Mover 列）
+  overstock_doh: 90              # {{OVERSTOCK_DOH}}：可售天數 > 90 天視為積壓
+  reorder_recommended_multiplier: 1.5   # REORDER_RECOMMENDED: days_on_hand < reorder_point * 1.5
+
+# ── 外部整合（--live 模式才會用到；--mock 完全不觸網）──
+integrations:
+  shopify:
+    shop_domain: "${SHOPIFY_SHOP_DOMAIN}"
+    admin_token: "${SHOPIFY_ADMIN_TOKEN}"
+    # 逐字照抄 apxG_p13 的 scope 清單（原圖確實重複列出 write_inventory 兩次，如實保留）
+    scopes: ["read_inventory", "write_inventory", "read_products", "write_products", "write_inventory"]
+    update_path: "shopify.com/admin -> Apps -> your app -> Edit permissions"
+    timeout_seconds: 30
+  shipbob:
+    api_key: "${SHIPBOB_API_KEY}"
+    scopes: ["inventory", "orders"]
+  demand_signals:
+    # Google Trends 只作為報告與促銷企劃的參考脈絡，不直接驅動自動調價（安全考量）
+    provider: "google-trends"
+    is_advisory_only: true
+  price_watch:
+    # 對手價格監控的 CSS selector 設定（--live 模式使用；--mock 讀快照）
+    check_frequency: "daily"
+    request_interval_seconds: 2
+    selectors:
+      default: "span.price"
+
+# ── 路徑（一律相對於本 demo 目錄解析，程式內用 Path(__file__).parent，不硬編碼）──
+paths:
+  mock_dir: "mock"
+  sku_snapshot: "mock/skus.json"
+  competitor_snapshot: "mock/competitor_prices.json"
+  demand_snapshot: "mock/demand_signals.json"
+  state_file: "state/pricing_state.json"
+  audit_file: "audit/pricing_audit.jsonl"
