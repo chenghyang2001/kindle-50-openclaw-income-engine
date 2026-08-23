@@ -273,6 +273,35 @@ if __name__ == "__main__":
     sys.exit(main())
 ```
 
+### ⚠️ 已知技術債：`run()` 回傳鍵名未標準化（2026-08-24 記錄）
+
+本契約的 §6 只規定 `run(args) -> dict`，**沒有規定 dict 裡要有哪些鍵**。
+結果：4 個獨立 writer 對同一份契約寫程式，鍵名幾乎全部發散。
+
+| 語意 | demo01 | demo02 | demo05 | demo09 |
+|---|---|---|---|---|
+| 模組編號 | `module_id` | `module` | `module_id` | `module` |
+| 模組名稱 | `module_name` | 無 | `module_name` | 無 |
+| 執行模式 | `mode` | `mode` | `mode` | `is_mock`（bool） |
+| 空跑旗標 | `is_dry_run` | `dry_run` | `dry_run` | `dry_run` |
+| 自主權警告 | `autonomy_warnings` | `autonomy.warnings`（巢狀） | `warnings` | 無（只有 `failed_sources`） |
+| 琥珀計數 | `amber_count` | `amber_count` | `amber_count` | `amber_count` |
+
+**`amber_count` 是唯一四家自發一致的鍵**——因為它是唯一在契約中被明確命名的。
+這是「規格留白處必然發散」的實證：不是誰偷懶，是每個人都會用自己覺得合理的方式填空。
+
+**現況處理**：`bundle-quickstart/run_all.py` 的 `normalize_result()` 與 `extract_warnings()`
+以防禦性 `.get()` 事後救回，已有測試覆蓋，功能正確。
+
+**為何不回頭改 10 個 demo**：純命名重構，收益（美觀、少一層轉接）不抵風險
+（10 個模組 × 重寫 + 重跑 QA，且每次改動都可能引入新缺陷）。轉接層是有測試的，穩定。
+
+**未來若要標準化**，建議把這 6 個鍵寫成 §6 的強制回傳欄位，並在同一次改動中
+一起改完 10 個 demo 與 `run_all.py`，不要分批：
+`module_id` / `module_name` / `mode` / `dry_run` / `warnings` / `amber_count`
+
+---
+
 **匯入 `_shared` 的方式**（所有 demo 統一）：
 
 ```python
