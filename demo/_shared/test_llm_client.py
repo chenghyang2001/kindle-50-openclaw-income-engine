@@ -432,5 +432,57 @@ def test_live_cli_safe_mode_does_not_leak_project_context() -> None:
         assert marker.lower() not in lowered, f"--safe-mode 疑似失效，回應洩漏了：{marker!r}"
 
 
+# --- complete_json()：demo06 端對端驗證實測 5/6 次 Claude 回應夾帶 markdown 圍籬，
+#     以下 5 個案例覆蓋「無圍籬」「圍籬」「圍籬+說明文字」「徹底不是 JSON」「非 dict」---
+
+
+# 31. happy path：fixture 是純 JSON（無圍籬）-> 正確回傳 dict
+def test_complete_json_happy_path(tmp_path: Path) -> None:
+    fixture = tmp_path / "reply.json"
+    fixture.write_text('{"vendor": "Acme", "total": 123.45}', encoding="utf-8")
+    client = LLMClient(mock=True)
+    result = client.complete_json("system", "user", fixture=fixture)
+    assert result == {"vendor": "Acme", "total": 123.45}
+
+
+# 32. 圍籬情境（demo06 實測看到的確切格式：```json ... ```）-> 正確剝除圍籬後回傳正確 dict
+def test_complete_json_strips_markdown_fence(tmp_path: Path) -> None:
+    fixture = tmp_path / "reply.json"
+    fixture.write_text('```json\n{"vendor": "Acme", "total": 123.45}\n```', encoding="utf-8")
+    client = LLMClient(mock=True)
+    result = client.complete_json("system", "user", fixture=fixture)
+    assert result == {"vendor": "Acme", "total": 123.45}
+
+
+# 33. 圍籬 + 前後有說明文字（保底防禦情境：大括號擷取）-> 正確取出中間 JSON
+def test_complete_json_strips_fence_with_surrounding_text(tmp_path: Path) -> None:
+    fixture = tmp_path / "reply.json"
+    fixture.write_text(
+        "這是提取結果：\n```json\n{\"vendor\": \"Acme\", \"total\": 123.45}\n```\n希望有幫助",
+        encoding="utf-8",
+    )
+    client = LLMClient(mock=True)
+    result = client.complete_json("system", "user", fixture=fixture)
+    assert result == {"vendor": "Acme", "total": 123.45}
+
+
+# 34. 徹底不是 JSON 的回應（不是圍籬問題）-> 拋 LLMError，訊息裡看得到清理前後片段
+def test_complete_json_raises_on_non_json_response(tmp_path: Path) -> None:
+    fixture = tmp_path / "reply.txt"
+    fixture.write_text("抱歉，我無法完成這個請求。", encoding="utf-8")
+    client = LLMClient(mock=True)
+    with pytest.raises(LLMError, match="抱歉"):
+        client.complete_json("system", "user", fixture=fixture)
+
+
+# 35. 解析成功但不是 dict（例如回應是純 JSON 陣列）-> 拋 LLMError
+def test_complete_json_raises_when_not_dict(tmp_path: Path) -> None:
+    fixture = tmp_path / "reply.json"
+    fixture.write_text("[1, 2, 3]", encoding="utf-8")
+    client = LLMClient(mock=True)
+    with pytest.raises(LLMError, match="list"):
+        client.complete_json("system", "user", fixture=fixture)
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))

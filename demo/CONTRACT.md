@@ -213,6 +213,38 @@ class LLMClient:
   API 時間，實際 wall time 視環境約數秒）明顯高於舊版直接 HTTP 呼叫；對逐筆呼叫
   `complete()` 的 demo（如批次評分、批次草稿）在大量筆數時會放大總耗時，尚未做平行化
 
+### `complete_json()`（2026-08-24 新增）
+
+demo06 端對端驗證實測：`prompts/extract_invoice.md` 明講「不得包 Markdown 程式碼圍籬」，
+但直接呼叫底層 `claude -p` CLI 6 次仍有**5 次**把回應包在 ` ```json ... ``` ` 圍籬裡。
+任何要求 Claude 嚴格輸出 JSON 的呼叫端，若直接 `json.loads(complete(...))`，多數情況
+會解析失敗（`Expecting value: line 1 column 1`）——這不是防禦假設情境，是防禦已經
+實測會發生、且發生機率是多數的情境。
+
+方法簽名：`complete_json(system, user, max_tokens=2000, fixture=None) -> dict`
+
+行為：
+
+1. 呼叫 `complete(system, user, max_tokens, fixture)` 取得原始文字
+2. 依序做兩層清理：
+   - 剝除 markdown 圍籬（開頭圍籬可能帶語言標籤如 ` ```json `，結尾純 ` ``` ` 行）
+   - 保底：取第一個 `{` 到最後一個 `}` 之間的內容（純剝圍籬不夠——Claude 有時
+     圍籬前後還會加一句人類語言說明，即使系統提示詞明講不要）
+3. `json.loads(清理後文字)`：解析失敗 -> `LLMError`（訊息含清理前後各 150 字元片段）；
+   解析成功但不是 dict -> `LLMError`（訊息含實際型別名稱）
+4. 回傳解析好的 dict
+
+**契約（呼叫端必讀）**：`complete_json()` 假設傳入內容已經確定要當 JSON 解析
+（live 模式，或 mock 模式配合合法 JSON fixture）。mock 模式若沒給 `fixture`，
+`complete()` 回傳的 `"[MOCK] ..."` 佔位字串**不會**被特殊處理，會自然落入
+`LLMError`——呼叫端若要走「LLM 是可選加值、沒有就用確定性邏輯」的模式
+（例如 demo03 的設計），必須自行先呼叫 `complete()` 判斷
+`raw.startswith("[MOCK]")`，再決定要不要接著呼叫 `complete_json()`。
+
+**目前接上的模組**：demo06（`extractor.py` 的 `parse_with_llm()`）。
+demo03／demo18 仍是各自的 `_safe_json()` 本地實作（行為類似但錯誤處理契約不同：
+失敗時回傳 `None` 而非拋例外），這輪不強制遷移，之後評估要不要統一。
+
 ---
 
 ## 4. `_shared/notifier.py`

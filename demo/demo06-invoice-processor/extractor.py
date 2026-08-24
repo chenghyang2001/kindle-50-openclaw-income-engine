@@ -135,9 +135,9 @@ def parse_with_llm(
     這裡不吞例外 —— JSON 壞掉必須讓呼叫端知道並降級為規則式解析 + needs_review。
     """
     system_prompt = Path(prompt_path).read_text(encoding="utf-8")
-    payload = json.loads(llm.complete(system=system_prompt, user=raw_text, max_tokens=800))
-    if not isinstance(payload, dict):
-        raise ValueError(f"提取結果不是 JSON 物件：{type(payload).__name__}")
+    # complete_json() 內部已容忍 Claude 常見的 markdown 圍籬包裹（```json ... ```）
+    # 並保證解析成功時一定是 dict，這裡不用再自己 json.loads() 或做 isinstance 檢查
+    payload = llm.complete_json(system=system_prompt, user=raw_text, max_tokens=800)
     currency = str(payload.get("currency") or default_currency)
     return {
         "vendor": payload.get("vendor"),

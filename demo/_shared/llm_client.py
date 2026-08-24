@@ -81,6 +81,45 @@ def _resolve_real_executable(cli_path: str) -> str:
     return cli_path
 
 
+def _strip_json_fences(text: str) -> str:
+    """剝除 Claude 常見的 markdown 程式碼圍籬包裹（```json ... ``` 或 ``` ... ```）。
+
+    demo06 端對端驗證實測：即使 system prompt 明講「不得包 Markdown 程式碼圍籬」，
+    直接呼叫 claude -p CLI 6 次仍有 5 次把回應包在 ```json ... ``` 圍欄裡——這是已經
+    實測會發生、且發生機率是多數的情境，不是防禦一個假設情境。只在文字確實以
+    ``` 開頭時才動手；不是圍籬包裹的內容原樣回傳，交給下一層（大括號擷取）處理。
+    """
+    stripped = text.strip()
+    if not stripped.startswith("```"):
+        return stripped
+    lines = stripped.splitlines()
+    if not lines:
+        return stripped
+    # 第一行是圍籬起始標記（``` 或 ```json 之類的語言標籤），整行捨棄
+    lines = lines[1:]
+    # 從尾端找最後一個純 ``` 的圍籬結束行，捨棄它與它之後的內容
+    for index in range(len(lines) - 1, -1, -1):
+        if lines[index].strip() == "```":
+            lines = lines[:index]
+            break
+    return "\n".join(lines).strip()
+
+
+def _extract_json_object(text: str) -> str:
+    """保底防禦：取第一個 `{` 到最後一個 `}` 之間的內容。
+
+    純粹剝圍籬還不夠——Claude 有時會在 JSON 前後多加一句人類語言的說明
+    （例如「這是提取結果：」「希望有幫助」），即使系統提示詞明講不要。
+    找不到合理的大括號配對（缺 `{`／缺 `}`／順序顛倒）時原樣回傳，
+    讓 json.loads 自然失敗並拋出帶有清理前後內容片段的錯誤，方便除錯判斷
+    是圍籬問題還是別的問題。
+    """
+    start, end = text.find("{"), text.rfind("}")
+    if start < 0 or end <= start:
+        return text
+    return text[start : end + 1]
+
+
 class LLMError(RuntimeError):
     """呼叫 claude CLI 失敗（含重試耗盡、回應格式異常、fixture 缺檔）。"""
 
@@ -211,6 +250,41 @@ class LLMClient:
         self._total_tokens["output"] += output_tokens
         self._record_usage("live", system, user, text, input_tokens, output_tokens)
         return text
+
+    def complete_json(
+        self,
+        system: str,
+        user: str,
+        max_tokens: int = 2000,
+        fixture: str | Path | None = None,
+    ) -> dict:
+        """呼叫 complete()，把回應解析成 JSON dict；容忍 Claude 常見的 markdown 圍籬包裹。
+
+        demo06 端對端驗證實測：即使 system prompt 明講「不得包 Markdown 程式碼圍籬」，
+        直接呼叫 claude -p CLI 6 次仍有 5 次把回應包在 ```json ... ``` 圍欄裡。這不是
+        防禦一個假設情境，是防禦已經實測會發生、且發生機率是多數的情境。
+
+        契約（呼叫端務必注意）：本方法假設傳入的內容「已經確定要當 JSON 解析」——
+        live 模式，或 mock 模式配合合法 JSON fixture。mock 模式若沒給 fixture，
+        complete() 會回傳 "[MOCK] <system 前 40 字>" 這種佔位字串，本方法**不會**
+        特殊處理它：圍籬剝除對它無效（它不是圍籬包裹），大括號搜尋找不到 `{` 會
+        保留原文字，json.loads() 對它自然解析失敗並拋出 LLMError。呼叫端若要支援
+        「LLM 是可選加值、mock 模式下走確定性邏輯」的模式（見 demo03 的
+        `_apply_llm`），應該自己先呼叫 complete() 判斷 raw.startswith("[MOCK]")
+        再決定要不要接著呼叫本方法，不要指望本方法幫忙判斷。
+        """
+        raw = self.complete(system=system, user=user, max_tokens=max_tokens, fixture=fixture)
+        cleaned = _extract_json_object(_strip_json_fences(raw))
+        try:
+            payload = json.loads(cleaned)
+        except json.JSONDecodeError as exc:
+            raise LLMError(
+                "LLM 回應解析為 JSON 失敗：清理前｜"
+                f"{raw[:150]!r}｜清理後｜{cleaned[:150]!r}｜{exc}"
+            ) from exc
+        if not isinstance(payload, dict):
+            raise LLMError(f"LLM 回應解析後不是 JSON 物件，是 {type(payload).__name__}")
+        return payload
 
     def _compose_system(self, system: str) -> str:
         """把 CONTEXT_NOTE 接到 system prompt 尾端（第 04 章：減少 40% 不相關輸出）。"""
