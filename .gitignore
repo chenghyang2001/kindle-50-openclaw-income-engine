@@ -29,6 +29,7 @@ demo/**/.seen.json
 demo/**/.state.json
 demo/**/state/
 demo/**/audit/
+demo/**/audit.jsonl
 demo/**/registry/
 demo/**/*.audit.jsonl
 demo/**/.compliance-state.json
