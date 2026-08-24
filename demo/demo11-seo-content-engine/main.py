@@ -29,7 +29,7 @@ sys.path.insert(0, str(MODULE_DIR))
 from _shared.autonomy import AutonomyError, AutonomyGate, AutonomyLevel  # noqa: E402
 from _shared.config_loader import load_config  # noqa: E402
 from _shared.diagnostics import Diagnostics  # noqa: E402
-from _shared.llm_client import LLMClient  # noqa: E402
+from _shared.llm_client import LLMClient, LLMError  # noqa: E402
 from _shared.notifier import Notifier, NotifierError  # noqa: E402
 
 from content_generator import (  # noqa: E402
@@ -68,6 +68,10 @@ CONTEXT_NOTE = (
 
 DEFAULT_HOURLY_RATE = "75"
 CENTS = Decimal("0.01")
+
+# Phase 2 文章草擬用 max_tokens=4000（全專案最大），實測一次真實產文耗時 ~130 秒，
+# 預設 60 秒逾時對這個長度不夠，留安全邊際設為 240 秒。
+LLM_TIMEOUT_SECONDS = 240
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -520,7 +524,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     selection = _run_phase1(config, candidates, state_file, diagnostics)
     briefs = _build_briefs(config, selection, brand)
     client = LLMClient(
-        mock=not bool(getattr(args, "live", False)), context_note=CONTEXT_NOTE
+        mock=not bool(getattr(args, "live", False)),
+        context_note=CONTEXT_NOTE,
+        timeout=LLM_TIMEOUT_SECONDS,
     )
     warnings = list(selection["warnings"])
     warnings.extend(_enrich_briefs(client, config, briefs, brand))
@@ -546,6 +552,7 @@ def main() -> int:
     except (
         ContentGeneratorError,
         KeywordPlannerError,
+        LLMError,
         FileNotFoundError,
         OSError,
         ValueError,

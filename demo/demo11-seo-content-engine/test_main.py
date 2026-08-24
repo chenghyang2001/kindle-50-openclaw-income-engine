@@ -19,6 +19,7 @@ sys.path.insert(0, str(MODULE_DIR.parent))
 sys.path.insert(0, str(MODULE_DIR))
 
 import main as seo_main  # noqa: E402
+from _shared.llm_client import LLMClient, LLMError  # noqa: E402
 from keyword_planner import (  # noqa: E402
     SOURCE_SEED_EXPANSION,
     TIER_ALREADY_RANKING,
@@ -185,3 +186,35 @@ def test_integration_autonomy_and_diagnostics(tmp_path: Path) -> None:
     assert "週一內容簡報" in result["summary_text"]
     assert "庫存盤點 表格 範本" in result["summary_text"]
     assert "審閱時要處理的提醒" in result["summary_text"]
+
+
+def test_main_catches_llm_error(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--live 模式下 CLI 逾時等狀況會拋 LLMError；main() 必須吃下來變成 exit code 1，
+    而不是讓 raw traceback 砸給使用者（demo05/demo12/demo14 既有慣例的補齊）。
+    """
+
+    def _raise_llm_error(args: argparse.Namespace) -> dict:
+        raise LLMError("模擬 CLI 逾時")
+
+    monkeypatch.setattr(seo_main, "run", _raise_llm_error)
+    monkeypatch.setattr(sys, "argv", ["main.py"])
+
+    exit_code = seo_main.main()
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "錯誤：" in captured.err
+    assert "模擬 CLI 逾時" in captured.err
+
+
+def test_llm_timeout_seconds_constant_locked() -> None:
+    """鎖定 LLM_TIMEOUT_SECONDS=240：Phase 2 實測真實產文 ~130 秒，
+    這個常數被誤改回較短的值會讓 --live 模式系統性逾時失敗，屬於容易被忽略的回歸。
+    """
+    assert seo_main.LLM_TIMEOUT_SECONDS == 240
+
+    # mock 模式不會真的觸網，但建構子的 timeout 參數驗證邏輯（timeout > 0）要走得通
+    client = LLMClient(mock=True, timeout=seo_main.LLM_TIMEOUT_SECONDS)
+    assert client is not None
