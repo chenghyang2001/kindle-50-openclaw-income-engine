@@ -418,8 +418,8 @@ def main() -> int:
         print(f"錯誤：{exc}", file=sys.stderr)
         return 1
 
-    if result["delivery"]["channel"] != "console":
-        # console 通道已經由 Notifier 印過，不重複輸出。
+    if result["dry_run"] or result["delivery"]["channel"] != "console":
+        # dry-run 時 Notifier 從未被呼叫；非 console 通道也需要主控台自己印。
         print(result["report_text"])
     if result["is_partial"]:
         print(

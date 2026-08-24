@@ -117,3 +117,52 @@ def test_integration_stripe_failure_still_delivers(monkeypatch, capsys):
     assert result["delivery"]["delivered"] is True
     assert result["delivery"]["channel"] == "console"
     assert "部分資料" in capsys.readouterr().out
+
+
+def test_dry_run_console_prints_report(monkeypatch, capsys):
+    """回歸測試（happy path）：--dry-run + console 通道時，main() 仍須印出完整報表。
+
+    dry-run 模式下 deliver() 直接 return，從未呼叫 Notifier，
+    main() 若只靠「channel != console」判斷是否要印，會漏掉這個組合。
+    """
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["main.py", "--mock", "--dry-run", "--config", str(MODULE_DIR / "config.yaml")],
+    )
+
+    exit_code = main.main()
+
+    output = capsys.readouterr().out
+    assert exit_code == 0
+    assert "每日銷售與進度報表" in output
+    assert "今日營收" in output
+
+
+def test_dry_run_non_console_prints_report_once(monkeypatch, capsys):
+    """回歸測試（edge case）：非 console 通道 + --dry-run 時報表不可被印兩次。
+
+    確保修復判斷式的 `or` 條件不會讓非 console 通道疊加印出兩份報表。
+    """
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "main.py",
+            "--mock",
+            "--dry-run",
+            "--notify",
+            "telegram",
+            "--config",
+            str(MODULE_DIR / "config.yaml"),
+        ],
+    )
+
+    exit_code = main.main()
+
+    output = capsys.readouterr().out
+    assert exit_code == 0
+    # 用含表情符號的報表標頭行比對（而非裸字串），
+    # 因為 AI 敘述摘要區塊的 mock 內容會回顯提示詞裡同樣的「每日銷售與進度報表」字樣，
+    # 用裸字串比對會誤判成「印了兩次」。
+    assert output.count("📊 每日銷售與進度報表｜") == 1
