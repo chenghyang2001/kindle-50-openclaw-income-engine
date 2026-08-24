@@ -257,3 +257,65 @@ def test_edge_case_first_line_truncation() -> None:
 def _first_line_expected_length() -> int:
     """截斷後長度應為 width + 省略符號長度，避免測試裡硬編碼魔術數字。"""
     return demo12._SUMMARY_PREVIEW_WIDTH + len(demo12._TRUNCATION_SUFFIX)
+
+
+def test_happy_path_message_within_char_limit(monkeypatch: pytest.MonkeyPatch) -> None:
+    """LLM 正文長度在 config.yaml 設定的 max_chars 限制內時，不該出現超標標記。
+
+    demo12 的 cadence 對每個外聯階段都設了 max_chars（Day 0 = 150、Day 4 = 180），
+    但程式從未驗證過 LLM 實際輸出是否真的守住這個限制。這裡固定 monkeypatch
+    LLMClient.complete 回傳一段遠低於任何階段上限的短文字，確認「守住限制」的
+    情況下 over_char_limit 正確回報 False，摘要文字也不該冒出超標警告。
+    """
+    short_body = "示範內容" * 10  # 40 字元，遠低於 Day0(150)／Day4(180) 上限
+    monkeypatch.setattr(
+        demo12.LLMClient,
+        "complete",
+        lambda self, system, user, max_tokens=2000, fixture=None: short_body,
+    )
+
+    result = _run()
+
+    assert result["drafted"], "此測試假設標準 mock 輸入至少產生一筆草稿"
+    for item in result["drafted"]:
+        assert item["message_chars"] == len(short_body)
+        assert item["over_char_limit"] is False
+
+    summary = demo12._summarise(result)
+    assert "⚠️ 正文" not in summary
+
+
+def test_edge_case_char_limit_note() -> None:
+    """`_char_limit_note()`：未超標回傳空字串，超標時回傳含實際字數與上限的警告文字。"""
+    under_limit_item = {"over_char_limit": False, "message_chars": 100, "max_chars": 150}
+    assert demo12._char_limit_note(under_limit_item) == ""
+
+    over_limit_item = {"over_char_limit": True, "message_chars": 224, "max_chars": 180}
+    note = demo12._char_limit_note(over_limit_item)
+    assert "224" in note
+    assert "180" in note
+
+
+def test_integration_over_char_limit_flagged_end_to_end(monkeypatch: pytest.MonkeyPatch) -> None:
+    """整合：LLM 實際超字數時，從 _compose_message 到 _summarise 全程都要能看見警告。
+
+    重現真實 bug：實際跑一次 --live，Day 4（max_chars=180）那封信 LLM 寫了 224 字，
+    超標 24%，但完全沒有任何警告顯示給審核者。這裡用固定超長文字模擬同樣的情況，
+    確認 message_chars／over_char_limit 正確算出，且摘要文字裡看得到警告字樣。
+    """
+    overlong_body = "x" * 224  # 同時超過 Day0(150) 與 Day4(180) 兩個階段的上限
+    monkeypatch.setattr(
+        demo12.LLMClient,
+        "complete",
+        lambda self, system, user, max_tokens=2000, fixture=None: overlong_body,
+    )
+
+    result = _run()
+
+    assert result["drafted"], "此測試假設標準 mock 輸入至少產生一筆草稿"
+    for item in result["drafted"]:
+        assert item["message_chars"] == len(overlong_body)
+        assert item["over_char_limit"] is True
+
+    summary = demo12._summarise(result)
+    assert "⚠️ 正文" in summary

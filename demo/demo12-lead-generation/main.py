@@ -284,8 +284,13 @@ def _subject(lead: dict, step: CadenceStep) -> str:
     return f"[外聯 Day {step.day}｜{step.type}] {lead.get('company') or lead.get('id')}"
 
 
-def _compose_message(context: dict, lead: dict, card: ScoreCard, step: CadenceStep) -> str:
-    """呼叫 LLM 產生信件內容，並由程式附上法定的識別與退訂區塊。"""
+def _compose_message(context: dict, lead: dict, card: ScoreCard, step: CadenceStep) -> tuple[str, int]:
+    """呼叫 LLM 產生信件內容，並由程式附上法定的識別與退訂區塊。
+
+    回傳 (完整信件文字含 footer, LLM 正文字元數)。正文字元數只算 LLM 產出的
+    部分，不含 footer——footer 是法定固定長度區塊，跟 LLM 有沒有守住
+    max_chars 無關，混進去算會讓超標判定失真。
+    """
     system = _read_prompt(step.prompt)
     payload = {
         "lead": {
@@ -307,8 +312,9 @@ def _compose_message(context: dict, lead: dict, card: ScoreCard, step: CadenceSt
         "step": {"day": step.day, "type": step.type, "max_chars": step.max_chars},
     }
     user = json.dumps(payload, ensure_ascii=False, indent=2)
-    body = context["llm"].complete(system=system, user=user, max_tokens=700)
-    return f"{body.rstrip()}\n\n{context['compliance'].footer(lead)}"
+    raw_body = context["llm"].complete(system=system, user=user, max_tokens=700).rstrip()
+    full_text = f"{raw_body}\n\n{context['compliance'].footer(lead)}"
+    return full_text, len(raw_body)
 
 
 def _outreach_entry(
@@ -317,6 +323,7 @@ def _outreach_entry(
     step: CadenceStep,
     plan: dict,
     body: str,
+    message_chars: int,
     level: AutonomyLevel,
 ) -> dict:
     """組出外聯（已送出 / 待審草稿）的回報項目。"""
@@ -326,6 +333,8 @@ def _outreach_entry(
             "stage_day": step.day,
             "stage_type": step.type,
             "max_chars": step.max_chars,
+            "message_chars": message_chars,
+            "over_char_limit": message_chars > step.max_chars,
             "due_at": plan["due_at"],
             "autonomy": level.value,
             "crm_push": card.band == BAND_HOT,
@@ -347,11 +356,11 @@ def _process_outreach(lead: dict, card: ScoreCard, now: datetime, context: dict)
         planner.assert_can_send(lead)
     except ComplianceBlocked as exc:
         return "blocked", _base_entry(lead, card, exc.reason, exc.detail)
-    body = _compose_message(context, lead, card, step)
+    body, message_chars = _compose_message(context, lead, card, step)
     email = str(lead.get("email") or "")
     gate: AutonomyGate = context["gate"]
     level = gate.effective_level(email)
-    entry = _outreach_entry(lead, card, step, plan, body, level)
+    entry = _outreach_entry(lead, card, step, plan, body, message_chars, level)
     # 寄件人識別不齊備時，即使命中白名單也不得自動外送
     can_auto = gate.can_send(email) and context["compliance"].is_identity_complete
     if can_auto and not context["dry_run"]:
@@ -460,6 +469,13 @@ def _first_line(text: str, width: int = _SUMMARY_PREVIEW_WIDTH) -> str:
     return head if len(head) <= width else head[:width] + _TRUNCATION_SUFFIX
 
 
+def _char_limit_note(item: dict) -> str:
+    """超過 config 設定的 max_chars 時附上警告，交給人工確認要不要改寫。"""
+    if not item.get("over_char_limit"):
+        return ""
+    return f"｜⚠️ 正文 {item['message_chars']} 字超過上限 {item['max_chars']}"
+
+
 def _summarise(result: dict) -> str:
     """組出給操作者的摘要文字。"""
     counts = result["band_counts"]
@@ -474,11 +490,13 @@ def _summarise(result: dict) -> str:
         f"｜寄件人識別：{'完整' if result['is_sender_identity_complete'] else '不完整（全部降級草稿）'}",
     ]
     for item in result["sent"]:
-        lines.append(f"  [已送] {item['company']} {item['score']} 分 Day {item['stage_day']}")
+        note = _char_limit_note(item)
+        lines.append(f"  [已送] {item['company']} {item['score']} 分 Day {item['stage_day']}{note}")
     for item in result["drafted"]:
+        note = _char_limit_note(item)
         lines.append(
             f"  [草稿] {item['company']} {item['score']} 分 Day {item['stage_day']}"
-            f"｜{len(item['body'])} 字元｜{_first_line(item['body'])}"
+            f"｜{len(item['body'])} 字元｜{_first_line(item['body'])}{note}"
         )
     for item in result["enrichment_queue"]:
         lines.append(f"  [補資料] {item['company']} — 缺 {'、'.join(item['missing_fields'])}")
