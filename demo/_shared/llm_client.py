@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -35,6 +36,49 @@ USAGE_LOG_NAME = ".usage.jsonl"
 
 # 指數退避的基準秒數：1s -> 2s -> 4s。與舊版 HTTP 重試沿用同一個退避節奏。
 BACKOFF_BASE_SECONDS = 1.0
+
+# npm 全域安裝在 Windows 上會產生 .cmd/.bat 包裝腳本（shim），不是真正的 PE 執行檔。
+_SHIM_SUFFIXES = frozenset({".cmd", ".bat"})
+# npm shim 內容形如 `"%dp0%\node_modules\@anthropic-ai\claude-code\bin\claude.exe" %*`，
+# 找雙引號包住、以 .exe 結尾的第一段路徑。
+_SHIM_EXE_PATTERN = re.compile(r'"([^"]+\.exe)"', re.IGNORECASE)
+
+
+def _resolve_real_executable(cli_path: str) -> str:
+    """把 npm shim（.cmd/.bat）解析成它實際指向的 .exe，避免多一層 cmd.exe 重新解析。
+
+    Windows 沒辦法直接執行 .cmd/.bat（不是 PE executable），CreateProcess 遇到這種目標
+    會自動借一層 `cmd.exe /c` 轉呼叫；這層 cmd.exe 會把 `<`、`>`、`|`、`&`、`^`、`%` 等字元
+    當成重導向/管線/變數展開的特殊運算子重新解讀——即使 `subprocess.run([...])` 用 list
+    傳參數，這層額外的 cmd.exe 解析不受一般 .exe 的雙引號跳脫規則保護。
+    demo 的 prompts/*.md 大量使用 `<動作 + 對象>` 這類角括號佔位符當 system prompt，
+    透過 .cmd shim 傳遞時會被打亂，導致 `--system-prompt` 沒生效、`--output-format json`
+    也沒套用（實測 demo01 briefing.md 會炸成這樣）。直接呼叫 shim 背後的 .exe 可完全繞開。
+
+    這只是「盡量繞開」的優化，不是必要條件：任何一步解析失敗都退回原本的 cli_path，
+    不讓整個流程因為這段最佳化掛掉。
+    """
+    path = Path(cli_path)
+    if path.suffix.lower() not in _SHIM_SUFFIXES:
+        return cli_path
+
+    try:
+        content = path.read_text(encoding="utf-8")
+    except OSError:
+        return cli_path
+
+    match = _SHIM_EXE_PATTERN.search(content)
+    if not match:
+        return cli_path
+
+    # %dp0% 是 npm shim 的標準寫法，代表「這個 .cmd 檔案自己所在的目錄」
+    raw_exe_path = match.group(1).replace("%dp0%", str(path.parent))
+    resolved_path = Path(raw_exe_path)
+    if not resolved_path.is_absolute():
+        resolved_path = path.parent / raw_exe_path
+    if resolved_path.is_file():
+        return str(resolved_path)
+    return cli_path
 
 
 class LLMError(RuntimeError):
@@ -103,7 +147,12 @@ class LLMClient:
         self._cli_path = "" if self._mock else self._require_cli()
 
     def _require_cli(self) -> str:
-        """live 模式缺 claude CLI 就走紅色警報退出，絕不靜默降級回 mock。"""
+        """live 模式缺 claude CLI 就走紅色警報退出，絕不靜默降級回 mock。
+
+        Windows 上 `shutil.which` 常解析出 npm 的 .cmd 包裝腳本而非真正的 .exe，
+        該路徑會觸發額外一層 cmd.exe 解析、打亂 system prompt 內容（見
+        `_resolve_real_executable` docstring），因此這裡再嘗試解析出背後的 .exe。
+        """
         cli_path = shutil.which(CLI_COMMAND)
         if not cli_path:
             self._diagnostics.red(
@@ -112,6 +161,8 @@ class LLMClient:
                 "安裝 Claude Code CLI 並完成一次互動登入（npm install -g @anthropic-ai/claude-code，"
                 "再執行一次 claude 完成登入），或改用 --mock 離線模式",
             )
+        if os.name == "nt":
+            cli_path = _resolve_real_executable(cli_path)
         return cli_path
 
     @property

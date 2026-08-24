@@ -1,12 +1,14 @@
-"""llm_client 的 claude CLI headless 化測試（複雜度：complex，22 個 mock 測試 + 1 個預設跳過的整合測試）。
+"""llm_client 的 claude CLI headless 化測試（複雜度：complex，28 個 mock 測試 + 1 個預設跳過的整合測試）。
 
-全部用 `unittest.mock.patch` 模擬 `shutil.which` 與 `subprocess.run`，
-絕對不真的呼叫 `claude` CLI（會產生真實 API 用量、拖慢測試、且在沒裝 CLI 的機器上會失敗）。
+全部用 `unittest.mock.patch` 模擬 `shutil.which`、`subprocess.run`、`pathlib.Path.read_text`
+/`Path.is_file`，絕對不真的呼叫 `claude` CLI、不真的讀寫檔案系統上的可執行檔
+（會產生真實 API 用量、拖慢測試、且在沒裝 CLI 的機器上會失敗）。
 
 唯一例外是檔案最後一個整合測試：預設用 `pytest.mark.skipif` 跳過，
 只有環境變數 `OPENCLAW_RUN_LIVE_CLI_TESTS=1` 存在時才真的打本機 `claude` CLI，
-用來當 `--safe-mode` 之類安全旗標未來被意外刪掉的回歸防線
-（這次的 MUST_FIX 就是因為 22 個 mock 測試全部繞過了 subprocess.run 才完全沒被抓到）。
+用來當 `--safe-mode` / `.cmd` shim 解析之類安全或正確性相關邏輯未來被意外破壞的回歸防線
+（這次的兩個 bug——`--safe-mode` 缺漏與 `.cmd` shim 觸發 cmd.exe 重新解析——
+都是因為既有 mock 測試繞過了 subprocess.run 的真實執行細節才完全沒被抓到）。
 """
 
 from __future__ import annotations
@@ -25,7 +27,12 @@ sys.path.insert(0, str(MODULE_DIR.parent))  # 讓 `from _shared...` 可解析
 sys.path.insert(0, str(MODULE_DIR))  # 讓「直接以腳本執行本檔」的 fallback import 也能用
 
 from _shared.diagnostics import Diagnostics, RedAlert  # noqa: E402
-from _shared.llm_client import CLI_COMMAND, LLMClient, LLMError  # noqa: E402
+from _shared.llm_client import (  # noqa: E402
+    CLI_COMMAND,
+    LLMClient,
+    LLMError,
+    _resolve_real_executable,
+)
 import _shared.llm_client as llm_client_module  # noqa: E402
 
 
@@ -306,7 +313,104 @@ def test_live_complete_passes_custom_model_to_argv() -> None:
     assert argv[argv.index("--model") + 1] == custom_model
 
 
-# 23. 整合測試（預設 SKIPPED）：真的呼叫一次本機 claude CLI，驗證 --safe-mode
+# 23. shutil.which 回傳 .exe（非 .cmd/.bat）時直接使用，不嘗試讀檔案內容解析
+def test_require_cli_uses_exe_path_directly_without_reading_file() -> None:
+    exe_path = "C:\\fake\\claude.exe"
+    with patch("shutil.which", return_value=exe_path), patch("pathlib.Path.read_text") as mock_read_text:
+        client = LLMClient(mock=False)
+    mock_read_text.assert_not_called()
+    with patch("subprocess.run", return_value=_cli_result(stdout=_ok_json())) as mock_run:
+        client.complete("system", "user")
+    argv = mock_run.call_args.args[0]
+    assert argv[0] == exe_path
+
+
+# 24. .CMD shim 內容含 %dp0%\...\claude.exe 且解析後路徑存在 -> 改用該 .exe 路徑
+def test_require_cli_resolves_cmd_shim_to_exe_when_it_exists() -> None:
+    cmd_path = "C:\\fake\\npm\\claude.CMD"
+    shim_content = (
+        "@ECHO off\r\n"
+        "GOTO start\r\n"
+        ':find_dp0\r\nSET dp0=%~dp0\r\nEXIT /b\r\n:start\r\nSETLOCAL\r\nCALL :find_dp0\r\n'
+        '"%dp0%\\node_modules\\@anthropic-ai\\claude-code\\bin\\claude.exe"   %*\r\n'
+    )
+    expected_exe = str(
+        Path("C:\\fake\\npm") / "node_modules" / "@anthropic-ai" / "claude-code" / "bin" / "claude.exe"
+    )
+    with (
+        patch("shutil.which", return_value=cmd_path),
+        patch("pathlib.Path.read_text", return_value=shim_content),
+        patch("pathlib.Path.is_file", return_value=True),
+    ):
+        client = LLMClient(mock=False)
+    with patch("subprocess.run", return_value=_cli_result(stdout=_ok_json())) as mock_run:
+        client.complete("system", "user")
+    argv = mock_run.call_args.args[0]
+    assert argv[0] == expected_exe
+
+
+# 25. 同上但解析出來的 .exe 路徑不存在 -> 退回用原本的 .cmd 路徑
+def test_require_cli_falls_back_to_cmd_when_resolved_exe_missing() -> None:
+    cmd_path = "C:\\fake\\npm\\claude.CMD"
+    shim_content = '"%dp0%\\node_modules\\@anthropic-ai\\claude-code\\bin\\claude.exe"   %*\r\n'
+    with (
+        patch("shutil.which", return_value=cmd_path),
+        patch("pathlib.Path.read_text", return_value=shim_content),
+        patch("pathlib.Path.is_file", return_value=False),
+    ):
+        client = LLMClient(mock=False)
+    with patch("subprocess.run", return_value=_cli_result(stdout=_ok_json())) as mock_run:
+        client.complete("system", "user")
+    argv = mock_run.call_args.args[0]
+    assert argv[0] == cmd_path
+
+
+# 26. .CMD 檔案內容讀取失敗（OSError）-> 不讓整個 _require_cli() 掛掉，退回用原本的 .cmd 路徑
+def test_require_cli_falls_back_to_cmd_when_read_fails() -> None:
+    cmd_path = "C:\\fake\\npm\\claude.CMD"
+    with (
+        patch("shutil.which", return_value=cmd_path),
+        patch("pathlib.Path.read_text", side_effect=OSError("讀檔失敗")),
+    ):
+        client = LLMClient(mock=False)
+    with patch("subprocess.run", return_value=_cli_result(stdout=_ok_json())) as mock_run:
+        client.complete("system", "user")
+    argv = mock_run.call_args.args[0]
+    assert argv[0] == cmd_path
+
+
+# 27. .CMD 檔案內容裡完全找不到符合 pattern 的 .exe 路徑（正則沒 match）-> 退回原本 .cmd 路徑
+def test_require_cli_falls_back_to_cmd_when_no_exe_pattern_matches() -> None:
+    cmd_path = "C:\\fake\\npm\\claude.CMD"
+    with (
+        patch("shutil.which", return_value=cmd_path),
+        patch("pathlib.Path.read_text", return_value="@ECHO off\r\necho 這裡沒有 exe 路徑\r\n"),
+    ):
+        client = LLMClient(mock=False)
+    with patch("subprocess.run", return_value=_cli_result(stdout=_ok_json())) as mock_run:
+        client.complete("system", "user")
+    argv = mock_run.call_args.args[0]
+    assert argv[0] == cmd_path
+
+
+# 28. 非 Windows 平台時，即使路徑剛好是 .cmd 結尾，也不會嘗試 Windows 專屬的 shim 解析邏輯
+def test_require_cli_skips_shim_resolution_on_non_windows(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(llm_client_module.os, "name", "posix")
+    cmd_path = "/fake/claude.cmd"
+    with (
+        patch("shutil.which", return_value=cmd_path),
+        patch("pathlib.Path.read_text") as mock_read_text,
+    ):
+        LLMClient(mock=False)
+    mock_read_text.assert_not_called()
+
+
+# 29. `_resolve_real_executable` 直接單元測試：非 .cmd/.bat 路徑原樣回傳（白箱驗證，雙重覆蓋 #23）
+def test_resolve_real_executable_returns_unchanged_for_non_shim_suffix() -> None:
+    assert _resolve_real_executable("C:\\fake\\claude.exe") == "C:\\fake\\claude.exe"
+
+
+# 30. 整合測試（預設 SKIPPED）：真的呼叫一次本機 claude CLI，驗證 --safe-mode
 #     確實生效——回應不能混進 cwd 的 CLAUDE.md／git status／其他專案指示。
 #     只有設定 OPENCLAW_RUN_LIVE_CLI_TESTS=1 才會真的執行，避免一般 `pytest` 跑測試
 #     時意外燒到使用者真實的 Claude 用量、也避免拖慢一般測試套件。
