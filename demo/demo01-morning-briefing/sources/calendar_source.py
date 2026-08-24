@@ -16,7 +16,9 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from . import SourceError, read_mock_payload
+from _shared.oauth import OAuthError, load_access_token
+
+from . import read_mock_payload
 
 EVENTS_ENDPOINT = "https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events"
 ALL_DAY_LABEL = "全天"
@@ -68,34 +70,19 @@ def _fetch_live_events(source_config: dict, diagnostics: Any) -> list[dict]:
             cause=f"環境變數 {token_env} 未設定，無法存取 Google Calendar",
             fix=f"先完成一次 Google OAuth 取得 token JSON，再設定 {token_env} 指向該檔案路徑",
         )
-        raise SourceError(f"缺少環境變數 {token_env}，行事曆為最高權重來源，流程中止")
 
-    access_token = _read_access_token(Path(token_location), token_env, diagnostics)
+    # oauth.py 只負責湊出 symptom/cause/fix 並 raise OAuthError，不會自己呼叫
+    # diagnostics.red()（見 _shared/oauth.py 頂端說明：Diagnostics.red() 本身就是
+    # 終結點，若 oauth.py 自己先 red 一次、這裡又再處理一次，等同紅色警報喊兩次，
+    # 或者讓這個 except 永遠抓不到東西，因為 RedAlert 已經先冒泡出去了）。
+    # 因此「要不要喊紅色警報、用哪個 Diagnostics 實例喊」的責任落在呼叫端——也就是這裡。
+    try:
+        access_token = load_access_token(Path(token_location), token_env, diagnostics)
+    except OAuthError as exc:
+        diagnostics.red(symptom=exc.symptom, cause=exc.cause, fix=exc.fix)
+
     payload = _request_events(source_config, access_token, diagnostics)
     return [_normalize_google_event(item) for item in payload.get("items", [])]
-
-
-def _read_access_token(token_path: Path, token_env: str, diagnostics: Any) -> str:
-    """從 token JSON 取出 access_token；格式不符即 RED。"""
-    try:
-        token_data = json.loads(token_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        diagnostics.red(
-            symptom="oauth_error",
-            cause=f"{token_env} 指向的 token 檔無法讀取或不是合法 JSON：{token_path}",
-            fix="重新執行 Google OAuth 流程產生 token，並確認設定永久 refresh token",
-        )
-        raise SourceError(f"token 檔無法解析：{token_path}") from exc
-
-    access_token = token_data.get("access_token") or token_data.get("token")
-    if not access_token:
-        diagnostics.red(
-            symptom="oauth_error",
-            cause=f"token 檔缺少 access_token 欄位：{token_path}",
-            fix="確認 OAuth 流程有帶 offline access，並重新產生 token",
-        )
-        raise SourceError(f"token 檔缺少 access_token：{token_path}")
-    return str(access_token)
 
 
 def _request_events(source_config: dict, access_token: str, diagnostics: Any) -> dict:
@@ -124,14 +111,12 @@ def _request_events(source_config: dict, access_token: str, diagnostics: Any) ->
             cause=f"Google Calendar API 回應 HTTP {exc.code}",
             fix="401/403 代表 token 過期或範圍不足，重新授權；其餘狀態碼請查 API 配額",
         )
-        raise SourceError(f"Google Calendar API 失敗：HTTP {exc.code}") from exc
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
         diagnostics.red(
             symptom="calendar_unreachable",
             cause=f"無法連線或解析 Google Calendar 回應：{exc}",
             fix="確認網路連線與 DNS，再重跑一次；行事曆為最高權重來源，不可略過",
         )
-        raise SourceError(f"Google Calendar 連線失敗：{exc}") from exc
 
 
 def _normalize_google_event(item: dict) -> dict:

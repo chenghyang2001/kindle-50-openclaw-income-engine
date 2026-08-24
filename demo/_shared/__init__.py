@@ -8,6 +8,7 @@
 | `diagnostics` | RAG 診斷矩陣（紅 / 琥珀 / 綠）與書中已知症狀對照表 |
 | `llm_client` | Claude Messages API 封裝，預設 mock 模式（零成本開發） |
 | `notifier` | 多通道發送（console / telegram / gmail / line / whatsapp） |
+| `oauth` | Google OAuth token 讀取，access_token 過期時用 refresh_token 自動換新 |
 | `config_loader` | YAML 載入 + `${ENV_VAR}` 展開 + 必要環境變數驗證 |
 | `package` | 把本套件 vendor 進單一 demo，產出可獨立交付的資料夾 |
 
@@ -22,6 +23,7 @@ __all__ = [
     "diagnostics",
     "llm_client",
     "notifier",
+    "oauth",
 ]
 
 __version__ = "1.0.0"

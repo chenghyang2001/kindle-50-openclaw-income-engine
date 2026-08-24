@@ -10,7 +10,7 @@ from __future__ import annotations
 import functools
 import sys
 from enum import Enum
-from typing import Any, Callable, TextIO, TypeVar
+from typing import Any, Callable, NoReturn, TextIO, TypeVar
 
 _T = TypeVar("_T")
 
@@ -130,7 +130,7 @@ class Diagnostics:
         """本次執行累積的琥珀色警示數量。"""
         return self._amber_count
 
-    def red(self, symptom: str, cause: str, fix: str) -> None:
+    def red(self, symptom: str, cause: str, fix: str) -> NoReturn:
         """印出紅色警報（symptom / cause / fix 三欄），然後退出或拋 RedAlert。"""
         message = f"[RED] [{self._module_name}] 症狀：{symptom}"
         safe_print(_SEPARATOR, sys.stderr)

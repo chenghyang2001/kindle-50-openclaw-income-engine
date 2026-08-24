@@ -269,6 +269,8 @@ def project_root() -> Path:
     """回傳 demo/ 的絕對路徑（以本檔位置推算，禁止硬編碼）"""
 ```
 
+> `_shared/` 還有第六個元件 `oauth.py`，因既有交叉引用不能順延編號，章節排在最後，見 **§10**。
+
 ---
 
 ## 6. 每個 demo 的 `main.py` 統一介面
@@ -400,3 +402,101 @@ demoNN-xxx/
 ```
 
 **驗收**：`python main.py --mock` 必須零憑證、零網路跑完並印出結果。
+
+---
+
+## 10. `_shared/oauth.py`（2026-08-24 新增，2026-08-24 修訂：OAuthError 攜帶診斷資訊）
+
+> **為什麼編號在這裡而不是接在 §5 之後**：`§6`（`main.py` 介面）／`§7`（`config.yaml`）／`§8`（測試要求）
+> 已被 30 個 demo 的 `.py` 與 `README.md` 交叉引用十餘處。把新章節插進 §5 後會讓那些引用全數失效，
+> 代價遠大於「`_shared/` 章節不連號」。新增章節一律往後接。
+
+Google OAuth 的 `access_token` 一小時過期。共有 5 個模組（demo01/05/06/11/14）用同一套
+`token_env` 模式讀 token，但目前只有 demo01 的憑證模型（`token_env` 指向一份 OAuth token
+JSON 檔）真的接得上這個元件（見本節最後「適用範圍」）；refresh 邏輯收斂到 `_shared/`，
+避免各自實作五份。
+
+```python
+class OAuthError(RuntimeError):
+    """token 檔不可用或 refresh 失敗，攜帶 symptom / cause / fix 三段診斷資訊。
+
+    本模組**不會自己呼叫** diagnostics.red()——因為 Diagnostics.red() 本身就是
+    終結點（exit_on_red=True 時 sys.exit(1)；否則 raise RedAlert）。若 oauth.py
+    內部先呼叫一次、呼叫端的 except OAuthError 又再處理一次，等同紅色警報喊兩次，
+    或者讓呼叫端的 except 永遠抓不到東西（因為 RedAlert 已經先冒泡出去，
+    OAuthError 根本輪不到被 raise）。呼叫端捕捉到本例外後，應自行取用
+    .symptom / .cause / .fix 呼叫 diagnostics.red()，再視需要轉成自己的領域錯誤
+    （例：demo01 轉 SourceError）。
+
+    診斷訊息一律只提檔案路徑與欄位名稱，絕不帶入任何權杖或密鑰的值。
+    """
+
+    def __init__(self, message: str, *, symptom: str, cause: str, fix: str) -> None: ...
+
+
+def load_access_token(
+    token_path: Path,
+    token_env: str,
+    diagnostics: Any,
+) -> str:
+    """
+    1. 讀 token JSON（encoding="utf-8"）；讀不到／非法 JSON -> raise OAuthError（帶 symptom/cause/fix）
+       （JSON 頂層不是物件也歸這條，否則後續 .get() 會 AttributeError）
+    2. 取 access_token（舊格式相容 token 欄位）；兩者皆無 -> raise OAuthError
+    3. 過期判斷：obtained_at + expires_in - 60（SKEW，提前換避免邊界競態）<= now
+       缺 obtained_at 或 expires_in -> 視為無法判斷，直接回傳現有 token（向後相容舊 token 檔）
+    4. 未過期 -> 直接回傳，不發任何網路請求
+    5. 已過期 -> 以 refresh_token / client_id / client_secret / token_uri POST 換新
+       四個欄位任一缺少 -> raise OAuthError
+       token_uri 不是以 "https://" 開頭 -> raise OAuthError（避免 client_secret 明文外洩）
+       絕不可靜默回傳過期 token（違反 §0「--live 缺憑證必須明確報錯退出」）
+    6. refresh 回應缺 access_token -> raise OAuthError
+       （不擋的話合併時會保留舊的 access_token，等於靜默回傳過期權杖，違反第 5 條鐵律）
+       即使 token 檔裡有可用的 refresh_token，若沒有 access_token 欄位仍然視為不可用
+       而報錯——refresh_token 只是「能不能換」的憑證，不是「現在有沒有可用 token」的答案。
+    7. refresh 成功 -> 新回應「合併」進原 token dict 後寫回原檔：
+       - Google 的 refresh 回應通常不含 refresh_token，必須保留原本那顆
+       - 更新 obtained_at 為當下 epoch 秒
+       - 原子寫入（同目錄暫存檔 + os.replace，暫存檔檔名帶 pid 避免併發衝突，
+         暫存檔權限明確設為 0o600），避免寫到一半當掉毀掉 refresh_token
+       - 寫回失敗（OSError）分兩種情況：
+         a. 這次回應帶有「與磁碟不同」的新 refresh_token（token 輪替）-> 磁碟上舊的
+            那顆已被 Google 作廢，寫檔失敗等於永久弄丟唯一還有效的續期憑證 ->
+            raise OAuthError（不可只發 AMBER）
+         b. 沒有輪替（磁碟上原本那顆仍有效）-> diagnostics.amber 後仍回傳新 token
+            （新 token 本身有效，只是這次沒存到，不該讓整條流程停擺）
+    8. 回傳可用的 access_token
+    """
+```
+
+**呼叫端契約**：`load_access_token()` 只負責湊出診斷資訊並 `raise OAuthError`——
+**不會**自己呼叫 `diagnostics.red()`。呼叫端捕捉到 `OAuthError` 後**必須自己呼叫**
+`diagnostics.red(symptom=exc.symptom, cause=exc.cause, fix=exc.fix)`（見 demo01 的
+`sources/calendar_source.py` 的 `except OAuthError` 分支）。唯一的例外是「續期成功但
+寫回檔案失敗、且 refresh_token 未輪替」這條路徑——那條路徑本來就該留在 `oauth.py`
+內部處理成 AMBER，不需要呼叫端接手。
+
+> **陷阱（2026-08-24 code review 抓到）**：`diagnostics.red()` 本身即終結流程——
+> `exit_on_red=True` 時 `sys.exit`、`False` 時 `raise RedAlert`，回傳型別標註為
+> `NoReturn`（見 `_shared/diagnostics.py`）。**`red()` 呼叫之後不應該再寫任何
+> 「理論上會執行到」的敘述**（例如緊接著 `raise` 自訂的領域錯誤）——那一行必定是
+> 死碼，只會誤導維護者以為上層攔截得到那個型別。`calendar_source.py` 曾經這樣寫
+> 並被 review 判 MUST_FIX，修法是直接刪掉那行，讓 `red()` 自己終結流程就好。
+
+**安全規定**：`access_token` / `refresh_token` / `client_secret` 的值一律不得出現在
+診斷訊息、log 或例外訊息中；`cause` / `fix` 只能提檔案路徑與欄位名。
+
+**適用範圍（2026-08-24 實查更正）**：本元件只適用「`token_env` 指向一份 OAuth token **JSON 檔**」
+的模組，目前**只有 demo01**（`GOOGLE_CALENDAR_TOKEN` -> `sources/calendar_source.py`）。
+
+其餘用到 `token_env` 的模組**接不上**，因為它們的憑證模型不同：
+
+| 模組 | `token_env` 實際存的東西 | 為什麼接不上 |
+| --- | --- | --- |
+| demo05 `monitor.py` | 環境變數**直接就是 bearer token 字串** | 沒有 refresh_token 可換，無從續期 |
+| demo06 `accounting.py` | `XERO_ACCESS_TOKEN` / `QUICKBOOKS_ACCESS_TOKEN`，同上 | 同上；且 Xero/QuickBooks 的續期流程與 Google 不同 |
+| demo14 `triage.py` | 環境變數直接就是 token 字串 | 同 demo05 |
+| demo11 `config.yaml` | `WORDPRESS_APP_PASSWORD`（應用程式密碼，非 OAuth） | 根本不是 OAuth；且 `push_enabled: false`，推送尚未實作 |
+
+要讓這些模組也享有自動續期，得先把它們的憑證從「環境變數存 token 值」改成「環境變數指向 token JSON 檔」，
+那是各模組的獨立改動，不屬於本契約範圍。
