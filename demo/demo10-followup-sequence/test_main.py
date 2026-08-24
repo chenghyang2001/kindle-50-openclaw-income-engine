@@ -173,3 +173,44 @@ def test_integration_reply_halts_sequence_and_autonomy_downgrades(
 
     # 4. 結果必須可 JSON 序列化（供 CRM 回寫 / 稽核留存）
     assert json.loads(json.dumps(result, ensure_ascii=False))["total_prospects"] == 6
+
+
+def test_summarise_shows_draft_body_preview() -> None:
+    """happy path：草稿摘要那一行要附上字元數與信件內容預覽，不能只有姓名/公司/Day。
+
+    這是修復的核心行為——過去 `_summarise()` 只印姓名/公司/Day，操作者完全看不到
+    LLM 到底寫了什麼，草稿模式的「人工審核」就無從審起。
+    """
+    result = _run()
+    summary = demo10._summarise(result)
+
+    assert result["drafted"], "mock 資料應至少產出一筆草稿，測試前提不成立"
+    for item in result["drafted"]:
+        expected_preview = demo10._first_line(item["body"])
+        expected_line = (
+            f"  [草稿] {item['name']}（{item['company']}）Day {item['step_day']}"
+            f"｜{len(item['body'])} 字元｜{expected_preview}"
+        )
+        assert expected_line in summary
+        assert "字元｜" in expected_line
+
+
+def test_first_line_truncates_and_handles_edge_inputs() -> None:
+    """edge case：`_first_line()` 的截斷、多行、空值行為要正確。"""
+    # 超過寬度的單行字串：截到 width 字元 + 省略符號
+    long_line = "A" * 60
+    truncated = demo10._first_line(long_line, width=40)
+    assert len(truncated) == 40 + len(demo10._TRUNCATION_SUFFIX)
+    assert truncated.endswith(demo10._TRUNCATION_SUFFIX)
+
+    # 未超過寬度的單行字串：原樣回傳，不加省略符號
+    short_line = "短句"
+    assert demo10._first_line(short_line, width=40) == short_line
+
+    # 多行字串：只取第一行，不含換行後的內容
+    multiline = "第一行內容\n第二行內容\n第三行內容"
+    assert demo10._first_line(multiline, width=40) == "第一行內容"
+
+    # 空字串與 None：回傳空字串，不拋例外
+    assert demo10._first_line("", width=40) == ""
+    assert demo10._first_line(None, width=40) == ""

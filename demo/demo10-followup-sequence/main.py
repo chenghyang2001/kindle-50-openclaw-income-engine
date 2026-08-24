@@ -56,6 +56,10 @@ CONTEXT_NOTE = (
     "不要重複介紹公司，不要用行銷術語，不要施壓。目標是讓對方願意回一句話。"
 )
 
+# 草稿摘要預覽寬度：讓操作者不用開檔案就能大致判斷信件內容是否需要修改
+_SUMMARY_PREVIEW_WIDTH = 40
+_TRUNCATION_SUFFIX = "…"
+
 
 def build_parser() -> argparse.ArgumentParser:
     """建立命令列參數解析器（介面依 CONTRACT.md §6）。"""
@@ -312,6 +316,13 @@ def _subject(decision: dict, prospect: dict) -> str:
     return f"[跟進 Day {decision['step']['day']}] {company} — {decision['step']['type']}"
 
 
+def _first_line(text: str, width: int = _SUMMARY_PREVIEW_WIDTH) -> str:
+    """取信件內容第一行的前 width 字元，用於草稿摘要預覽。"""
+    stripped = (text or "").strip()
+    head = stripped.splitlines()[0] if stripped else ""
+    return head if len(head) <= width else head[:width] + _TRUNCATION_SUFFIX
+
+
 def _summarise(result: dict) -> str:
     """組出給操作者的摘要文字。"""
     lines = [
@@ -321,7 +332,10 @@ def _summarise(result: dict) -> str:
         f"stop_on_reply：{'啟用（不可停用）' if result['stop_on_reply'] else '異常'}",
     ]
     for item in result["drafted"]:
-        lines.append(f"  [草稿] {item['name']}（{item['company']}）Day {item['step_day']}")
+        lines.append(
+            f"  [草稿] {item['name']}（{item['company']}）Day {item['step_day']}"
+            f"｜{len(item['body'])} 字元｜{_first_line(item['body'])}"
+        )
     for item in result["sent"]:
         lines.append(f"  [已送] {item['name']}（{item['company']}）Day {item['step_day']}")
     for item in result["halted"]:
