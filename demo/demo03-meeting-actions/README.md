@@ -109,7 +109,7 @@ python main.py --mock --dry-run
 # 推到 Telegram
 python main.py --mock --notify telegram
 
-# 真實模式：啟動 Webhook 等待會議平台回呼（需 ANTHROPIC_API_KEY）
+# 真實模式：啟動 Webhook 等待會議平台回呼；缺憑證會明確報錯，不會偷偷退回 mock
 python main.py --live --serve --notify gmail
 
 # 測試

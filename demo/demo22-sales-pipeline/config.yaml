@@ -35,7 +35,7 @@ safety:
 
 integrations:
   # 以下為端點位址（非機密）。正式部署以同名環境變數覆寫；
-  # API token 一律走 os.environ（ANTHROPIC_API_KEY / CRM_API_TOKEN），不進設定檔。
+  # API token 一律走 os.environ（CRM_API_TOKEN），不進設定檔。
   crm_base_url: "https://crm.internal.example"
   crm_update_path: "/v1/deals/{deal_id}"
   proposal_service_url: "https://proposals.internal.example/v1/proposals"

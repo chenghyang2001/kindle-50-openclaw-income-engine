@@ -151,8 +151,8 @@ python -m pytest test_main.py -v
 | `--state-file` | 去重狀態檔路徑，預設同目錄 `.seen.json`（測試會指向暫存目錄） |
 
 **live 模式需要的環境變數**（缺哪個就報哪個，不給預設值）：
-`GOOGLE_BUSINESS_API_KEY`、`TRUSTPILOT_API_KEY`、`ANTHROPIC_API_KEY`，
-以及所選通知管道的憑證（如 `TELEGRAM_BOT_TOKEN`）。
+`GOOGLE_BUSINESS_API_KEY`、`TRUSTPILOT_API_KEY`，
+以及所選通知管道的憑證（如 `TELEGRAM_BOT_TOKEN`）。Claude 走本機 `claude` CLI／Max 訂閱 OAuth，不需要 `ANTHROPIC_API_KEY`。
 
 ---
 

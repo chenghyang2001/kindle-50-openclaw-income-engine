@@ -439,7 +439,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     diagnostics = Diagnostics(MODULE_NAME, exit_on_red=False)
     red_alerts: list[str] = []
     warnings: list[str] = []
-    required_env = None if args.mock else ["ANTHROPIC_API_KEY", "SHOPIFY_ADMIN_TOKEN"]
+    required_env = None if args.mock else ["SHOPIFY_ADMIN_TOKEN"]
     config = load_config(_resolve_path(args.config), required_env=required_env)
     runtime = config.get("runtime", {})
     settings = {**config.get("inventory", {}), **config.get("pricing", {})}

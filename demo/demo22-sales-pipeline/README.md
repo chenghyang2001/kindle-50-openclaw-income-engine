@@ -155,17 +155,18 @@ python main.py --live                # 啟動前查收據；查不到 → RED �
 #### 四種模式組合：誰會被呼叫、誰要付錢
 
 `--dry-run` 擋住的是**業務系統端點**，不是 LLM。`--live --dry-run` 下內容是**真的生成**的
-（這正是預覽的價值——換成 fixture 就失去意義），所以**會計費**：
+（這正是預覽的價值——換成 fixture 就失去意義）。LLM 走本機 `claude` CLI／Max 訂閱 OAuth，
+不吃 `ANTHROPIC_API_KEY`、不額外計 API 費用：
 
 | 組合 | LLM 內容生成 | 業務系統送出（CRM / 提案 / 外寄 / 導入） | 需要金鑰 | 成本 |
 | --- | --- | --- | --- | --- |
 | `--mock` | ❌ 離線 mock 佔位字串 | ❌ 不送出（自主權預設 DRAFT） | 不需要 | **零** |
 | `--mock --dry-run` | ❌ 離線 mock 佔位字串 | ❌ 不送出，只印出端點與內容 | 不需要 | **零** |
-| `--live --dry-run` | ✅ **實際呼叫 Anthropic API** | ❌ 不送出，只印出端點與內容 | `ANTHROPIC_API_KEY` | **會產生 API 費用** |
-| `--live` | ✅ 實際呼叫 | ✅ 依自主權層級實際送出 | `ANTHROPIC_API_KEY` + `CRM_API_TOKEN` | 會產生 API 費用 |
+| `--live --dry-run` | ✅ **實際呼叫本機 claude CLI** | ❌ 不送出，只印出端點與內容 | 不需要（走 Max 訂閱 OAuth） | 計入 Max 訂閱額度 |
+| `--live` | ✅ 實際呼叫 | ✅ 依自主權層級實際送出 | `CRM_API_TOKEN` | 計入 Max 訂閱額度 |
 
 - 要**完全零外部呼叫**做流程驗證 → `--mock --dry-run`
-- 要**看真實生成內容**但不動客戶系統 → `--live --dry-run`（有成本，程式會在輸出末尾明講）
+- 要**看真實生成內容**但不動客戶系統 → `--live --dry-run`（消耗 Max 訂閱額度，程式會在輸出末尾明講）
 - 程式印出的提示會依模式區分這兩類，不會做「不會實際送出」這種涵蓋 LLM 的絕對宣稱
 
 ---
@@ -332,7 +333,7 @@ python main.py --mock --state-file ./state/pipeline_state.json \
 # 推到 Telegram
 python main.py --mock --notify telegram
 
-# 串真實 API（缺 ANTHROPIC_API_KEY / CRM_API_TOKEN 會明確報錯，不會靜默降級）
+# 串真實 API（缺 CRM_API_TOKEN 會明確報錯，不會靜默降級）
 python main.py --live --dry-run     # 必須先跑這一次，取得通行收據
                                     #   注意：此組合的 LLM 內容生成會實際呼叫 API（計費）
 python main.py --live

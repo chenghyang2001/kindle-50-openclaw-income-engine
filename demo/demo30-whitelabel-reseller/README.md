@@ -317,7 +317,7 @@ PYTHONUTF8=1 python main.py --mock \
 # 跑完流程但不實際發送（也不寫狀態檔）
 PYTHONUTF8=1 python main.py --mock --dry-run
 
-# 串真實 API（需 ANTHROPIC_API_KEY；安全閥仍會先跑一次內部 dry-run）
+# 串真實 API（走本機 claude CLI／Max 訂閱 OAuth；安全閥仍會先跑一次內部 dry-run）
 PYTHONUTF8=1 python main.py --live --notify telegram
 ```
 
@@ -325,7 +325,7 @@ PYTHONUTF8=1 python main.py --live --notify telegram
 
 | 旗標 | 預設 | 說明 |
 | --- | --- | --- |
-| `--mock` / `--live` | `--mock` | 互斥。`--live` 缺 `ANTHROPIC_API_KEY` 直接 RED 退出，不靜默降級 |
+| `--mock` / `--live` | `--mock` | 互斥。`--live` 走本機 `claude` CLI／Max 訂閱 OAuth，缺 CLI 登入直接 RED 退出，不靜默降級 |
 | `--dry-run` | 關 | 跑完流程不發送、不寫狀態檔 |
 | `--notify` | `console` | console / telegram / gmail / line / whatsapp |
 | `--config` | `./config.yaml` | 設定檔路徑 |

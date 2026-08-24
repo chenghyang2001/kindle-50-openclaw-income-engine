@@ -232,7 +232,7 @@ python main.py --mock --stage nurture
 # 不污染工作樹：狀態與稽核日誌都寫到暫存目錄
 python main.py --mock --state-file /tmp/state.json --audit-file /tmp/audit.jsonl
 
-# 串接真實 API（需要 ANTHROPIC_API_KEY 與各整合的憑證環境變數）
+# 串接真實 API（需要各整合的憑證環境變數；Claude 走本機 claude CLI／Max 訂閱 OAuth）
 python main.py --live --notify telegram
 ```
 

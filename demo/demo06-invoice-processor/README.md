@@ -126,7 +126,6 @@ python main.py --live --notify telegram
 
 | 變數 | 用途 |
 | --- | --- |
-| `ANTHROPIC_API_KEY` | Claude 提取 |
 | `XERO_ACCESS_TOKEN` / `XERO_TENANT_ID` | Xero 發布 |
 | `QUICKBOOKS_ACCESS_TOKEN` / `QUICKBOOKS_REALM_ID` | 改用 QuickBooks 時 |
 

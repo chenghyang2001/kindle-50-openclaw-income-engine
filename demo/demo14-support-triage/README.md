@@ -273,8 +273,8 @@ python -m pytest test_main.py -v
 
 **live 模式需要的環境變數**（缺哪個就報哪個，不給預設值）：
 `GMAIL_ACCESS_TOKEN`、`INTERCOM_ACCESS_TOKEN`、`WHATSAPP_ACCESS_TOKEN`、
-`INSTAGRAM_ACCESS_TOKEN`、`SHOPIFY_ADMIN_TOKEN`、`ANTHROPIC_API_KEY`，
-以及所選通知管道的憑證（如 `TELEGRAM_BOT_TOKEN`）。
+`INSTAGRAM_ACCESS_TOKEN`、`SHOPIFY_ADMIN_TOKEN`，
+以及所選通知管道的憑證（如 `TELEGRAM_BOT_TOKEN`）。Claude 走本機 `claude` CLI／Max 訂閱 OAuth，不需要 `ANTHROPIC_API_KEY`。
 
 ---
 

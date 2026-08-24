@@ -48,7 +48,7 @@ from sequencer import (  # noqa: E402
 )
 
 MODULE_LABEL = "demo10-followup-sequence"
-LIVE_REQUIRED_ENV = ("ANTHROPIC_API_KEY",)
+LIVE_REQUIRED_ENV: tuple[str, ...] = ()
 
 # 第 04 章：CONTEXT_NOTE 可減少約 40% 不相關輸出
 CONTEXT_NOTE = (

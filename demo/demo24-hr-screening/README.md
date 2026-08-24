@@ -195,7 +195,7 @@ python main.py --mock --now 2026-08-26T10:00:00+00:00
 # 揭露某位短名單成員的真實身分（缺 --approved-by 會被拒絕並留下稽核紀錄）
 python main.py --mock --reveal CAND-xxxxxxxx --approved-by "Nadia Farrell" --reveal-reason "安排一面"
 
-# 真實模式（需 ANTHROPIC_API_KEY / GREENHOUSE_API_KEY / GREENHOUSE_WEBHOOK_SECRET）
+# 真實模式（需 GREENHOUSE_API_KEY / GREENHOUSE_WEBHOOK_SECRET）
 python main.py --live --applications ./ats-export.json
 
 # 測試

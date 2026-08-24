@@ -63,7 +63,7 @@ from tenancy import (  # noqa: E402
 )
 
 MODULE_LABEL = "demo30-whitelabel-reseller"
-LIVE_REQUIRED_ENV = ("ANTHROPIC_API_KEY",)
+LIVE_REQUIRED_ENV: tuple[str, ...] = ()
 NOT_PROVIDED = "（原簡報未提供）"
 
 REPORT_PROMPT = "prompts/whitelabel_monthly_report.md"

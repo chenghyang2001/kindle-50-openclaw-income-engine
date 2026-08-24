@@ -338,7 +338,7 @@ def _build_review(
 def run(args: argparse.Namespace) -> dict[str, Any]:
     """執行主流程，回傳結果 dict（供測試斷言）。不做 sys.exit。"""
     config_path = _resolve_path(args.config) if args.config else MODULE_DIR / "config.yaml"
-    required_env = [] if args.mock else ["ANTHROPIC_API_KEY"]
+    required_env: list[str] = []
     config = load_config(config_path, required_env=required_env)
     diagnostics = Diagnostics(MODULE_NAME, exit_on_red=args.exit_on_red)
     document = _load_document(args, config, diagnostics)

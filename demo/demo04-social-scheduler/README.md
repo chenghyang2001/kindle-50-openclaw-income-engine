@@ -69,7 +69,7 @@ python main.py --mock --dry-run
 # 推到 Telegram
 python main.py --mock --notify telegram
 
-# 串接真實 API（需要 ANTHROPIC_API_KEY）
+# 串真實 API；缺憑證會明確報錯，不會偷偷退回 mock
 python main.py --live
 
 # 跑測試

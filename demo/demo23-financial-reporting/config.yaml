@@ -130,7 +130,6 @@ live:
   # --live 時缺少這些環境變數要明確報錯退出，不可靜默退回 mock。
   # 全部都是唯讀憑證：本模組沒有任何寫入財務系統的程式路徑。
   required_env:
-    - ANTHROPIC_API_KEY
     - XERO_ACCESS_TOKEN
     - QUICKBOOKS_ACCESS_TOKEN
     - SAGE_ACCESS_TOKEN

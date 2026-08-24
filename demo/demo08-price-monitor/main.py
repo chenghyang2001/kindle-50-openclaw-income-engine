@@ -222,7 +222,7 @@ def _deliver(report: str, *, channel: str, gate: AutonomyGate, recipient: str,
 def run(args: argparse.Namespace) -> dict[str, Any]:
     """執行主流程並回傳結果 dict（不做 sys.exit，交給 main() 決定退出碼）"""
     diagnostics = Diagnostics(MODULE_NAME, exit_on_red=False)
-    required_env = None if args.mock else ["ANTHROPIC_API_KEY"]
+    required_env = None
     config = load_config(_resolve_path(args.config), required_env=required_env)
 
     monitor = config.get("monitor", {})

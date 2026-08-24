@@ -322,7 +322,7 @@ def _next_state(notices: list[escalation.Notice], previous: dict[str, str], is_e
 def run(args: argparse.Namespace) -> dict[str, Any]:
     """執行主流程，回傳結果 dict（供測試斷言）。不做 sys.exit。"""
     config_path = _resolve_path(args.config) if args.config else MODULE_DIR / "config.yaml"
-    config = load_config(config_path, required_env=[] if args.mock else ["ANTHROPIC_API_KEY"])
+    config = load_config(config_path)
     diagnostics = Diagnostics(MODULE_NAME, exit_on_red=args.exit_on_red)
     context, now = build_context(config, args, diagnostics)
     findings = collect_findings(config, context)

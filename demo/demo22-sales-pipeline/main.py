@@ -74,7 +74,7 @@ from pipeline import (  # noqa: E402
 )
 
 MODULE_LABEL = "demo22-sales-pipeline"
-LIVE_REQUIRED_ENV = ("ANTHROPIC_API_KEY", "CRM_API_TOKEN")
+LIVE_REQUIRED_ENV = ("CRM_API_TOKEN",)
 
 # 第 04 章：CONTEXT_NOTE 可減少約 40% 不相關輸出
 CONTEXT_NOTE = (

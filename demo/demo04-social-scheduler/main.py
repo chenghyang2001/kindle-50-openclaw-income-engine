@@ -57,7 +57,7 @@ def build_parser() -> argparse.ArgumentParser:
     mode.add_argument(
         "--live",
         action="store_true",
-        help="串接真實 Anthropic API（需要 ANTHROPIC_API_KEY）",
+        help="串真實 API；缺憑證會明確報錯，不會偷偷退回 mock",
     )
     parser.add_argument(
         "--dry-run",

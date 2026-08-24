@@ -179,7 +179,8 @@ PYTHONUTF8=1 python main.py --live --notify telegram
 | `suppliers[].domain` | **必須以 `@` 開頭**，否則啟動時直接拋錯 | — |
 
 憑證一律走環境變數，設定檔中不得出現明碼：
-`ANTHROPIC_API_KEY` / `ERP_API_TOKEN` / `SUPPLIER_MAILBOX_USER` / `SUPPLIER_MAILBOX_PASSWORD`。
+`ERP_API_TOKEN` / `SUPPLIER_MAILBOX_USER` / `SUPPLIER_MAILBOX_PASSWORD`。
+Claude 走本機 `claude` CLI／Max 訂閱 OAuth，不需要 `ANTHROPIC_API_KEY`。
 
 ---
 

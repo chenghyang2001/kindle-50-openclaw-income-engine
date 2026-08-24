@@ -145,6 +145,5 @@ prompts:
 live:
   # --live 時缺少這些環境變數要明確報錯退出，不可靜默退回 mock。
   required_env:
-    - ANTHROPIC_API_KEY
     - CRM_API_KEY
     - APOLLO_API_KEY

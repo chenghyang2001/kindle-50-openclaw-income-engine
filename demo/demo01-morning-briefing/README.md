@@ -132,7 +132,7 @@ PYTHONUTF8=1 python -m pytest test_main.py -v
 
 | 來源 | 需要 | 缺少時 |
 | --- | --- | --- |
-| Claude | `ANTHROPIC_API_KEY` | RED `api_key_invalid` |
+| Claude | 無（走本機 `claude` CLI／Max 訂閱 OAuth，非 `ANTHROPIC_API_KEY`） | RED `Claude CLI 未安裝或不在 PATH` |
 | 行事曆 | `GOOGLE_CALENDAR_TOKEN`（指向 OAuth token JSON） | RED，附 OAuth 修復步驟 |
 | 信件 | 已登入的 `gws` CLI | RED `oauth_error` / `gws_cli_missing` |
 | 新聞 | 無（公開 RSS） | 單一 feed 失敗走 AMBER，不中斷 |

@@ -679,7 +679,7 @@ def _load_entities(args: argparse.Namespace, sources: dict) -> tuple[list[Listin
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
     """執行主流程並回傳結果 dict（不做 sys.exit，交給 main() 決定退出碼）"""
-    required_env = None if args.mock else ["ANTHROPIC_API_KEY"]
+    required_env = None
     config = load_config(_resolve_path(args.config), required_env=required_env)
     state_cfg = config.get("state") or {}
     state_path = _resolve_path(args.state_file or state_cfg.get("state_file", "state/notifications.json"))

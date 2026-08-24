@@ -222,7 +222,7 @@ python main.py --mock --json
 # 推到 Telegram
 python main.py --mock --notify telegram
 
-# 真實模式（需 ANTHROPIC_API_KEY；Critical 通道憑證不齊會直接停機）
+# 真實模式（Critical 通道憑證不齊會直接停機）
 python main.py --live --notify gmail
 
 # 測試

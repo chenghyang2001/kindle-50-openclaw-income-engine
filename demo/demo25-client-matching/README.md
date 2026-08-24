@@ -117,7 +117,7 @@ python main.py --mock --buyers-file mock/buyers_noncompliant.json
 # 重現特定時點的 60 分鐘時效判定
 python main.py --mock --now 2026-08-24T08:50:00+08:00
 
-# 串真實物件／買方 API 與 Claude API（缺 ANTHROPIC_API_KEY 會明確報錯）
+# 串真實物件／買方 API 與 Claude（走本機 claude CLI／Max 訂閱 OAuth）
 python main.py --live --notify telegram
 
 # 測試

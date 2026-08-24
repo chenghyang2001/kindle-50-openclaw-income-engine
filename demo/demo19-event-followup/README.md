@@ -313,7 +313,7 @@ python main.py --mock --dry-run
 # 指定進度狀態檔（指定後即啟用讀寫，可跨次執行推進序列）
 python main.py --mock --state-file ./state/wb-2026-0820.json
 
-# 串真實 Anthropic API（缺 ANTHROPIC_API_KEY 會明確報錯，不會靜默降級）
+# 串真實 API（走本機 claude CLI／Max 訂閱 OAuth）；缺憑證會明確報錯，不會靜默降級
 python main.py --live
 
 # 測試

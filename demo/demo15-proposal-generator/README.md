@@ -241,8 +241,9 @@ python main.py --live --notify telegram
 
 | 變數 | 用途 |
 | --- | --- |
-| `ANTHROPIC_API_KEY` | Claude 撰寫提案敘事 |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID_CHENGHYANG2001BOT` | Telegram 通知 |
+
+Claude 撰寫提案敘事走本機 `claude` CLI／Max 訂閱 OAuth，不需要 `ANTHROPIC_API_KEY`。
 
 `--live` 另需在 `config.yaml` 填入 `crm.export_path`（CRM 匯出的 JSON，含 Deals / Meeting Notes /
 Company Profile）。未填會直接觸發紅色警報停下來，不會靜默跑成空結果。

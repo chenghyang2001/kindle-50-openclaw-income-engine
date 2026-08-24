@@ -241,7 +241,7 @@ python main.py --mock --state-file /tmp/reviewed.json
 # 推到 Telegram、輸出完整 JSON
 python main.py --mock --notify telegram --json
 
-# 真實模式（需 ANTHROPIC_API_KEY；會把合約全文送往 LLM API，導入前先做隱私評估）
+# 真實模式（會把合約全文送往 LLM，導入前先做隱私評估）
 python main.py --live --contract path/to/contract.json --notify gmail
 
 # 測試

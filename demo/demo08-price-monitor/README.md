@@ -58,7 +58,7 @@ python main.py --mock --dry-run
 # 推到 Telegram
 python main.py --mock --notify telegram
 
-# 串真實競品網站與 Claude API（缺 ANTHROPIC_API_KEY 會明確報錯，不會偷偷退回 mock）
+# 串真實競品網站與 Claude API；缺憑證會明確報錯，不會偷偷退回 mock
 python main.py --live
 
 # 測試
