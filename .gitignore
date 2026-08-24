@@ -36,3 +36,6 @@ demo/**/.compliance-state.json
 demo/**/.handled.json
 demo/**/mock/posted.json
 demo/dist/
+
+# NotebookLM 產出（音檔/影片/簡報，體積大不入版控）
+doc/notebooklm-output/
