@@ -272,3 +272,29 @@ def test_main_catches_llm_error(
     assert exit_code == 1
     assert "錯誤：" in captured.err
     assert "模擬 CLI 逾時" in captured.err
+
+
+def test_summarise_includes_draft_body_preview(monkeypatch: pytest.MonkeyPatch) -> None:
+    """bug 修復：草稿摘要原本完全不顯示信件內容，審核者要開檔案才看得到。
+    這裡驗證摘要文字含有該筆草稿內容的預覽片段（用 _first_line() 動態算出
+    預期值，避免 mock LLM 輸出文字微調就打壞測試）。
+    """
+    _freeze_timezone(monkeypatch)
+
+    result = _run()
+    assert result["drafted"], "測試前提：mock 名單至少要產出一筆草稿"
+    sample = result["drafted"][0]
+    expected_preview = demo19._first_line(sample["body"])
+
+    summary = demo19._summarise(result)
+
+    assert expected_preview in summary
+    assert f"{len(sample['body'])} 字元" in summary
+
+
+def test_first_line_edge_case_empty_body() -> None:
+    """邊界：空字串／純空白 body 不可讓預覽函式出錯或炸出例外。"""
+    assert demo19._first_line("") == ""
+    assert demo19._first_line("   \n  ") == ""
+    long_text = "A" * 50
+    assert demo19._first_line(long_text) == "A" * demo19._SUMMARY_PREVIEW_WIDTH + "…"

@@ -280,3 +280,31 @@ def test_main_catches_llm_error(
     assert exit_code == 1
     assert "錯誤：" in captured.err
     assert "模擬 CLI 逾時" in captured.err
+
+
+def test_summarise_includes_draft_body_preview(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """bug 修復：_summarise_items() 的 [草稿] 那段原本完全不顯示信件內容，
+    正式執行（非 --dry-run）看不到任何內容預覽——即使 _register_call() 早就
+    把 excerpt 存進 payload_preview，只是只在 dry-run 才印出來。這裡驗證
+    摘要文字含有該筆草稿內容的預覽片段（用 _first_line() 動態算出預期值，
+    避免 mock LLM 輸出文字微調就打壞測試）。
+    """
+    _freeze_timezone(monkeypatch)
+
+    result = _run(tmp_path)
+    assert result["drafted"], "測試前提：mock 交易至少要產出一筆草稿"
+    sample = result["drafted"][0]
+    expected_preview = demo22._first_line(sample["body"])
+
+    summary = demo22._summarise(result)
+
+    assert expected_preview in summary
+    assert f"{len(sample['body'])} 字元" in summary
+
+
+def test_first_line_edge_case_empty_body() -> None:
+    """邊界：空字串／None body 不可讓預覽函式出錯或炸出例外。"""
+    assert demo22._first_line("") == ""
+    assert demo22._first_line(None) == ""  # type: ignore[arg-type]

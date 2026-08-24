@@ -253,3 +253,31 @@ def test_main_catches_llm_error(
     assert exit_code == 1
     assert "錯誤：" in captured.err
     assert "模擬 CLI 逾時" in captured.err
+
+
+def test_format_summary_includes_sample_preview(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """bug 修復：format_summary() 原本只印每個子智能體的產能統計，完全不印
+    orchestrator._agent_action() 存進 samples 的實際內容片段。這裡驗證摘要
+    文字含有每個有產出的 agent 的樣本預覽（用 _sample_preview() 動態算出
+    預期值，避免 mock fixture 文字微調就打壞測試）。
+    """
+    _isolate_usage_log(monkeypatch, tmp_path)
+    result = swarm_main.run(
+        _args(tmp_path, approve=True, approved_by="Elena Torres")
+    )
+
+    dispatched_with_samples = [a for a in result["actions"] if a["samples"]]
+    assert dispatched_with_samples, "測試前提：至少要有一個 agent 產出 samples"
+    for action in dispatched_with_samples:
+        expected_preview = swarm_main._sample_preview(action["samples"][0])
+        assert expected_preview in result["summary_text"]
+
+
+def test_sample_preview_edge_case_unknown_fields() -> None:
+    """邊界：sample 沒有任何已知欄位（title/text/subject/findings/lead_ref）
+    時要退回印整包 JSON，不可回傳空字串或拋例外；純字串 sample 也要能處理。
+    """
+    assert swarm_main._sample_preview({"unexpected_key": "值"}) != ""
+    assert swarm_main._sample_preview("純字串樣本") == "純字串樣本"

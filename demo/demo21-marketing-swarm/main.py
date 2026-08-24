@@ -58,6 +58,11 @@ CONTEXT_NOTE = (
     "brand.proof_points 以外的數字一律不得出現。輸出必須是單一 JSON 物件。"
 )
 
+# 摘要預覽：與 demo10-followup-sequence / demo19-event-followup 一致的
+# 內容預覽慣例，讓審核者不用開稽核日誌就能看到每個子智能體實際產出了什麼。
+_SUMMARY_PREVIEW_WIDTH = 40
+_TRUNCATION_SUFFIX = "…"
+
 
 def build_parser() -> argparse.ArgumentParser:
     """建立命令列參數解析器（介面依 CONTRACT.md §6，另加 Level 3 專屬旗標）。"""
@@ -378,6 +383,45 @@ def _totals(actions: list[dict[str, Any]]) -> dict[str, int]:
     }
 
 
+def _first_line(text: str, width: int = _SUMMARY_PREVIEW_WIDTH) -> str:
+    """取文字第一行的前 width 字元，用於摘要列表預覽。"""
+    stripped = (text or "").strip()
+    head = stripped.splitlines()[0] if stripped else ""
+    return head if len(head) <= width else head[:width] + _TRUNCATION_SUFFIX
+
+
+def _sample_preview(sample: Any) -> str:
+    """把單一 sample 摘出可讀的一行預覽。
+
+    五個 Sub-agent 的 sample 欄位結構不一致（見各自 mock/*.json）：
+    content 用 title/angle、social 用 text、email 用 subject/cta、
+    analytics 用 findings（list）、lead_gen 只有雜湊過的 lead_ref（無 PII，
+    可安全預覽）。這裡不 hardcode agent_id，改用「已知欄位優先序」逐一嘗試，
+    未命中任何已知欄位時退回印出整包 JSON，確保新增 agent 類型也不會摔錯。
+    """
+    if not isinstance(sample, dict):
+        return _first_line(str(sample))
+    parts: list[str] = []
+    if sample.get("title"):
+        parts.append(str(sample["title"]))
+    if sample.get("text"):
+        parts.append(str(sample["text"]))
+    if sample.get("subject"):
+        subject = str(sample["subject"])
+        cta = sample.get("cta")
+        parts.append(f"{subject}（CTA：{cta}）" if cta else subject)
+    findings = sample.get("findings")
+    if isinstance(findings, list) and findings:
+        parts.append(str(findings[0]))
+    if sample.get("lead_ref"):
+        segment = sample.get("segment", "")
+        score = sample.get("score", "")
+        parts.append(f"{sample['lead_ref']}｜{segment}｜分數 {score}")
+    if not parts:
+        parts.append(json.dumps(sample, ensure_ascii=False))
+    return _first_line(" ".join(parts))
+
+
 def format_summary(result: dict[str, Any]) -> str:
     """把蜂群一週產出渲染成人可讀摘要（也是通知內文）。"""
     totals = result["totals"]
@@ -403,6 +447,9 @@ def format_summary(result: dict[str, Any]) -> str:
             f"｜{action['status']}｜{action['publish_mode']}"
             f"｜ctx v{action['context_version']}"
         )
+        samples = action.get("samples") or []
+        if samples:
+            lines.append(f"    範例：{_sample_preview(samples[0])}")
     if result["warnings"]:
         lines.append("")
         lines.append("⚠️ 審核時要處理的提醒：")

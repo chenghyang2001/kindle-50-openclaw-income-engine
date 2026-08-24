@@ -78,6 +78,11 @@ TOKEN_LENGTH = 16
 # config 內附的示範 salt。正式環境（--live）沿用這組值會被判定為設定疏漏。
 DEMO_TOKEN_SALT = "demo-only-salt-請於正式部署改為機密值"
 
+# 摘要預覽：與 demo10-followup-sequence / demo12-lead-generation 一致的
+# 草稿內容預覽慣例，讓審核者不用開檔案就能看到信件實際寫了什麼。
+_SUMMARY_PREVIEW_WIDTH = 40
+_TRUNCATION_SUFFIX = "…"
+
 
 def build_parser() -> argparse.ArgumentParser:
     """建立命令列參數解析器（介面依 CONTRACT.md §6）。"""
@@ -494,6 +499,13 @@ def _subject(decision: dict) -> str:
     )
 
 
+def _first_line(text: str, width: int = _SUMMARY_PREVIEW_WIDTH) -> str:
+    """取信件內容第一行的前 width 字元，用於草稿摘要預覽。"""
+    stripped = (text or "").strip()
+    head = stripped.splitlines()[0] if stripped else ""
+    return head if len(head) <= width else head[:width] + _TRUNCATION_SUFFIX
+
+
 def _run_sequence(attendees: list, now: datetime, context: dict) -> dict[str, list]:
     """跑完整份名單的分群判定 + 產文，回傳三個 bucket。"""
     buckets: dict[str, list] = {"sent": [], "drafted": [], "halted": []}
@@ -641,6 +653,7 @@ def _summarise_entries(result: dict) -> list[str]:
         lines.append(
             f"  [草稿] {item['name']}（{item['company']}）"
             f" {item['segment']} / {item['step_type']}"
+            f"｜{len(item['body'])} 字元｜{_first_line(item['body'])}"
         )
     for item in result["sent"]:
         lines.append(

@@ -83,6 +83,12 @@ CONTEXT_NOTE = (
     "缺資料就寫「待補」，禁止杜撰金額、比率與案例。"
 )
 
+# 摘要預覽：與 demo10-followup-sequence / demo19-event-followup 一致的
+# 草稿內容預覽慣例。與 _register_call() 的 payload_preview.excerpt（body[:120]）
+# 屬同一用途，但那段只在 --dry-run 才印出；這裡讓正式執行也看得到內容。
+_SUMMARY_PREVIEW_WIDTH = 40
+_TRUNCATION_SUFFIX = "…"
+
 
 # ---------------------------------------------------------------- CLI --
 def build_parser() -> argparse.ArgumentParser:
@@ -386,6 +392,13 @@ def _subject(decision: dict) -> str:
         f"[{decision['chain_label']}] {decision['company']} — "
         f"Day {decision['step']['day']} {decision['step']['type']}"
     )
+
+
+def _first_line(text: str, width: int = _SUMMARY_PREVIEW_WIDTH) -> str:
+    """取內容第一行的前 width 字元，用於草稿摘要預覽。"""
+    stripped = (text or "").strip()
+    head = stripped.splitlines()[0] if stripped else ""
+    return head if len(head) <= width else head[:width] + _TRUNCATION_SUFFIX
 
 
 # ---------------------------------------------------------------- 稽核 --
@@ -755,7 +768,7 @@ def _summarise_items(result: dict) -> list[str]:
     for item in result["drafted"]:
         lines.append(
             f"  [草稿] {item['deal_id']}（{item['company']}）{item['chain_label']}"
-            f" Day {item['step_day']}"
+            f" Day {item['step_day']}｜{len(item['body'])} 字元｜{_first_line(item['body'])}"
         )
     for item in result["halted"]:
         lines.append(f"  [中止] {item['deal_id']}（{item['company']}）— {item['reason']}")
