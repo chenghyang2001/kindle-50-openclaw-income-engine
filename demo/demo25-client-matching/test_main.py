@@ -221,3 +221,53 @@ def test_main_catches_llm_error(monkeypatch, capsys):
     assert exit_code == 1
     assert "錯誤：" in captured.err
     assert "模擬 CLI 逾時" in captured.err
+
+
+def test_report_shows_notification_content_preview(tmp_path):
+    """dry-run 模式下 _deliver() 不會呼叫 Notifier.send()（唯一原本會印出完整
+    text 的地方），若「推播明細」只列 metadata，dry-run 會變成唯一看不到任何
+    推播內容的模式。這裡釘住報告必須包含每筆推播 text 的第一行預覽。
+    """
+    result = client_matching.run(_args(tmp_path, "--dry-run"))
+
+    assert result["notifications"], "此情境應至少產生一筆推播，測試前提才成立"
+    for notification in result["notifications"]:
+        preview = client_matching._first_line(notification["text"])
+        assert preview, "mock fixture 產出的推薦信不應為空，預覽不該是空字串"
+        assert preview in result["report"], (
+            f"報告的推播明細應包含 {notification['listing_id']} → "
+            f"{notification['buyer_id']} 的內容預覽"
+        )
+    # 逐一比對容易漏掉「metadata 行後面緊接著預覽行」這件事本身，
+    # 額外釘住其中一筆的兩行相鄰順序。
+    sample = result["notifications"][0]
+    metadata_fragment = f"{sample['listing_id']} → {sample['buyer_id']}"
+    metadata_index = result["report"].index(metadata_fragment)
+    preview_index = result["report"].index(
+        client_matching._first_line(sample["text"]), metadata_index
+    )
+    assert preview_index > metadata_index
+
+
+def test_first_line_edge_cases():
+    """_first_line() 邊界情況：截斷、剛好邊界、多行、空值皆不得拋例外"""
+    first_line = client_matching._first_line
+
+    # 超長字串：截斷至 40 字元並加上省略符號
+    long_text = "A" * 100
+    truncated = first_line(long_text)
+    assert truncated == "A" * 40 + "…"
+    assert len(truncated) == 41
+
+    # 剛好 40 字元：不截斷、不加省略符號
+    exact_40 = "B" * 40
+    assert first_line(exact_40) == exact_40
+
+    # 多行字串：只取第一行，忽略後面內容
+    multiline = "第一行內容\n第二行內容\n第三行內容"
+    assert first_line(multiline) == "第一行內容"
+
+    # 空字串／None：不拋例外，回傳空字串
+    assert first_line("") == ""
+    assert first_line(None) == ""
+    assert first_line("   ") == ""

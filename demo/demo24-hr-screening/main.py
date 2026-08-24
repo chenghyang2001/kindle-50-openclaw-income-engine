@@ -58,6 +58,9 @@ from scorer import (  # noqa: E402
 
 MODULE_NAME = "demo24-hr-screening"
 STATE_VERSION = 1
+# 拒絕信內容預覽截斷寬度：招募經理審核用，太長反而看不出重點（仿 demo10 慣例）。
+_REJECTION_PREVIEW_WIDTH = 40
+_TRUNCATION_SUFFIX = "…"
 
 
 @dataclass
@@ -435,9 +438,19 @@ def build_candidate_rows(
 
 
 def render_report(
-    context: RunContext, requisition: dict[str, Any], rows: list[dict[str, Any]], scores: list[CandidateScore], invited: tuple[str, ...]
+    context: RunContext,
+    requisition: dict[str, Any],
+    rows: list[dict[str, Any]],
+    scores: list[CandidateScore],
+    invited: tuple[str, ...],
+    pending_rejections: list[dict[str, Any]],
 ) -> str:
-    """組出給招募經理的短名單報告。依鐵律 3，本文只出現匿名識別碼。"""
+    """組出給招募經理的短名單報告。依鐵律 3，本文只出現匿名識別碼。
+
+    `pending_rejections` 由呼叫端傳入（見 `run()`）：LLM 生成的面試問題與拒絕信全文
+    原本只寫進 row / state，從未在報告中出現過，招募經理根本看不到內容就無從審核
+    是否誠實、是否虛構讚美——這裡把兩者都攤開，但仍只以匿名識別碼呈現候選人。
+    """
     module = context.config.get("module") or {}
     counts = _decision_counts(scores)
     lines = [
@@ -452,6 +465,10 @@ def render_report(
     lines.extend(format_shortlist(scores, invited) or ["（本批無人達到短名單門檻）"])
     lines.extend(["", "【評分依據】", f"條件矩陣指紋：{criteria_fingerprint(context.config)}"])
     lines.extend(_render_evidence(rows))
+    lines.extend(["", "【面試問題（已邀約者）】"])
+    lines.extend(_render_interview_questions(rows) or ["（本批無人受邀）"])
+    lines.extend(["", "【待發拒絕信（人工審核用）】"])
+    lines.extend(_render_pending_rejections(pending_rejections) or ["（無待發拒絕信）"])
     lines.extend(["", "【身分揭露】", "confirm → `python main.py --reveal <識別碼> --approved-by \"<招募經理姓名>\"`"])
     return "\n".join(lines)
 
@@ -472,6 +489,44 @@ def _render_evidence(rows: list[dict[str, Any]]) -> list[str]:
         if row["gaps"]:
             lines.append(f"  缺口：{'、'.join(row['gaps'])}")
     return lines
+
+
+def _render_interview_questions(rows: list[dict[str, Any]]) -> list[str]:
+    """已邀約候選人的面試問題全文（匿名識別碼呈現，鐵律 3）。
+
+    面試問題本身不像拒絕信那麼長，逐題列出即可，不截斷。
+    prompts/interview_questions.md 硬性規則 1 已要求模型輸出自帶 `1.`–`4.` 編號，
+    這裡只加縮排、不再重複編號，避免出現「1. 1. ...」。
+    """
+    lines: list[str] = []
+    for row in rows:
+        if not row.get("invited_to_video_interview"):
+            continue
+        questions = row.get("interview_questions") or []
+        if not questions:
+            continue
+        lines.append(f"- {row['identifier']}：")
+        lines.extend(f"  {question}" for question in questions)
+    return lines
+
+
+def _render_pending_rejections(pending_rejections: list[dict[str, Any]]) -> list[str]:
+    """待發拒絕信的內容預覽。招募經理靠這行才能判斷信件是否誠實、有無虛構讚美。"""
+    lines: list[str] = []
+    for item in pending_rejections:
+        body = str(item.get("body", ""))
+        lines.append(f"- {item.get('ats_reference', 'N/A')}｜{len(body)} 字元｜{_first_line(body)}")
+    return lines
+
+
+def _first_line(text: str | None, width: int = _REJECTION_PREVIEW_WIDTH) -> str:
+    """取內容第一行的前 width 字元，用於報告預覽（沿用 demo10/demo21 既有慣例）。
+
+    None / 空字串一律回傳空字串，不拋例外——這是預覽用的輔助函式，不該讓報告產出失敗。
+    """
+    stripped = (text or "").strip()
+    head = stripped.splitlines()[0] if stripped else ""
+    return head if len(head) <= width else head[:width] + _TRUNCATION_SUFFIX
 
 
 def handle_reveal(
@@ -516,7 +571,14 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     rows = build_candidate_rows(context, scores, invited)
     schedule_rejections(context, scores, vault)
     dispatched = dispatch_due_rejections(context, bool(args.dry_run))
-    report = render_report(context, payload.get("requisition") or {}, rows, scores, invited)
+    report = render_report(
+        context,
+        payload.get("requisition") or {},
+        rows,
+        scores,
+        invited,
+        list(context.state.get("pending_rejections") or []),
+    )
     delivered = _deliver_report(args, context, report)
     reveal = handle_reveal(args, context, vault, scores)
     return _finalise(args, context, payload, rows, invited, dispatched, report, delivered, reveal, preflight_result)

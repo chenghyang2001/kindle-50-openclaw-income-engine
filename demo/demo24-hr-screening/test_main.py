@@ -173,6 +173,62 @@ def test_integration_shared_gate_diagnostics_and_audit(tmp_path: Path) -> None:
         demo_main.run(_args(tmp_path, config=str(config_path), notify="telegram"))
 
 
+def test_report_shows_interview_questions_content(tmp_path: Path) -> None:
+    """happy path：報告裡看得到面試問題實際內容，且只用匿名識別碼呈現候選人。
+
+    修 bug 前 render_report() 從未印出 interview_questions，
+    招募經理只看得到數字統計，看不到 LLM 實際生成了什麼題目。
+    """
+    result = demo_main.run(_args(tmp_path))
+
+    invited_rows = [row for row in result["candidates"] if row["invited_to_video_interview"]]
+    assert invited_rows, "本測試的 mock 資料應至少有一位受邀者，測試前提才成立"
+
+    report = result["report"]
+    assert "【面試問題（已邀約者）】" in report
+    for row in invited_rows:
+        assert row["identifier"] in report
+        for question in row["interview_questions"]:
+            assert question in report, f"報告缺少 {row['identifier']} 的面試題：{question}"
+
+    # 鐵律 3：匿名化不能因為新增區塊而破功，報告仍不含真實姓名
+    raw = json.loads(MOCK_APPLICATIONS.read_text(encoding="utf-8"))
+    for application in raw["applications"]:
+        assert str(application["name"]) not in report
+
+
+def test_report_shows_pending_rejection_preview(tmp_path: Path) -> None:
+    """happy path：報告裡看得到待發拒絕信的內容預覽，不是只有「N 封」的純數字統計。
+
+    修 bug 前 dispatch_due_rejections() 的 is_dry_run 分支無條件把項目塞進 pending，
+    從不送出也從不在報告露出內容，草稿信全文只能靠額外的 --json-out 才看得到。
+    """
+    result = demo_main.run(_args(tmp_path, dry_run=True))
+
+    assert result["pending_rejections"], "本測試的 mock 資料應至少排入一筆拒絕信，測試前提才成立"
+    report = result["report"]
+    assert "【待發拒絕信（人工審核用）】" in report
+    for item in result["pending_rejections"]:
+        expected_preview = demo_main._first_line(item["body"])
+        assert item["ats_reference"] in report
+        assert expected_preview in report
+
+
+def test_first_line_truncates_and_handles_empty_input() -> None:
+    """edge case：_first_line() 超長字串正確截斷，空字串／None 不拋例外。"""
+    long_text = "A" * 100
+    truncated = demo_main._first_line(long_text, width=40)
+    assert truncated == "A" * 40 + "…"
+    assert len(truncated) == 41
+
+    multiline = "第一行內容\n第二行不該出現"
+    assert demo_main._first_line(multiline) == "第一行內容"
+
+    assert demo_main._first_line("") == ""
+    assert demo_main._first_line(None) == ""
+    assert demo_main._first_line("   ") == ""
+
+
 def test_main_catches_llm_error(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:

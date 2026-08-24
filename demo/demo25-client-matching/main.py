@@ -80,6 +80,9 @@ DELIVERY_SENT = "sent"
 DELIVERY_DRAFT = "draft"
 DELIVERY_DRY_RUN = "dry_run"
 
+_SUMMARY_PREVIEW_WIDTH = 40
+_TRUNCATION_SUFFIX = "…"
+
 
 def build_parser() -> argparse.ArgumentParser:
     """建立 CLI 參數解析器（旗標依 CONTRACT.md §6，另加本模組專屬三個）"""
@@ -562,6 +565,18 @@ def _build_vendor_packs(
 # 報告與結果
 # ---------------------------------------------------------------------------
 
+def _first_line(text: str, width: int = _SUMMARY_PREVIEW_WIDTH) -> str:
+    """取文字第一行的前 width 字元，用於摘要列表預覽。
+
+    dry-run 模式不會走到 Notifier.send()（唯一會印出完整 text 的地方），
+    若「推播明細」只列 metadata，dry-run 反而是唯一看不到任何推播內容的模式，
+    違反 dry-run 應作為安全預覽的設計初衷，因此在報告裡加一行內容預覽。
+    """
+    stripped = (text or "").strip()
+    head = stripped.splitlines()[0] if stripped else ""
+    return head if len(head) <= width else head[:width] + _TRUNCATION_SUFFIX
+
+
 def _build_report(ctx: _Context, outcome: _Outcome, packs: list[dict[str, Any]], counts: dict) -> str:
     """組出人看的執行報告"""
     high = sum(1 for n in outcome.notifications if n["is_high_priority"])
@@ -577,9 +592,14 @@ def _build_report(ctx: _Context, outcome: _Outcome, packs: list[dict[str, Any]],
         "── 推播明細 ──",
     ]
     lines += [
-        f"  {'★' if n['is_high_priority'] else ' '} {n['listing_id']} → {n['buyer_id']}"
-        f"（{n['buyer_name']}）｜{n['score']} 分／{n['tier']}｜{n['minutes_since_listed']} 分鐘"
-        f"｜{n['delivery']}" for n in outcome.notifications
+        line
+        for n in outcome.notifications
+        for line in (
+            f"  {'★' if n['is_high_priority'] else ' '} {n['listing_id']} → {n['buyer_id']}"
+            f"（{n['buyer_name']}）｜{n['score']} 分／{n['tier']}｜{n['minutes_since_listed']} 分鐘"
+            f"｜{n['delivery']}",
+            f"     {_first_line(n['text'])}",
+        )
     ] or ["  （無）"]
     lines += ["", "── 去重擋下（本次不重複打擾） ──"]
     lines += [
