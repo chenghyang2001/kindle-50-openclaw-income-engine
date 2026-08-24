@@ -38,7 +38,7 @@ sys.path.insert(0, str(MODULE_DIR))
 from _shared.autonomy import AutonomyError, AutonomyGate, AutonomyLevel  # noqa: E402
 from _shared.config_loader import load_config  # noqa: E402
 from _shared.diagnostics import Diagnostics  # noqa: E402
-from _shared.llm_client import LLMClient  # noqa: E402
+from _shared.llm_client import LLMClient, LLMError  # noqa: E402
 from _shared.notifier import Notifier  # noqa: E402
 
 from enricher import (  # noqa: E402
@@ -681,7 +681,7 @@ def main() -> int:
     args = build_parser().parse_args()
     try:
         result = run(args)
-    except (FileNotFoundError, ValueError) as exc:
+    except (LLMError, FileNotFoundError, ValueError) as exc:
         print(f"錯誤：{exc}", file=sys.stderr)
         return 1
 

@@ -11,12 +11,15 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 MODULE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(MODULE_DIR.parent))
 sys.path.insert(0, str(MODULE_DIR))
 
 import aggregator  # noqa: E402
 import main  # noqa: E402
+from _shared.llm_client import LLMError  # noqa: E402
 
 MOCK_DIR = MODULE_DIR / "mock"
 
@@ -192,3 +195,24 @@ def test_integration_meta_outage_still_delivers(monkeypatch, capsys):
     assert result["delivery"]["delivered"] is True
     assert result["delivery"]["channel"] == "console"
     assert "部分資料" in capsys.readouterr().out
+
+
+def test_main_catches_llm_error(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--live 模式下 CLI 逾時等狀況會拋 LLMError；main() 必須吃下來變成 exit code 1，
+    而不是讓 raw traceback 砸給使用者（demo11 既有慣例的補齊）。
+    """
+
+    def _raise_llm_error(args: argparse.Namespace) -> dict:
+        raise LLMError("模擬 CLI 逾時")
+
+    monkeypatch.setattr(main, "run", _raise_llm_error)
+    monkeypatch.setattr(sys, "argv", ["main.py"])
+
+    exit_code = main.main()
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "錯誤：" in captured.err
+    assert "模擬 CLI 逾時" in captured.err

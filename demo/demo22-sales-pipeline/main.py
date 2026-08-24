@@ -41,7 +41,7 @@ sys.path.insert(0, str(MODULE_DIR))
 from _shared.autonomy import AutonomyGate, AutonomyLevel  # noqa: E402
 from _shared.config_loader import load_config  # noqa: E402
 from _shared.diagnostics import Diagnostics  # noqa: E402
-from _shared.llm_client import LLMClient  # noqa: E402
+from _shared.llm_client import LLMClient, LLMError  # noqa: E402
 from _shared.notifier import Notifier  # noqa: E402
 from audit import (  # noqa: E402
     ACTION_CHAIN_DRAFTED,
@@ -767,7 +767,7 @@ def main() -> int:
     args = build_parser().parse_args()
     try:
         result = run(args)
-    except (PipelineError, FileNotFoundError, OSError) as exc:
+    except (PipelineError, LLMError, FileNotFoundError, OSError) as exc:
         print(f"錯誤：{exc}", file=sys.stderr)
         return 1
     summary = _summarise(result)

@@ -10,12 +10,15 @@ import argparse
 import sys
 from pathlib import Path
 
+import pytest
+
 MODULE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(MODULE_DIR.parent))
 sys.path.insert(0, str(MODULE_DIR))
 
 import enricher  # noqa: E402
 import main  # noqa: E402
+from _shared.llm_client import LLMError  # noqa: E402
 from enricher import (  # noqa: E402
     ACTION_NO_DATA,
     STATUS_FAILED,
@@ -219,3 +222,24 @@ def test_integration_provider_failure_still_delivers(tmp_path, monkeypatch, caps
     assert "industry" in stdout and "→" in stdout  # 從什麼值變成什麼值
     assert "保留 CRM" in stdout                     # 衝突欄位的處置也要看得到
     assert not (tmp_path / "cli-report.csv").exists()
+
+
+def test_main_catches_llm_error(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--live 模式下 CLI 逾時等狀況會拋 LLMError；main() 必須吃下來變成 exit code 1，
+    而不是讓 raw traceback 砸給使用者（demo11 既有慣例的補齊）。
+    """
+
+    def _raise_llm_error(args: argparse.Namespace) -> dict:
+        raise LLMError("模擬 CLI 逾時")
+
+    monkeypatch.setattr(main, "run", _raise_llm_error)
+    monkeypatch.setattr(sys, "argv", ["main.py"])
+
+    exit_code = main.main()
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "錯誤：" in captured.err
+    assert "模擬 CLI 逾時" in captured.err

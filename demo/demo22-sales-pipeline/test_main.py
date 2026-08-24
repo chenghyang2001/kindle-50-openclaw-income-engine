@@ -25,6 +25,7 @@ sys.path.insert(0, str(MODULE_DIR.parent))
 sys.path.insert(0, str(MODULE_DIR))
 
 import main as demo22  # noqa: E402
+from _shared.llm_client import LLMError  # noqa: E402
 from audit import (  # noqa: E402
     ACTION_CHAIN_HALTED,
     ACTION_EVENT_REJECTED,
@@ -258,3 +259,24 @@ def test_integration_halt_on_reply_and_sla_alerting(
 
     # 7. 結果必須可 JSON 序列化（供 CRM 回寫 / 稽核留存）
     assert json.loads(json.dumps(result, ensure_ascii=False))["total_deals"] == 10
+
+
+def test_main_catches_llm_error(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--live 模式下 LLM 呼叫逾時等狀況會拋 LLMError；main() 必須吃下來變成 exit code 1，
+    而不是讓 raw traceback 砸給使用者（demo11 既有慣例的補齊）。
+    """
+
+    def _raise_llm_error(args):
+        raise LLMError("模擬 CLI 逾時")
+
+    monkeypatch.setattr(demo22, "run", _raise_llm_error)
+    monkeypatch.setattr(sys, "argv", ["main.py"])
+
+    exit_code = demo22.main()
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "錯誤：" in captured.err
+    assert "模擬 CLI 逾時" in captured.err

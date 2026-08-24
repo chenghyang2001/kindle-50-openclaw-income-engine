@@ -23,6 +23,7 @@ sys.path.insert(0, str(_DEMO_DIR.parent))
 sys.path.insert(0, str(_DEMO_DIR))
 
 import main as swarm_main  # noqa: E402
+from _shared.llm_client import LLMError  # noqa: E402
 from audit import AuditLog, read_entries  # noqa: E402
 from orchestrator import (  # noqa: E402
     AgentSpec,
@@ -231,3 +232,24 @@ def test_integration(
     assert gate.level.value == "draft"
     assert diagnostics.amber_count >= 1
     assert gate.can_send("content") is False
+
+
+def test_main_catches_llm_error(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--live 模式下 LLM 呼叫逾時等狀況會拋 LLMError；main() 必須吃下來變成 exit code 1，
+    而不是讓 raw traceback 砸給使用者（demo11 既有慣例的補齊）。
+    """
+
+    def _raise_llm_error(args: argparse.Namespace) -> dict:
+        raise LLMError("模擬 CLI 逾時")
+
+    monkeypatch.setattr(swarm_main, "run", _raise_llm_error)
+    monkeypatch.setattr(sys, "argv", ["main.py"])
+
+    exit_code = swarm_main.main()
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "錯誤：" in captured.err
+    assert "模擬 CLI 逾時" in captured.err

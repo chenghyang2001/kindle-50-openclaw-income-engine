@@ -30,7 +30,7 @@ sys.path.insert(0, str(_DEMO_DIR))
 from _shared.autonomy import AutonomyError, AutonomyGate, AutonomyLevel  # noqa: E402
 from _shared.config_loader import load_config  # noqa: E402
 from _shared.diagnostics import Diagnostics  # noqa: E402
-from _shared.llm_client import LLMClient  # noqa: E402
+from _shared.llm_client import LLMClient, LLMError  # noqa: E402
 from _shared.notifier import Notifier, NotifierError  # noqa: E402
 
 from audit import AuditError, AuditLog  # noqa: E402
@@ -633,7 +633,7 @@ def main() -> int:
     args = build_parser().parse_args()
     try:
         result = run(args)
-    except (SwarmError, AuditError, FileNotFoundError, OSError, ValueError) as exc:
+    except (SwarmError, AuditError, LLMError, FileNotFoundError, OSError, ValueError) as exc:
         print(f"錯誤：{exc}", file=sys.stderr)
         return 1
     totals = result["totals"]
