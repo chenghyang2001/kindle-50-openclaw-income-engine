@@ -49,6 +49,9 @@ channel:
 state:
   # 相對於本模組目錄（main.py 以 Path(__file__).parent 展開，禁止硬編碼絕對路徑）
   store_file: "state/conversations.json"
+  # live 模式的日曆狀態獨立存放，避免直接改到版控追蹤的 mock/calendar.json
+  # （首次執行時 main.py 會從 mock.calendar_file 複製一份當起始快照）
+  calendar_file: "state/calendar.json"
 
 mock:
   calendar_file: "mock/calendar.json"

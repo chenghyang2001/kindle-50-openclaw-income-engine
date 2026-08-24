@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from dataclasses import dataclass
 from datetime import datetime
@@ -47,6 +48,12 @@ from state_machine import (  # noqa: E402
 
 MODULE_NAME = "demo07-booking-scheduler"
 MEETING_MODE = "線上會議（連結於確認訊息內附上）"
+
+# 對應 Slot.label() 的輸出格式（見 calendar_client.py），例：09/25（四）10:00-10:45。
+# 用來驗證 LLM 潤飾後有沒有把時段標籤原樣保留下來。
+_SLOT_LABEL_PATTERN = re.compile(r"\d{2}/\d{2}（[一二三四五六日]）\d{2}:\d{2}-\d{2}:\d{2}")
+# 對應 CalendarClient.create_booking() 產生的預約編號格式（BK-YYYYMMDD-HHMM）。
+_BOOKING_ID_PATTERN = re.compile(r"BK-\d{8}-\d{4}")
 
 
 @dataclass
@@ -112,6 +119,21 @@ def _build_gate(runtime: dict[str, Any], diagnostics: Diagnostics) -> AutonomyGa
     return gate
 
 
+def _resolve_calendar_path(config: dict[str, Any], is_mock: bool) -> Path:
+    """mock 模式直接讀示範資料；live 模式用獨立狀態檔，首次執行時從示範資料
+    複製一份當起始快照（避免污染版控追蹤的 mock fixture，同時保留「已知既有
+    行程」這個日曆該有的初始語意，不能像對話狀態那樣把缺檔當空日曆）。
+    """
+    if is_mock:
+        return _resolve_path(config["mock"]["calendar_file"])
+    state_path = _resolve_path(config.get("state", {}).get("calendar_file", "state/calendar.json"))
+    if not state_path.exists():
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        seed = _resolve_path(config["mock"]["calendar_file"])
+        state_path.write_text(seed.read_text(encoding="utf-8"), encoding="utf-8")
+    return state_path
+
+
 def _build_context(
     config: dict[str, Any], args: argparse.Namespace, diagnostics: Diagnostics
 ) -> SchedulerContext:
@@ -124,7 +146,7 @@ def _build_context(
         diagnostics.amber(tz_warning, "pip install tzdata（Windows 環境建議安裝）")
     is_mock = bool(args.mock) and not bool(args.live)
     calendar = CalendarClient(
-        calendar_path=_resolve_path(config["mock"]["calendar_file"]),
+        calendar_path=_resolve_calendar_path(config, is_mock),
         tz=tz,
         slot_duration_minutes=int(scheduling["slot_duration_minutes"]),
         business_hours=scheduling["business_hours"],
@@ -163,10 +185,27 @@ def _load_conversations(config: dict[str, Any]) -> list[dict[str, Any]]:
 # 回覆生成
 # --------------------------------------------------------------------------- #
 def _polish(ctx: SchedulerContext, text: str) -> str:
-    """live 模式才把樣板回覆交給 LLM 依 prompts/conversation.md 潤飾語氣。"""
+    """live 模式才把樣板回覆交給 LLM 依 prompts/conversation.md 潤飾語氣。
+
+    LLM 偶爾會把要送給客戶的模板文字誤判成內部狀態報告，寫出「已送出時段選項，
+    等待客戶回覆」這類系統備忘而非客戶訊息（實測 6 次中 2 次），且輸出非空字串，
+    .strip() or text 這層保底攔不住。改用「關鍵事實是否還在」當驗證：時段標籤與
+    預約編號都是樣板文字裡確定會出現的具體資訊，潤飾後若遺漏，判定為潤飾失敗，
+    捨棄 LLM 輸出、改用原始模板（語氣生硬但內容保證正確）。
+    """
     if ctx.is_mock:
         return text
-    return ctx.llm.complete(system=ctx.prompt, user=text, max_tokens=400).strip() or text
+    polished = ctx.llm.complete(system=ctx.prompt, user=text, max_tokens=400).strip()
+    if not polished:
+        return text
+    expected = _SLOT_LABEL_PATTERN.findall(text) + _BOOKING_ID_PATTERN.findall(text)
+    if expected and not all(token in polished for token in expected):
+        ctx.diagnostics.amber(
+            "LLM 潤飾後遺漏關鍵資訊（時段或預約編號），已改用原始模板文字",
+            "檢查 prompts/conversation.md 是否需要更明確要求逐字保留時段與編號",
+        )
+        return text
+    return polished
 
 
 def _slots_reply(ctx: SchedulerContext, slots: list[Slot], opening: str) -> str:
@@ -301,8 +340,10 @@ def _handle_reschedule(
         ctx.calendar.cancel_booking(booking["id"])
     record["reschedules"] += 1
     record["booking"] = None
+    # 這句固定安撫語沒有任何動態內容，讓 LLM 潤飾只有風險沒有好處
+    # （曾實測讓 LLM 在這裡憑空捏造出跟系統實際時段對不上的假時段）
     return [
-        _polish(ctx, "沒問題，我幫你改。原本的時段已經釋出了。"),
+        "沒問題，我幫你改。原本的時段已經釋出了。",
         _offer_slots(ctx, machine, record, ""),
     ]
 
@@ -377,6 +418,16 @@ def _build_summary(config: dict[str, Any], records: list[dict[str, Any]]) -> str
     return "\n".join(lines)
 
 
+def _effective_notify_channel(args: argparse.Namespace, config: dict[str, Any]) -> str:
+    """算出實際生效的通知通道：CLI 明講就用 CLI，否則回退 config 設定。
+
+    抽成獨立函式讓 `_notify()` 與 `main()` 共用同一份判斷依據——`main()` 需要
+    知道「console 通道是否已經在 `_notify()` 印過一次摘要」，才能決定
+    `_render_report()` 要不要再放一次摘要（見 Bug 2：console 通道摘要印兩次）。
+    """
+    return args.notify or config.get("runtime", {}).get("notify_channel", "console")
+
+
 def _notify(
     args: argparse.Namespace,
     config: dict[str, Any],
@@ -387,7 +438,7 @@ def _notify(
     if args.dry_run:
         diagnostics.green("--dry-run：略過發送")
         return False
-    channel = args.notify or config.get("runtime", {}).get("notify_channel", "console")
+    channel = _effective_notify_channel(args, config)
     notifier = Notifier(channel=channel, config=config.get("channel", {}))
     return notifier.send(summary, subject="預約排程器每日摘要")
 
@@ -414,6 +465,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         records.append(_process_conversation(ctx, spec, machine))
     summary = _build_summary(config, records)
     state_path = None if args.dry_run else str(store.save(machines))
+    is_notified = _notify(args, config, summary, diagnostics)
     return {
         "module": config.get("module", {}).get("id", "07"),
         "is_mock": ctx.is_mock,
@@ -425,13 +477,21 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "amber_count": diagnostics.amber_count,
         "summary": summary,
         "state_file": state_path,
-        "is_notified": _notify(args, config, summary, diagnostics),
+        "is_notified": is_notified,
+        "notify_channel": _effective_notify_channel(args, config),
     }
 
 
-def _render_report(result: dict[str, Any]) -> str:
-    """人看的完整輸出：摘要 + 每段對話的代理程式回覆逐字稿。"""
-    blocks = [result["summary"], ""]
+def _render_report(result: dict[str, Any], include_summary: bool = True) -> str:
+    """人看的完整輸出：摘要 + 每段對話的代理程式回覆逐字稿。
+
+    include_summary=False 用於「console 通道已經送出」的情境（見 main()）：
+    `_notify()` 呼叫 `Notifier.send()` 時，console 通道會把摘要直接印到終端機，
+    這裡若再放一次會讓同一段文字在終端機出現兩次。其他通道（telegram/gmail/
+    line/whatsapp）發送不會印到終端機，使用者仍需要在這份報告裡看到摘要，
+    因此維持 include_summary=True，不影響那些通道的行為。
+    """
+    blocks = [result["summary"], ""] if include_summary else []
     for record in result["conversations"]:
         blocks.append(f"=== {record['id']} {record['customer']}（{record['scenario']}）===")
         for reply in record["replies"]:
@@ -455,7 +515,9 @@ def main() -> int:
     except (FileNotFoundError, ValueError, RuntimeError, OSError) as exc:
         print(f"錯誤：{exc}", file=sys.stderr)
         return 1
-    print(_render_report(result))
+    # console 通道已經在 _notify() 內把摘要印過一次，這裡不重複放（Bug 2）
+    console_already_printed = result["notify_channel"] == "console" and result["is_notified"]
+    print(_render_report(result, include_summary=not console_already_printed))
     return 0
 
 
