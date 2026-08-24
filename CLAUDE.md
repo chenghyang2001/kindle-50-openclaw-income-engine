@@ -7,7 +7,7 @@
 兩個部分：
 
 1. **`pdf/`** — 16 份 NotebookLM 生成的章節簡報（純圖片 PDF，**無文字層**）
-2. **`demo/`** — 依第 03、04 章實作的 10 個自動化模組，每個都可離線執行
+2. **`demo/`** — 依第 03/04 章（Level 1）、第 05 章 + 附錄F（Level 2）、第 07 章 + 附錄G（Level 3）實作的 **30 個自動化模組**（#1–#30），每個都可離線執行
 
 ## 目錄結構
 
@@ -19,16 +19,18 @@ kindle-50-openclaw-income-engine/
 │
 ├── pdf/                   # 16 份章節簡報（圖片 PDF，16:9）
 │
-└── demo/                  # 10 模組實作
-    ├── PLAN.md            # 建置計畫（模組規格、Session 拆分、驗收標準）
+└── demo/                  # 30 模組實作（#1–#30）
+    ├── PLAN.md            # Level 1（#1–#10）建置計畫：模組規格、Session 拆分、驗收標準
+    ├── SPEC-11-20.md      # Level 2（#11–#20）規格萃取：附錄F + 第05章
+    ├── SPEC-21-30.md      # Level 3（#21–#30）規格萃取：附錄G + 第07章
     ├── CONTRACT.md        # _shared API 契約（凍結）
     ├── README.md          # demo 總覽 + 快速上手
     ├── requirements.txt
     ├── .env.example
     ├── _shared/           # 基礎設施層
-    ├── demo01-morning-briefing/
-    ├── ...                # demo02 ~ demo09
-    ├── demo10-followup-sequence/
+    ├── demo01-morning-briefing/ ... demo10-followup-sequence/   # Level 1
+    ├── demo11-seo-content-engine/ ... demo20-vendor-tracking/   # Level 2
+    ├── demo21-marketing-swarm/ ... demo30-whitelabel-reseller/  # Level 3
     └── bundle-quickstart/ # 打包方案 + 客戶提案範本
 ```
 
@@ -121,11 +123,17 @@ pix = doc[0].get_pixmap(matrix=pymupdf.Matrix(1.16, 1.16))  # ~1600px 寬
 
 ## 已知的原著數據矛盾
 
-第 03 章模組矩陣的「內部回收時間」加總為 **168 hrs/mo**，但封面與複利效應圖寫
+第 03 章 Level 1（#1–#10）模組矩陣的「內部回收時間」加總為 **168 hrs/mo**，但封面與複利效應圖寫
 **40–60 hrs/mo**。兩者差近 3 倍。
 
 推測：矩陣值為「客戶端價值主張」，40–60 為「自用實際回收」。原著未說明此區別。
 **對外引用時要選定口徑並說明基準**，`demo/README.md` 已註明。
+
+Level 2（#11–#20）與 Level 3（#21–#30）也普遍存在**同一模組兩個來源給不同定價**
+的情況（第 05/07 章 vs 附錄 F/G）；Level 3 更有 36 張投影片全數缺「顧問自己的
+內部回收工時」數字。兩者的處理原則一致：**不自行平均、不推估，一律以各模組
+README 記錄的來源對照表與採用理由為準**（見 `demo/SPEC-11-20.md`、
+`demo/SPEC-21-30.md`）。
 
 ## 相關文件
 
