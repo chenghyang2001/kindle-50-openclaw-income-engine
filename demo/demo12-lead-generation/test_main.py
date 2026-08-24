@@ -216,3 +216,44 @@ def test_integration_compliance_hard_rule_and_autonomy_downgrade(tmp_path: Path)
 
     # 5. 結果必須可 JSON 序列化（供 CRM 回寫 / 法遵稽核留存）
     assert json.loads(json.dumps(result, ensure_ascii=False))["total_leads"] == 9
+
+
+def test_happy_path_summarise_shows_draft_body_preview() -> None:
+    """草稿摘要列必須帶信件內容預覽，不能只有公司名稱/分數/Day（demo10 同型 bug）。"""
+    result = _run()
+    assert result["drafted"], "此測試假設標準 mock 輸入至少產生一筆草稿"
+
+    summary = demo12._summarise(result)
+    summary_lines = summary.splitlines()
+
+    for item in result["drafted"]:
+        expected_preview = demo12._first_line(item["body"])
+        matching = [
+            line
+            for line in summary_lines
+            if line.startswith(f"  [草稿] {item['company']} ")
+        ]
+        assert matching, f"摘要文字缺少 {item['company']} 的草稿列"
+        draft_line = matching[0]
+        # 不能只有公司名稱/分數/Day，必須帶字元數與內容預覽
+        assert "字元｜" in draft_line
+        assert expected_preview in draft_line
+
+
+def test_edge_case_first_line_truncation() -> None:
+    """`_first_line()` 的截斷、多行、空值三種邊界行為。"""
+    long_line = "A" * 50
+    truncated = demo12._first_line(long_line)
+    assert len(truncated) == _first_line_expected_length()
+    assert truncated.endswith("…")
+
+    multiline_text = "第一行內容\n第二行不該出現\n第三行也不該出現"
+    assert demo12._first_line(multiline_text) == "第一行內容"
+
+    assert demo12._first_line("") == ""
+    assert demo12._first_line(None) == ""
+
+
+def _first_line_expected_length() -> int:
+    """截斷後長度應為 width + 省略符號長度，避免測試裡硬編碼魔術數字。"""
+    return demo12._SUMMARY_PREVIEW_WIDTH + len(demo12._TRUNCATION_SUFFIX)

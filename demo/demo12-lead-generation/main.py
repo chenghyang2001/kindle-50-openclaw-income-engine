@@ -66,6 +66,8 @@ from lead_scorer import (  # noqa: E402
 
 MODULE_LABEL = "demo12-lead-generation"
 LIVE_REQUIRED_ENV: tuple[str, ...] = ()
+_SUMMARY_PREVIEW_WIDTH = 40
+_TRUNCATION_SUFFIX = "…"
 
 # 第 04 章：CONTEXT_NOTE 可減少約 40% 不相關輸出
 CONTEXT_NOTE = (
@@ -451,6 +453,13 @@ def _build_result(
     }
 
 
+def _first_line(text: str, width: int = _SUMMARY_PREVIEW_WIDTH) -> str:
+    """取信件內容第一行的前 width 字元，用於草稿摘要預覽。"""
+    stripped = (text or "").strip()
+    head = stripped.splitlines()[0] if stripped else ""
+    return head if len(head) <= width else head[:width] + _TRUNCATION_SUFFIX
+
+
 def _summarise(result: dict) -> str:
     """組出給操作者的摘要文字。"""
     counts = result["band_counts"]
@@ -467,7 +476,10 @@ def _summarise(result: dict) -> str:
     for item in result["sent"]:
         lines.append(f"  [已送] {item['company']} {item['score']} 分 Day {item['stage_day']}")
     for item in result["drafted"]:
-        lines.append(f"  [草稿] {item['company']} {item['score']} 分 Day {item['stage_day']}")
+        lines.append(
+            f"  [草稿] {item['company']} {item['score']} 分 Day {item['stage_day']}"
+            f"｜{len(item['body'])} 字元｜{_first_line(item['body'])}"
+        )
     for item in result["enrichment_queue"]:
         lines.append(f"  [補資料] {item['company']} — 缺 {'、'.join(item['missing_fields'])}")
     for item in result["rejected"]:
