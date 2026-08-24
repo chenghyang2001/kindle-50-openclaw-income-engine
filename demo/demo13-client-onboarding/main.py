@@ -196,9 +196,21 @@ def _result(stage: StageSpec, outcome: StageOutcome, reason: str, **extra: Any) 
     )
 
 
-def _polish(ctx: OnboardingContext, stage: StageSpec, text: str) -> str:
-    """live 模式才把套版結果交給 LLM 依 prompts/*.md 潤飾語氣；mock 直接用套版輸出。"""
-    if ctx.is_mock:
+# 這些樣板是內部團隊用的通知（Slack 頻道訊息、內部會議提醒），不是寫給客戶的信。
+# 絕對不能套用「你是客戶經理，正在寫信給客戶」這類提示詞去潤飾——LLM 會把整則
+# 內部通知改寫成客戶信，聯絡人 email／客戶經理／自主權層級等內部追蹤欄位會全部消失。
+# 這是實測 --live 真實重現過的 bug，見對應的 commit message。
+_INTERNAL_ONLY_TEMPLATES = frozenset({"slack_new_client", "kickoff_meeting"})
+
+
+def _polish(ctx: OnboardingContext, stage: StageSpec, template_name: str, text: str) -> str:
+    """live 模式才把套版結果交給 LLM 依 prompts/*.md 潤飾語氣；mock 直接用套版輸出。
+
+    內部專用樣板（見 _INTERNAL_ONLY_TEMPLATES）一律跳過 LLM 潤飾、原樣送出——
+    這些是給內部團隊看的固定格式通知，不需要「潤飾語氣」，套用客戶信提示詞
+    只會讓 LLM 把內部追蹤欄位整個改寫掉。
+    """
+    if ctx.is_mock or template_name in _INTERNAL_ONLY_TEMPLATES:
         return text
     prompt_key = "welcome_file" if stage.key == "welcome_pack" else "checkin_file"
     system = ctx.prompts.get(prompt_key, "")
@@ -246,7 +258,7 @@ def _execute_stage(
         reason=f"於 {at} 交付（{delivery}）",
         owner=str(context["am_name"]),
         idempotency_key=machine.idempotency_key(stage.key),
-        messages=[_polish(ctx, stage, message) for message in messages],
+        messages=[_polish(ctx, stage, name, text) for name, text in messages],
         delivery=delivery,
     )
 

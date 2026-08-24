@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 import yaml
@@ -18,7 +19,8 @@ sys.path.insert(0, str(MODULE_DIR.parent))
 sys.path.insert(0, str(MODULE_DIR))
 
 import main  # noqa: E402
-from onboarding import StageOutcome, missing_required  # noqa: E402
+import onboarding  # noqa: E402
+from onboarding import StageOutcome, load_sequence, missing_required  # noqa: E402
 from state_machine import (  # noqa: E402
     ClientOnboarding,
     DuplicateStageError,
@@ -175,3 +177,77 @@ def test_integration_idempotency_autonomy_and_notifier(tmp_path: Path) -> None:
         machine.mark_stage_done(
             "welcome_pack", OnboardingEvent.SEND_WELCOME_PACK, "2026-09-30T09:01:00"
         )
+
+
+def test_render_stage_messages_keeps_template_name(tmp_path: Path) -> None:
+    """happy path：render_stage_messages 的新回傳型別要帶上樣板名稱。
+
+    welcome_pack 這個 stage 底下有兩個樣板（客戶信 + 內部 Slack 通知），
+    下游的 _polish() 必須能區分兩者，回傳型別因此從純文字清單改成
+    (樣板名稱, 文字) 的 tuple 清單——這裡直接驗證 onboarding.py 那一層。
+    """
+    config = _base_config()
+    templates = dict(config.get("templates", {}))
+    stages = load_sequence(config)
+    stage = next(item for item in stages if item.key == "welcome_pack")
+
+    # 最小 context：不關心佔位符是否全部解析，只驗證回傳的 (name, text) 結構
+    messages, _unresolved = onboarding.render_stage_messages(templates, stage, {})
+
+    assert isinstance(messages, list)
+    assert len(messages) == 2
+    assert messages[0][0] == "welcome_pack"
+    assert isinstance(messages[0][1], str)
+    assert messages[1][0] == "slack_new_client"
+    assert isinstance(messages[1][1], str)
+
+
+def test_polish_skips_llm_for_internal_only_templates(tmp_path: Path) -> None:
+    """edge case（regression 防呆）：內部樣板一律跳過 LLM 潤飾，原樣送出。
+
+    這是實測 --live 重現過的 bug：slack_new_client／kickoff_meeting 這類內部
+    通知若被套用「你是客戶經理，正在寫信給客戶」的提示詞，LLM 會把聯絡人
+    email、客戶經理、成交時間等內部追蹤欄位整個改寫消失。本測試用假的
+    ctx（is_mock=False，代表 live 模式）與假的 llm，斷言：
+      1. 回傳值就是原始文字（沒被潤飾）
+      2. llm.complete() 完全沒被呼叫過
+    """
+    config = _base_config()
+    stages = load_sequence(config)
+    welcome_stage = next(item for item in stages if item.key == "welcome_pack")
+    kickoff_stage = next(item for item in stages if item.key == "kickoff_meeting")
+
+    ctx = MagicMock()
+    ctx.is_mock = False
+    ctx.llm = MagicMock()
+    ctx.prompts = {}
+
+    original_slack_text = "原始內部通知文字"
+    result_slack = main._polish(ctx, welcome_stage, "slack_new_client", original_slack_text)
+    assert result_slack == original_slack_text
+    ctx.llm.complete.assert_not_called()
+
+    original_kickoff_text = "原始啟動會議提醒文字"
+    result_kickoff = main._polish(ctx, kickoff_stage, "kickoff_meeting", original_kickoff_text)
+    assert result_kickoff == original_kickoff_text
+    ctx.llm.complete.assert_not_called()
+
+
+def test_integration_internal_notice_not_rewritten_as_customer_letter(tmp_path: Path) -> None:
+    """integration：跑一次完整 mock 流程，slack_new_client 訊息不能被誤潤飾或錯位。
+
+    mock 模式本身就不會呼叫 LLM（is_mock 短路），但這裡驗證的是整條管線
+    组裝出來的最終訊息內容正確對應到 slack_new_client 樣板本身的關鍵欄位，
+    確保 render_stage_messages 回傳型別變更後、_execute_stage 解構 (name, text)
+    的順序沒有被打亂，訊息也沒有跑錯位置。
+    """
+    result = main.run(_args(tmp_path))
+    brand_new = next(
+        record for record in result["clients"] if record["client_id"] == "CL-1001"
+    )
+    stages = _stages_by_key(brand_new)
+    slack_message = stages["welcome_pack"]["messages"][1]
+
+    assert "Slack" in slack_message
+    assert "新客戶成交" in slack_message
+    assert "陳彥廷" in slack_message  # 聯絡人 email 對應的姓名，內部追蹤欄位仍在

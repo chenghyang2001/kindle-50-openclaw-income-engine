@@ -271,16 +271,21 @@ def build_template_context(
 
 def render_stage_messages(
     templates: dict[str, str], stage: StageSpec, context: dict[str, Any]
-) -> tuple[list[str], tuple[str, ...]]:
-    """渲染一個階段要送出的所有訊息，回傳 (訊息清單, 未解析佔位符)。"""
-    messages: list[str] = []
+) -> tuple[list[tuple[str, str]], tuple[str, ...]]:
+    """渲染一個階段要送出的所有訊息，回傳 ((樣板名稱, 訊息文字) 清單, 未解析佔位符)。
+
+    保留樣板名稱是因為同一個 stage 底下可能同時有客戶信與內部通知（例如
+    welcome_pack stage 的 welcome_pack + slack_new_client），下游的 LLM
+    潤飾必須知道自己在潤飾哪一則，才不會把內部通知誤套用客戶語氣改寫。
+    """
+    messages: list[tuple[str, str]] = []
     unresolved: list[str] = []
     for name in stage.templates:
         template = templates.get(name)
         if template is None:
             raise SequenceConfigError(f"階段 {stage.key} 指定的樣板 {name!r} 不存在於 templates")
         text, gaps = render(template, context)
-        messages.append(text.strip())
+        messages.append((name, text.strip()))
         unresolved.extend(gap for gap in gaps if gap not in unresolved)
     return messages, tuple(unresolved)
 
