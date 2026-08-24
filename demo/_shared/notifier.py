@@ -199,11 +199,15 @@ class Notifier:
         recipient = self._credential("to", GMAIL_TO_ENV)
         if not recipient:
             raise NotifierError(f"gmail 缺少收件人（config['to'] 或環境變數 {GMAIL_TO_ENV}）")
-        if shutil.which("gws") is None:
+        gws_path = shutil.which("gws")
+        if gws_path is None:
             raise NotifierError("找不到 gws CLI；請先安裝 Google Workspace CLI 並完成登入")
         payload = json.dumps({"raw": _build_gmail_raw(recipient, subject or DEFAULT_SUBJECT, text)})
+        # Windows 上 shutil.which 解析出的是含副檔名的完整路徑（如 xxx\gws.CMD）；
+        # subprocess.run 在 shell=False 下不會自動幫裸指令名補上 PATHEXT，
+        # 傳裸字串 "gws" 會直接 FileNotFoundError，必須用解析後的完整路徑呼叫。
         result = subprocess.run(
-            ["gws", "gmail", "users", "messages", "send",
+            [gws_path, "gmail", "users", "messages", "send",
              "--params", '{"userId":"me"}', "--json", payload, "--format", "json"],
             capture_output=True, encoding="utf-8", errors="replace",
             timeout=self._timeout, check=False,

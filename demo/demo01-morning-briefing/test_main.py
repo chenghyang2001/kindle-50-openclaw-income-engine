@@ -5,10 +5,13 @@
 
 import argparse
 import json
+import subprocess
 import sys
 from collections.abc import Callable
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
+import pytest
 import yaml
 
 MODULE_DIR = Path(__file__).resolve().parent
@@ -16,6 +19,7 @@ sys.path.insert(0, str(MODULE_DIR.parent))
 sys.path.insert(0, str(MODULE_DIR))
 
 import main  # noqa: E402
+from sources import email_source  # noqa: E402
 
 CONFIG_PATH = MODULE_DIR / "config.yaml"
 MOCK_FILENAMES = (("calendar", "calendar.json"), ("email", "emails.json"), ("news", "news.json"))
@@ -103,3 +107,78 @@ def test_integration_amber_autonomy_and_notifier(tmp_path: Path) -> None:
     assert result["can_auto_reply"] is False
     assert result["notify_channel"] == "console"
     assert result["is_delivered"] is True
+
+
+def _completed(stdout: str, returncode: int = 0) -> subprocess.CompletedProcess:
+    """組出一個 subprocess.CompletedProcess，模擬 gws 呼叫的成功回應。"""
+    return subprocess.CompletedProcess(args=["gws"], returncode=returncode, stdout=stdout, stderr="")
+
+
+def test_run_gws_uses_resolved_path_from_shutil_which() -> None:
+    """happy path：shutil.which 解析出完整路徑時，subprocess.run 收到的 argv[0] 是該路徑而非裸字串 "gws"。
+
+    Windows 上裸字串 "gws"（無副檔名）在 shell=False 下不會被 CreateProcess 自動補上
+    PATHEXT，直接呼叫會 FileNotFoundError；必須改用 shutil.which 解析出的完整路徑。
+    """
+    diag = MagicMock()
+    resolved = "C:\\fake\\npm\\gws.CMD"
+    with (
+        patch("sources.email_source.shutil.which", return_value=resolved) as mock_which,
+        patch(
+            "sources.email_source.subprocess.run", return_value=_completed('{"ok": true}')
+        ) as mock_run,
+    ):
+        result = email_source._run_gws("gws", ["gmail", "users", "messages", "list"], diag)
+    mock_which.assert_called_once_with("gws")
+    argv = mock_run.call_args.args[0]
+    assert argv[0] == resolved
+    assert result == {"ok": True}
+    diag.red.assert_not_called()
+
+
+def test_run_gws_falls_back_to_literal_command_when_which_cannot_resolve() -> None:
+    """edge/error：shutil.which 解析不到時原樣保留 cli_command，讓既有 FileNotFoundError 分支自然觸發。"""
+    diag = MagicMock()
+    with (
+        patch("sources.email_source.shutil.which", return_value=None),
+        patch("sources.email_source.subprocess.run", side_effect=FileNotFoundError("no such file")),
+    ):
+        with pytest.raises(email_source.SourceError):
+            email_source._run_gws("gws", ["gmail", "users", "messages", "list"], diag)
+    diag.red.assert_called_once()
+
+
+def test_fetch_live_messages_end_to_end_with_resolved_gws_path() -> None:
+    """integration：_fetch_live_messages 端對端跑一次（list + get 兩階段），確認兩次呼叫都用解析後的完整路徑。"""
+    diag = MagicMock()
+    resolved = "C:\\fake\\npm\\gws.CMD"
+    listing_json = json.dumps({"messages": [{"id": "m1"}]})
+    detail_json = json.dumps(
+        {
+            "payload": {
+                "headers": [
+                    {"name": "From", "value": "vip@example.com"},
+                    {"name": "Subject", "value": "測試主旨"},
+                    {"name": "Date", "value": "2026-01-01"},
+                ]
+            },
+            "snippet": "測試摘要",
+        }
+    )
+    with (
+        patch("sources.email_source.shutil.which", return_value=resolved),
+        patch(
+            "sources.email_source.subprocess.run",
+            side_effect=[_completed(listing_json), _completed(detail_json)],
+        ) as mock_run,
+    ):
+        messages = email_source._fetch_live_messages(
+            {"query": "is:unread newer_than:1d", "max_results": 5}, diag
+        )
+    assert len(messages) == 1
+    assert messages[0]["from"] == "vip@example.com"
+    assert messages[0]["subject"] == "測試主旨"
+    assert messages[0]["summary"] == "測試摘要"
+    assert mock_run.call_count == 2
+    for call in mock_run.call_args_list:
+        assert call.args[0][0] == resolved

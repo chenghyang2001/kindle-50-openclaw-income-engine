@@ -153,9 +153,18 @@ def _gws_json(argv: list[str], diag: Diagnostics) -> dict:
 
     刻意不自己實作 OAuth：Gmail 的 token 7 天就過期，是書中的紅色警報常客，
     交給使用者本機已登入的 gws 是最省事也最不容易壞的做法。
+
+    呼叫端把 "gws" 寫死在 argv[0]（見本檔 _fetch_live_emails / _dispatch_reply）。
+    Windows 上 shutil.which 解析出的是含副檔名的完整路徑（如 xxx\\gws.CMD）；
+    subprocess.run 在 shell=False 下不會自動幫裸指令名補上 PATHEXT，傳裸字串
+    "gws" 會直接 FileNotFoundError，所以呼叫前先把 argv[0] 換成解析後的完整路徑。
+    解析不到時原樣保留 "gws"，讓下面既有的 FileNotFoundError 分支自然觸發。
     """
+    resolved_argv = list(argv)
+    if resolved_argv and resolved_argv[0] == "gws":
+        resolved_argv[0] = shutil.which("gws") or "gws"
     try:
-        completed = subprocess.run(argv, capture_output=True, check=True,
+        completed = subprocess.run(resolved_argv, capture_output=True, check=True,
                                    encoding="utf-8", timeout=60)
     except FileNotFoundError as exc:
         diag.red(symptom="找不到 gws 指令",

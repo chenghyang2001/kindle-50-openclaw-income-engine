@@ -6,9 +6,12 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
+import pytest
 import yaml
 
 _DEMO_DIR = Path(__file__).resolve().parent
@@ -115,3 +118,76 @@ def test_integration_supervised_auto_downgrade(tmp_path: Path) -> None:
     assert others and all(d["action"] == "draft" for d in others)
     # --dry-run：判斷照做，但一封都不真的送出。
     assert all(d["dispatched"] is False for d in result["drafts"])
+
+
+def _completed(stdout: str) -> subprocess.CompletedProcess:
+    """組出一個 subprocess.CompletedProcess，模擬 gws 呼叫的成功回應。"""
+    return subprocess.CompletedProcess(args=["gws"], returncode=0, stdout=stdout, stderr="")
+
+
+def test_gws_json_replaces_literal_gws_with_resolved_path() -> None:
+    """happy path：argv[0] 是字面 "gws" 時，_gws_json 用 shutil.which 解析出的完整路徑取代它，
+
+    subprocess.run 實際收到的 argv[0] 不能還是裸字串 "gws"（Windows shell=False 下無副檔名
+    的裸指令名不會被 CreateProcess 自動補上 PATHEXT，會直接 FileNotFoundError）。
+    """
+    diag = MagicMock()
+    resolved = "C:\\fake\\npm\\gws.CMD"
+    with (
+        patch("main.shutil.which", return_value=resolved) as mock_which,
+        patch("main.subprocess.run", return_value=_completed('{"ok": true}')) as mock_run,
+    ):
+        result = inbox_zero._gws_json(
+            ["gws", "gmail", "users", "messages", "list", "--params", "{}"], diag
+        )
+    mock_which.assert_called_once_with("gws")
+    argv = mock_run.call_args.args[0]
+    assert argv[0] == resolved
+    assert argv[1:] == ["gmail", "users", "messages", "list", "--params", "{}"]
+    assert result == {"ok": True}
+    diag.red.assert_not_called()
+
+
+def test_gws_json_falls_back_and_raises_redalert_when_which_cannot_resolve() -> None:
+    """edge/error：shutil.which 解析不到時原樣保留 "gws"，讓既有 FileNotFoundError 分支自然觸發並拋 RedAlert。"""
+    diag = MagicMock()
+    with (
+        patch("main.shutil.which", return_value=None),
+        patch("main.subprocess.run", side_effect=FileNotFoundError("no such file")),
+    ):
+        with pytest.raises(inbox_zero.RedAlert):
+            inbox_zero._gws_json(["gws", "gmail", "users", "messages", "list"], diag)
+    diag.red.assert_called_once()
+
+
+def test_fetch_live_emails_end_to_end_with_resolved_gws_path() -> None:
+    """integration：_fetch_live_emails 端對端跑一次（list + get 兩階段），確認兩次呼叫都用解析後的完整路徑。"""
+    diag = MagicMock()
+    resolved = "C:\\fake\\npm\\gws.CMD"
+    listing_json = json.dumps({"messages": [{"id": "m1"}]})
+    detail_json = json.dumps({
+        "payload": {
+            "headers": [
+                {"name": "From", "value": "vip@example.com"},
+                {"name": "Subject", "value": "測試主旨"},
+                {"name": "Date", "value": "2026-01-01"},
+            ],
+            "mimeType": "text/plain",
+            "body": {"data": ""},
+        },
+    })
+    cfg = {"inbox": {"live_query": "is:unread newer_than:1d", "live_max_results": 10}}
+    with (
+        patch("main.shutil.which", return_value=resolved),
+        patch(
+            "main.subprocess.run",
+            side_effect=[_completed(listing_json), _completed(detail_json)],
+        ) as mock_run,
+    ):
+        emails = inbox_zero._fetch_live_emails(cfg, diag)
+    assert len(emails) == 1
+    assert emails[0]["from"] == "vip@example.com"
+    assert emails[0]["subject"] == "測試主旨"
+    assert mock_run.call_count == 2
+    for call in mock_run.call_args_list:
+        assert call.args[0][0] == resolved

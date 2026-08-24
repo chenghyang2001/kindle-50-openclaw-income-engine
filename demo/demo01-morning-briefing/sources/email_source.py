@@ -8,6 +8,7 @@
 """
 
 import json
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -103,10 +104,17 @@ def _fetch_one_message(cli_command: str, message_id: str, diagnostics: Any) -> d
 
 
 def _run_gws(cli_command: str, argv: list[str], diagnostics: Any) -> dict:
-    """執行 gws 子指令並回傳解析後的 JSON；任何失敗都要看得見，不可靜默吞掉。"""
+    """執行 gws 子指令並回傳解析後的 JSON；任何失敗都要看得見，不可靜默吞掉。
+
+    Windows 上 shutil.which 解析出的是含副檔名的完整路徑（如 xxx\\gws.CMD）；
+    subprocess.run 在 shell=False 下不會自動幫裸指令名補上 PATHEXT，傳裸字串
+    "gws" 會直接 FileNotFoundError。解析不到時原樣保留 cli_command，讓下面既有的
+    FileNotFoundError 分支自然觸發（行為不變，只是換一個真正會踩到的路徑）。
+    """
+    resolved_command = shutil.which(cli_command) or cli_command
     try:
         completed = subprocess.run(
-            [cli_command, *argv],
+            [resolved_command, *argv],
             capture_output=True,
             text=True,
             encoding="utf-8",
