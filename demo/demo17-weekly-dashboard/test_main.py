@@ -197,6 +197,56 @@ def test_integration_meta_outage_still_delivers(monkeypatch, capsys):
     assert "部分資料" in capsys.readouterr().out
 
 
+def test_dry_run_console_prints_report(monkeypatch, capsys):
+    """回歸測試（happy path）：--dry-run + console 通道時，main() 仍須印出完整週報。
+
+    dry-run 模式下 deliver() 直接 return，從未呼叫 Notifier，
+    main() 若只靠「channel != console」判斷是否要印，會漏掉這個組合，
+    終端機只剩下 stderr 的診斷訊息，週報文字整份消失。
+    """
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["main.py", "--mock", "--dry-run", "--config", str(MODULE_DIR / "config.yaml")],
+    )
+
+    exit_code = main.main()
+
+    output = capsys.readouterr().out
+    assert exit_code == 0
+    assert "每週績效儀表板" in output
+    assert "2026-W33" in output
+
+
+def test_dry_run_non_console_prints_report_once(monkeypatch, capsys):
+    """回歸測試（edge case）：非 console 通道 + --dry-run 時週報不可被印兩次。
+
+    確保修復判斷式的 `or` 條件不會讓非 console 通道疊加印出兩份週報。
+    """
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "main.py",
+            "--mock",
+            "--dry-run",
+            "--notify",
+            "telegram",
+            "--config",
+            str(MODULE_DIR / "config.yaml"),
+        ],
+    )
+
+    exit_code = main.main()
+
+    output = capsys.readouterr().out
+    assert exit_code == 0
+    # 用含表情符號的報表抬頭行比對（而非裸字串），
+    # 因為 AI 敘述摘要區塊的 mock 內容可能回顯提示詞裡同樣的字樣，
+    # 用裸字串比對會誤判成「印了兩次」。
+    assert output.count("📊 每週績效儀表板｜") == 1
+
+
 def test_main_catches_llm_error(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
