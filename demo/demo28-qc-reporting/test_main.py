@@ -19,6 +19,7 @@ sys.path.insert(0, str(MODULE_DIR))
 
 import chain as chain_mod  # noqa: E402
 import main  # noqa: E402
+from _shared.llm_client import LLMError  # noqa: E402
 from aggregator import (  # noqa: E402
     AlertSeverity,
     ControlChart,
@@ -260,3 +261,80 @@ def test_integration_alerts_visible_in_all_four_tiers(tmp_path, capsys):
     # (10) 稽核軌跡逐階記錄各階看見的警報 id，事後可證明沒有被吃掉
     assert "tier_built" in result["audit"]["events"]
     assert result["audit"]["chain_verified"] is True
+
+
+# --------------------------------------------------------------------------
+# 回歸測試：LLMError 未捕捉 + dry-run 吞掉報表內容
+# --------------------------------------------------------------------------
+
+
+def test_main_catches_llm_error(monkeypatch, capsys):
+    """--live 模式下 CLI 逾時等狀況會拋 LLMError；main() 必須吃下來變成 exit code 1，
+    而不是讓 raw traceback 砸給使用者（demo16 既有慣例的補齊）。
+    """
+
+    def _raise_llm_error(args):
+        raise LLMError("模擬 CLI 逾時")
+
+    monkeypatch.setattr(main, "run", _raise_llm_error)
+    monkeypatch.setattr(sys, "argv", ["main.py"])
+
+    exit_code = main.main()
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "錯誤：" in captured.err
+    assert "模擬 CLI 逾時" in captured.err
+
+
+def test_dry_run_console_prints_full_report(monkeypatch, tmp_path, capsys):
+    """回歸測試（happy path 變形）：--dry-run + console 通道時，main() 仍須印出完整的
+    四階報告內容，而不是只有 stderr 的一行警報統計。
+
+    dry-run 模式下 deliver() 直接 return，從未呼叫 Notifier；main() 舊版只印
+    `--- {period_key} ---` 標題行，report.body_markdown + AI 敘述整份消失。
+    """
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "main.py", "--mock", "--dry-run", "--tier", "daily",
+            "--config", str(MODULE_DIR / "config.yaml"),
+            "--state-file", str(tmp_path / "qc-state.json"),
+            "--audit-file", str(tmp_path / "qc-audit.jsonl"),
+        ],
+    )
+
+    exit_code = main.main()
+
+    output = capsys.readouterr().out
+    assert exit_code == 0
+    header_lines = [line for line in output.splitlines() if line.startswith("--- ")]
+    assert header_lines, "dry-run 應該至少印出一份報告標題"
+    # body_markdown 的收件對象區塊是報告本體的一部分，只印標題不會出現這行
+    assert "收件對象" in output
+    assert "Ops Director" in output
+
+
+def test_dry_run_non_console_prints_full_report(monkeypatch, tmp_path, capsys):
+    """回歸測試（edge case）：非 console 通道 + --dry-run 時一樣要印出完整內容，
+    不能因為通道不是 console 就退回只印標題。
+    """
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "main.py", "--mock", "--dry-run", "--tier", "daily", "--notify", "telegram",
+            "--config", str(MODULE_DIR / "config.yaml"),
+            "--state-file", str(tmp_path / "qc-state.json"),
+            "--audit-file", str(tmp_path / "qc-audit.jsonl"),
+        ],
+    )
+
+    exit_code = main.main()
+
+    output = capsys.readouterr().out
+    assert exit_code == 0
+    header_lines = [line for line in output.splitlines() if line.startswith("--- ")]
+    assert header_lines, "dry-run 應該至少印出一份報告標題，即使通道不是 console"
+    assert "收件對象" in output

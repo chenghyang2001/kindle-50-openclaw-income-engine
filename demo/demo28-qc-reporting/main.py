@@ -40,7 +40,7 @@ sys.path.insert(0, str(MODULE_DIR))
 from _shared.autonomy import AutonomyError, AutonomyGate, AutonomyLevel  # noqa: E402
 from _shared.config_loader import load_config  # noqa: E402
 from _shared.diagnostics import Diagnostics  # noqa: E402
-from _shared.llm_client import LLMClient  # noqa: E402
+from _shared.llm_client import LLMClient, LLMError  # noqa: E402
 from _shared.notifier import Notifier, NotifierError  # noqa: E402
 
 import aggregator  # noqa: E402
@@ -718,6 +718,12 @@ def _build_result(
         "alert_counts": count_by_severity(all_alerts),
         "carry_forward": [alert.alert_id for alert in carried],
         "delivered_reports": [report.period_key for report in reports],
+        # dry-run 時 deliver() 從未呼叫 Notifier，main() 得靠這份完整內容自己印出來，
+        # 不能只靠 delivered_reports 的 period_key 清單（那只是標題，不是報告本體）。
+        "rendered_reports": {
+            report.period_key: render_delivery_text(report, narratives.get(report.period_key, ""))
+            for report in reports
+        },
         "narratives": narratives,
         "delivery": delivery,
         "audit": trail.summary(),
@@ -744,7 +750,7 @@ def main() -> int:
     args = build_parser().parse_args()
     try:
         result = run(args)
-    except (FileNotFoundError, ValueError, SourceError) as exc:
+    except (LLMError, FileNotFoundError, ValueError, SourceError) as exc:
         print(f"錯誤：{exc}", file=sys.stderr)
         return 1
     except chain_mod.AlertSuppressionError as exc:
@@ -752,7 +758,15 @@ def main() -> int:
         print(f"報告鏈完整性檢查失敗：{exc}", file=sys.stderr)
         return 2
 
-    if result["delivery"]["channel"] != "console":
+    if result["dry_run"]:
+        # dry-run 時 deliver() 從未呼叫 Notifier，四階報告內容要在這裡自己印出來，
+        # 否則 --dry-run 只會看到 stderr 的統計摘要，完整報告內容整個消失。
+        for key in result["delivered_reports"]:
+            print(f"--- {key} ---")
+            print(result["rendered_reports"].get(key, ""))
+    elif result["delivery"]["channel"] != "console":
+        # console 通道已經由 Notifier 印過，這裡只印標題避免重複；
+        # 非 console 通道的完整內容已經送到外部管道，不在 stdout 重複印一次。
         for key in result["delivered_reports"]:
             print(f"--- {key} ---")
     _print_footer(result)

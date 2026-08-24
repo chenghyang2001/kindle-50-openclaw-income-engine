@@ -25,6 +25,7 @@ sys.path.insert(0, str(MODULE_DIR))
 import main as demo_main  # noqa: E402
 from _shared.config_loader import load_config  # noqa: E402
 from _shared.diagnostics import Diagnostics, RedAlert  # noqa: E402
+from _shared.llm_client import LLMError  # noqa: E402
 from anonymiser import (  # noqa: E402
     IdentityVault,
     RevealNotAuthorisedError,
@@ -170,3 +171,24 @@ def test_integration_shared_gate_diagnostics_and_audit(tmp_path: Path) -> None:
     # 5. 全域安全閥：沒先跑過 --dry-run 就要對外送出 → 紅色警報擋下
     with pytest.raises(RedAlert):
         demo_main.run(_args(tmp_path, config=str(config_path), notify="telegram"))
+
+
+def test_main_catches_llm_error(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--live 模式下 CLI 逾時等狀況會拋 LLMError；main() 必須吃下來變成 exit code 1，
+    而不是讓 raw traceback 砸給使用者（demo16 既有慣例的補齊）。
+    """
+
+    def _raise_llm_error(args):
+        raise LLMError("模擬 CLI 逾時")
+
+    monkeypatch.setattr(demo_main, "run", _raise_llm_error)
+    monkeypatch.setattr(sys, "argv", ["main.py"])
+
+    exit_code = demo_main.main()
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "錯誤：" in captured.err
+    assert "模擬 CLI 逾時" in captured.err

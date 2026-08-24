@@ -30,7 +30,7 @@ sys.path.insert(0, str(_DEMO_DIR))
 from _shared.autonomy import AutonomyGate, AutonomyLevel  # noqa: E402
 from _shared.config_loader import load_config  # noqa: E402
 from _shared.diagnostics import Diagnostics, RedAlert  # noqa: E402
-from _shared.llm_client import LLMClient  # noqa: E402
+from _shared.llm_client import LLMClient, LLMError  # noqa: E402
 from _shared.notifier import Notifier, NotifierError  # noqa: E402
 
 from analyser import (  # noqa: E402
@@ -562,7 +562,7 @@ def main() -> int:
     except RedAlert as exc:
         print(f"紅色警報：{exc}", file=sys.stderr)
         return 1
-    except (AnalyserError, PricerError, AuditError, NotifierError,
+    except (LLMError, AnalyserError, PricerError, AuditError, NotifierError,
             FileNotFoundError, ValueError) as exc:
         print(f"錯誤：{exc}", file=sys.stderr)
         return 1

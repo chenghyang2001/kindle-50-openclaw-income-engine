@@ -28,7 +28,7 @@ sys.path.insert(0, str(MODULE_DIR))
 from _shared.autonomy import AutonomyError, AutonomyGate, AutonomyLevel  # noqa: E402
 from _shared.config_loader import load_config  # noqa: E402
 from _shared.diagnostics import Diagnostics  # noqa: E402
-from _shared.llm_client import LLMClient  # noqa: E402
+from _shared.llm_client import LLMClient, LLMError  # noqa: E402
 from _shared.notifier import Notifier  # noqa: E402
 
 import analyser  # noqa: E402
@@ -449,7 +449,7 @@ def main() -> int:
     except (analyser.AnalyserError, escalation.EscalationError, registry.RegistryError) as exc:
         print(f"錯誤：{exc}", file=sys.stderr)
         return 1
-    except (FileNotFoundError, ValueError, OSError) as exc:
+    except (LLMError, FileNotFoundError, ValueError, OSError) as exc:
         print(f"錯誤：{exc}", file=sys.stderr)
         return 1
     if args.json_out:

@@ -25,6 +25,7 @@ sys.path.insert(0, str(MODULE_DIR))
 import audit  # noqa: E402
 import main  # noqa: E402
 import rollup  # noqa: E402
+from _shared.llm_client import LLMError  # noqa: E402
 from access_control import Role, resolve_scope  # noqa: E402
 
 #: 全網五個據點；隔離測試要確認店長看不到後面四個的任何痕跡。
@@ -245,3 +246,67 @@ def test_integration_site_manager_sees_only_own_site(tmp_path, capsys):
     # 店長視野不得推進全網基準線
     assert outbound["baseline_state"]["updated"] is False
     assert outbound["baseline_state"]["reason"] == "baseline_update_requires_hq"
+
+
+def test_main_catches_llm_error(monkeypatch, capsys):
+    """--live 模式下 CLI 逾時等狀況會拋 LLMError；main() 必須吃下來變成 exit code 1，
+    而不是讓 raw traceback 砸給使用者（demo16 既有慣例的補齊）。
+    """
+
+    def _raise_llm_error(args):
+        raise LLMError("模擬 CLI 逾時")
+
+    monkeypatch.setattr(main, "run", _raise_llm_error)
+    monkeypatch.setattr(sys, "argv", ["main.py"])
+
+    exit_code = main.main()
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "錯誤：" in captured.err
+    assert "模擬 CLI 逾時" in captured.err
+
+
+def test_dry_run_console_prints_report(monkeypatch, tmp_path, capsys):
+    """回歸測試（happy path 變形）：--dry-run + console 通道時，main() 仍須印出完整報表。
+
+    dry-run 模式下 deliver() 直接 return，從未呼叫 Notifier，
+    main() 若只靠「channel != console」判斷是否要印，會漏掉這個組合。
+    """
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "main.py", "--mock", "--dry-run", "--role", "hq",
+            "--config", str(MODULE_DIR / "config.yaml"),
+            "--state-file", str(tmp_path / "baselines.json"),
+            "--audit-file", str(tmp_path / "access.jsonl"),
+        ],
+    )
+
+    exit_code = main.main()
+
+    output = capsys.readouterr().out
+    assert exit_code == 0
+    assert "多據點商業智慧匯總" in output
+    assert "全網總計" in output
+
+
+def test_dry_run_non_console_prints_report_once(monkeypatch, tmp_path, capsys):
+    """回歸測試（edge case）：非 console 通道 + --dry-run 時報表不可被印兩次。"""
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "main.py", "--mock", "--dry-run", "--role", "hq", "--notify", "telegram",
+            "--config", str(MODULE_DIR / "config.yaml"),
+            "--state-file", str(tmp_path / "baselines.json"),
+            "--audit-file", str(tmp_path / "access.jsonl"),
+        ],
+    )
+
+    exit_code = main.main()
+
+    output = capsys.readouterr().out
+    assert exit_code == 0
+    assert output.count("🏢 多據點商業智慧匯總｜") == 1

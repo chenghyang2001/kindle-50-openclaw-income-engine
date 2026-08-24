@@ -24,6 +24,7 @@ import audit as audit_mod  # noqa: E402
 import board_pack as pack_mod  # noqa: E402
 import main  # noqa: E402
 from _shared.diagnostics import Diagnostics  # noqa: E402
+from _shared.llm_client import LLMError  # noqa: E402
 from sources import PnLLine, SourceError, SourceFacts, quantize_money, to_decimal  # noqa: E402
 
 #: 固定時區（UTC+8 = 台北）。刻意不用 ZoneInfo("Asia/Taipei")：
@@ -236,3 +237,70 @@ def test_integration_approval_gate_blocks_board(monkeypatch, tmp_path, capsys):
     fresh.record("t2", {"nested": {"values": [Decimal("2.005"), "x"]}})
     assert fresh.verify_chain() == []
     assert fresh.verify_file() == []
+
+
+def test_main_catches_llm_error(monkeypatch, capsys):
+    """--live 模式下 CLI 逾時等狀況會拋 LLMError；main() 必須吃下來變成 exit code 1，
+    而不是讓 raw traceback 砸給使用者（demo16 既有慣例的補齊）。
+    """
+
+    def _raise_llm_error(args):
+        raise LLMError("模擬 CLI 逾時")
+
+    monkeypatch.setattr(main, "run", _raise_llm_error)
+    monkeypatch.setattr(sys, "argv", ["main.py"])
+
+    exit_code = main.main()
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "錯誤：" in captured.err
+    assert "模擬 CLI 逾時" in captured.err
+
+
+def test_dry_run_console_prints_report(monkeypatch, tmp_path, capsys):
+    """回歸測試（happy path 變形）：--dry-run + console 通道時，main() 仍須印出完整董事會報表。
+
+    dry-run 模式下 deliver() 直接 return，從未呼叫 Notifier，
+    main() 若只靠「channel != console」判斷是否要印，會漏掉這個組合
+    （草稿・待財務總監審核的報表就整份消失在終端機上）。
+    """
+    monkeypatch.setattr(main, "current_time", lambda tz: FIXED_NOW)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "main.py", "--mock", "--dry-run",
+            "--config", str(MODULE_DIR / "config.yaml"),
+            "--state-file", str(tmp_path / "approval.json"),
+            "--audit-file", str(tmp_path / "audit.jsonl"),
+        ],
+    )
+
+    exit_code = main.main()
+
+    output = capsys.readouterr().out
+    assert exit_code == 0
+    assert "董事會財務報告" in output
+    assert "EXECUTIVE SUMMARY" in output
+
+
+def test_dry_run_non_console_prints_report_once(monkeypatch, tmp_path, capsys):
+    """回歸測試（edge case）：非 console 通道 + --dry-run 時報表不可被印兩次。"""
+    monkeypatch.setattr(main, "current_time", lambda tz: FIXED_NOW)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "main.py", "--mock", "--dry-run", "--notify", "telegram",
+            "--config", str(MODULE_DIR / "config.yaml"),
+            "--state-file", str(tmp_path / "approval.json"),
+            "--audit-file", str(tmp_path / "audit.jsonl"),
+        ],
+    )
+
+    exit_code = main.main()
+
+    output = capsys.readouterr().out
+    assert exit_code == 0
+    assert output.count("📑 董事會財務報告｜") == 1

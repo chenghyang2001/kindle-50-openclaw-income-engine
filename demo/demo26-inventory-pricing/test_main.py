@@ -22,6 +22,7 @@ sys.path.insert(0, str(_DEMO_DIR.parent))
 sys.path.insert(0, str(_DEMO_DIR))
 
 from _shared.autonomy import AutonomyGate, AutonomyLevel  # noqa: E402
+from _shared.llm_client import LLMError  # noqa: E402
 
 
 def _load(module_name: str, filename: str):
@@ -227,3 +228,22 @@ def test_integration_autonomy_downgrade_and_console_notify(tmp_path, capsys):
 
     is_valid, note = audit.verify_chain(result["audit_file"])
     assert is_valid, note
+
+
+def test_main_catches_llm_error(monkeypatch, capsys):
+    """--live 模式下 CLI 逾時等狀況會拋 LLMError；main() 必須吃下來變成 exit code 1，
+    而不是讓 raw traceback 砸給使用者（demo16 既有慣例的補齊）。
+    """
+
+    def _raise_llm_error(args):
+        raise LLMError("模擬 CLI 逾時")
+
+    monkeypatch.setattr(optimiser, "run", _raise_llm_error)
+    monkeypatch.setattr(sys, "argv", ["main.py"])
+
+    exit_code = optimiser.main()
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "錯誤：" in captured.err
+    assert "模擬 CLI 逾時" in captured.err

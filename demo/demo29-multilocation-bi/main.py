@@ -41,7 +41,7 @@ sys.path.insert(0, str(MODULE_DIR))
 from _shared.autonomy import AutonomyError, AutonomyGate, AutonomyLevel  # noqa: E402
 from _shared.config_loader import load_config  # noqa: E402
 from _shared.diagnostics import Diagnostics  # noqa: E402
-from _shared.llm_client import LLMClient  # noqa: E402
+from _shared.llm_client import LLMClient, LLMError  # noqa: E402
 from _shared.notifier import Notifier  # noqa: E402
 
 import audit  # noqa: E402
@@ -747,12 +747,12 @@ def main() -> int:
     args = build_parser().parse_args()
     try:
         result = run(args)
-    except (FileNotFoundError, ValueError, audit.AuditError, rollup.RollupError) as exc:
+    except (LLMError, FileNotFoundError, ValueError, audit.AuditError, rollup.RollupError) as exc:
         print(f"錯誤：{exc}", file=sys.stderr)
         return 1
 
-    if result["delivery"]["channel"] != "console":
-        # console 通道已由 Notifier 印過，不重複輸出。
+    if result["dry_run"] or result["delivery"]["channel"] != "console":
+        # dry-run 時 deliver() 從未呼叫 Notifier；非 console 通道也需要主控台自己印。
         print(result["report_text"])
     if result["access"]["is_denied"]:
         print(f"\n注意：本次拒絕存取（{result['access']['denial_reason']}）。", file=sys.stderr)

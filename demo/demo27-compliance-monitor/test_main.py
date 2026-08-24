@@ -19,6 +19,7 @@ sys.path.insert(0, str(MODULE_DIR.parent))
 sys.path.insert(0, str(MODULE_DIR))
 
 import main as demo_main  # noqa: E402
+from _shared.llm_client import LLMError  # noqa: E402
 from analyser import warning_stage  # noqa: E402
 from escalation import LEVEL_RANK  # noqa: E402
 
@@ -152,3 +153,22 @@ def test_integration_escalation_paths_and_append_only_ledgers(tmp_path: Path) ->
     # --- 去重狀態檔：同階段第二次不重複轟炸法務長，但台帳照樣入帳 ---
     assert all(item["is_suppressed"] for item in second["notices"])
     assert second["ledger_rows"] == {"contract": 7, "licence": 4, "policy": 4}
+
+
+def test_main_catches_llm_error(monkeypatch, capsys):
+    """--live 模式下 CLI 逾時等狀況會拋 LLMError；main() 必須吃下來變成 exit code 1，
+    而不是讓 raw traceback 砸給使用者（demo16 既有慣例的補齊）。
+    """
+
+    def _raise_llm_error(args):
+        raise LLMError("模擬 CLI 逾時")
+
+    monkeypatch.setattr(demo_main, "run", _raise_llm_error)
+    monkeypatch.setattr(sys, "argv", ["main.py"])
+
+    exit_code = demo_main.main()
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "錯誤：" in captured.err
+    assert "模擬 CLI 逾時" in captured.err
