@@ -153,8 +153,11 @@ class LLMClient:
         timeout: int = 60,
     ) -> None:
         """
-        mock=True   -> 不呼叫 API，complete() 回傳 fixture 內容（零成本）
-        mock=False  -> 讀 os.environ["ANTHROPIC_API_KEY"]，缺少則透過 Diagnostics.red 退出
+        mock=True   -> 不呼叫 CLI，complete() 回傳 fixture 內容（零成本）
+        mock=False  -> 用 shutil.which("claude") 解析本機已登入的 Claude Code CLI，
+                       缺少則透過 Diagnostics.red 退出（2026-08-24 修訂：不再讀
+                       ANTHROPIC_API_KEY，改走 claude -p 呼叫使用者的 Max 訂閱，
+                       不消耗 API Credits）
         context_note-> 附加到 system prompt 尾端的 CONTEXT_NOTE 段落
                        （第 04 章：可減少 40% 不相關輸出）
         """
@@ -169,12 +172,20 @@ class LLMClient:
         """
         mock=True 時：讀 fixture 檔案內容回傳；fixture 為 None 則回傳固定佔位字串
                      "[MOCK] <system 前 40 字>"
-        mock=False 時：呼叫 Anthropic Messages API（用 urllib.request，不用 requests）
-                      逾時或 5xx 走指數退避重試 max_retries 次
+        mock=False 時：以子行程呼叫本機 claude CLI 的 headless 模式（claude -p），
+                      逾時走指數退避重試 max_retries 次；非逾時的失敗
+                      （非 0 exit code／回應 JSON 的 is_error=true／JSON 格式錯誤／
+                      缺 result 欄位）一律不重試，直接拋 LLMError
+                      （2026-08-24 修訂：max_tokens 保留在簽名裡供型別驗證，
+                      但不會傳給 CLI——headless 模式沒有對應的 token 上限旗標）
         用量一律追加一行 JSON 到用量記錄檔（2026-08-24 修訂）：
                       路徑優先序 = 環境變數 OPENCLAW_USAGE_LOG > demo/ 目錄下的 .usage.jsonl
                       （以 config_loader.project_root() 推算，**不可用 cwd**）
                       理由：cwd 相對會在使用者從其他目錄執行時，把記錄檔亂丟進不相干的 repo
+                      注意：live 模式的 input_tokens/output_tokens 現在讀自 claude -p 回應
+                      JSON 的 usage 欄位，語意已不同於舊版 Anthropic Messages API 的計費
+                      token（不含 prompt cache 的 cache_creation/cache_read token 數，
+                      output_tokens 則含 thinking token），不可再拿來對照舊版的用量報表。
         """
 
     @property
@@ -182,12 +193,25 @@ class LLMClient:
         """{"input": N, "output": M}"""
 ```
 
-**API 細節（`mock=False` 時）**
+**CLI 呼叫細節（`mock=False` 時，2026-08-24 修訂，取代舊版直連 Anthropic API）**
 
-- Endpoint: `https://api.anthropic.com/v1/messages`
-- Headers: `x-api-key`, `anthropic-version: 2023-06-01`, `content-type: application/json`
-- Body: `{"model":..., "max_tokens":..., "system":..., "messages":[{"role":"user","content":...}]}`
-- 回傳取 `resp["content"][0]["text"]`
+- 執行檔：`shutil.which("claude")` 解析（Windows 上會解析到 `claude.CMD`），透過
+  `subprocess.run([...], input=user, capture_output=True, text=True, encoding="utf-8",
+  timeout=self.timeout)` 呼叫，**不用 `shell=True`**
+- Argv：`[cli_path, "-p", "--safe-mode", "--model", <model>, "--system-prompt", <組合後
+  system>, "--tools", "", "--output-format", "json"]`
+  - `--safe-mode`：**必要旗標，不可省略**。停用 CLAUDE.md／skills／plugins／hooks／MCP
+    servers 等本機客製化；沒有這個旗標，即使 `--tools ""` 停用了內建工具，headless 呼叫
+    仍會自動掛載呼叫當下 cwd 的 CLAUDE.md／git status／專案指示，並把內容洩漏進回應文字
+    （code review 實測發現此問題，見 `demo/_shared/test_llm_client.py` 第 23 條回歸測試）
+  - `--tools ""`：停用所有內建工具執行，維持純文字補全語意
+  - `user` 透過 `input=` 從 stdin 餵入，**不進 argv**
+- 回應：`result.stdout` 是 JSON，取 `payload["result"]` 當文字內容；`payload["is_error"]`
+  為 `true` 或缺 `result` 欄位都視為失敗（`LLMError`，不重試）；`payload["usage"]["input_tokens"]` /
+  `["output_tokens"]` 供用量記錄
+- 已知取捨：每次呼叫起一個新的 CLI 子行程，單次呼叫耗時（`--safe-mode` 加上後約 1~2 秒
+  API 時間，實際 wall time 視環境約數秒）明顯高於舊版直接 HTTP 呼叫；對逐筆呼叫
+  `complete()` 的 demo（如批次評分、批次草稿）在大量筆數時會放大總耗時，尚未做平行化
 
 ---
 
@@ -279,7 +303,7 @@ if __name__ == "__main__":
 結果：4 個獨立 writer 對同一份契約寫程式，鍵名幾乎全部發散。
 
 | 語意 | demo01 | demo02 | demo05 | demo09 |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | 模組編號 | `module_id` | `module` | `module_id` | `module` |
 | 模組名稱 | `module_name` | 無 | `module_name` | 無 |
 | 執行模式 | `mode` | `mode` | `mode` | `is_mock`（bool） |

@@ -1,9 +1,13 @@
-"""Claude Messages API 封裝 — 預設 mock 模式，零成本開發。
+"""呼叫本機已登入的 `claude` CLI headless 模式（`claude -p`）— 預設 mock 模式，零成本開發。
 
 設計取捨：
-1. **預設 `mock=True`**。10 個 demo 開發期間跑上百次，若預設打真實 API 會燒掉整包預算。
-2. **只用標準庫 `urllib.request`**。這批交付包要能丟到客戶機器上直接跑，
-   少一個 `pip install requests` 就少一個安裝失敗的支援電話。
+1. **預設 `mock=True`**。mock 預設不是為了省 Max 訂閱額度（訂閱制本身是固定 $0/次），
+   而是讓開發機、CI 環境不需要一個已經互動登入過的 `claude` CLI 也能離線、可重現地測試——
+   10 個 demo 開發期間要跑上百次，逼每個環境都先登入一次 CLI 才能測試會拖慢所有人。
+2. **只用標準庫**。這批交付包要能丟到客戶機器上直接跑，
+   少一個 `pip install requests` 就少一個安裝失敗的支援電話；
+   `subprocess` 一樣是標準庫，live 模式現在連 HTTP 都不用打，改成呼叫本機 CLI 子行程，
+   走使用者已登入的 Claude Max 訂閱額度，不需要 `ANTHROPIC_API_KEY`。
 3. **用量一律落地 `.usage.jsonl`**。沒有帳單資料就沒辦法對客戶報價，
    因此 mock 與 live 都寫入（mock 記字元數、tokens 為 0，不捏造數字）。
    路徑固定在 `demo/`（或 `OPENCLAW_USAGE_LOG` 指定處），不跟著 cwd 跑——
@@ -14,31 +18,27 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
+import subprocess
 import time
-import urllib.error
-import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
 try:  # 一般情境：以 `_shared` 套件被 demo 匯入
-    from .diagnostics import Diagnostics, KNOWN_SYMPTOMS
+    from .diagnostics import Diagnostics
 except ImportError:  # 直接以腳本執行本檔時沒有套件脈絡
-    from diagnostics import Diagnostics, KNOWN_SYMPTOMS  # type: ignore[no-redef]
+    from diagnostics import Diagnostics  # type: ignore[no-redef]
 
-ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
-ANTHROPIC_VERSION = "2023-06-01"
-API_KEY_ENV = "ANTHROPIC_API_KEY"
+CLI_COMMAND = "claude"
 USAGE_LOG_ENV = "OPENCLAW_USAGE_LOG"
 USAGE_LOG_NAME = ".usage.jsonl"
 
-# 指數退避的基準秒數：1s -> 2s -> 4s。Anthropic 建議的最小重試間隔即為 1 秒。
+# 指數退避的基準秒數：1s -> 2s -> 4s。與舊版 HTTP 重試沿用同一個退避節奏。
 BACKOFF_BASE_SECONDS = 1.0
-# 這些狀態碼代表「等一下再試會好」，其餘 4xx 是請求本身有問題，重試只是浪費時間與配額。
-RETRYABLE_STATUS = frozenset({408, 409, 425, 429, 500, 502, 503, 504, 529})
 
 
 class LLMError(RuntimeError):
-    """呼叫 Claude API 失敗（含重試耗盡、回應格式異常、fixture 缺檔）。"""
+    """呼叫 claude CLI 失敗（含重試耗盡、回應格式異常、fixture 缺檔）。"""
 
 
 class _RetryableError(LLMError):
@@ -72,7 +72,7 @@ def usage_log_path() -> Path:
 
 
 class LLMClient:
-    """Claude Messages API 的極簡封裝。"""
+    """呼叫本機 `claude` CLI headless 模式的極簡封裝。"""
 
     def __init__(
         self,
@@ -83,8 +83,8 @@ class LLMClient:
         timeout: int = 60,
     ) -> None:
         """
-        mock=True   -> 不呼叫 API，complete() 回傳 fixture 內容（零成本）
-        mock=False  -> 讀 os.environ["ANTHROPIC_API_KEY"]，缺少則透過 Diagnostics.red 退出
+        mock=True   -> 不呼叫 CLI，complete() 回傳 fixture 內容（零成本）
+        mock=False  -> 解析 PATH 上的 `claude` 指令，缺少則透過 Diagnostics.red 退出
         context_note-> 附加到 system prompt 尾端的 CONTEXT_NOTE 段落
                        （第 04 章：可減少 40% 不相關輸出）
         """
@@ -100,19 +100,19 @@ class LLMClient:
         self._timeout = timeout
         self._diagnostics = Diagnostics("llm_client")
         self._total_tokens: dict[str, int] = {"input": 0, "output": 0}
-        self._api_key = "" if self._mock else self._require_api_key()
+        self._cli_path = "" if self._mock else self._require_cli()
 
-    def _require_api_key(self) -> str:
-        """live 模式缺金鑰就走紅色警報退出，絕不靜默降級回 mock。"""
-        api_key = os.environ.get(API_KEY_ENV, "").strip()
-        if not api_key:
-            entry = KNOWN_SYMPTOMS["api_key_invalid"]
+    def _require_cli(self) -> str:
+        """live 模式缺 claude CLI 就走紅色警報退出，絕不靜默降級回 mock。"""
+        cli_path = shutil.which(CLI_COMMAND)
+        if not cli_path:
             self._diagnostics.red(
-                f"{entry['symptom']}：環境變數 {API_KEY_ENV} 未設定或為空",
-                entry["cause"],
-                f"{entry['fix']}（PowerShell: setx {API_KEY_ENV} \"sk-ant-...\"）",
+                "Claude CLI 未安裝或不在 PATH",
+                f"live 模式改用 {CLI_COMMAND} -p 呼叫本機 Max 訂閱，需要能執行到 {CLI_COMMAND} 指令",
+                "安裝 Claude Code CLI 並完成一次互動登入（npm install -g @anthropic-ai/claude-code，"
+                "再執行一次 claude 完成登入），或改用 --mock 離線模式",
             )
-        return api_key
+        return cli_path
 
     @property
     def is_mock(self) -> bool:
@@ -139,7 +139,11 @@ class LLMClient:
         """送出一次補全請求並回傳純文字結果。
 
         mock=True 時讀 fixture 檔案內容；fixture 為 None 則回傳 "[MOCK] <system 前 40 字>"。
-        mock=False 時呼叫 Anthropic Messages API，逾時或 5xx 走指數退避重試。
+        mock=False 時呼叫本機 `claude -p`，逾時走指數退避重試，其餘失敗直接報錯。
+
+        max_tokens 保留在簽名裡是為了維持公開契約（見 CONTRACT.md），但不會傳給 CLI——
+        `claude -p` 沒有對應的 token 上限旗標，也沒有其他旗標能湊出等效行為，
+        寧可誠實地不做任何事，也不要假裝有限制卻其實沒生效。
         """
         if not isinstance(system, str) or not isinstance(user, str):
             raise LLMError("system 與 user 都必須是字串")
@@ -151,17 +155,7 @@ class LLMClient:
             self._record_usage("mock", system, user, text, 0, 0)
             return text
 
-        payload = {
-            "model": self._model,
-            "max_tokens": max_tokens,
-            "system": self._compose_system(system),
-            "messages": [{"role": "user", "content": user}],
-        }
-        response = self._post_with_retry(payload)
-        text = self._extract_text(response)
-        usage = response.get("usage") or {}
-        input_tokens = int(usage.get("input_tokens", 0))
-        output_tokens = int(usage.get("output_tokens", 0))
+        text, input_tokens, output_tokens = self._run_cli_with_retry(system, user)
         self._total_tokens["input"] += input_tokens
         self._total_tokens["output"] += output_tokens
         self._record_usage("live", system, user, text, input_tokens, output_tokens)
@@ -186,59 +180,80 @@ class LLMClient:
         except OSError as exc:
             raise LLMError(f"讀取 mock fixture 失敗：{path.resolve()}｜{exc}") from exc
 
-    def _post_with_retry(self, payload: dict) -> dict:
-        """指數退避重試：總嘗試次數 = max_retries + 1（max_retries=0 代表只試一次）。"""
+    def _run_cli_with_retry(self, system: str, user: str) -> tuple[str, int, int]:
+        """指數退避重試：總嘗試次數 = max_retries + 1（max_retries=0 代表只試一次）。
+
+        只有「等一下可能會好」的狀況（CLI 逾時）才重試；JSON 解析失敗、
+        is_error、非 0 exit code 都是重試也沒用的錯誤，直接 LLMError。
+        """
         last_error: Exception | None = None
         for attempt in range(self._max_retries + 1):
             try:
-                return self._post_once(payload)
+                return self._run_cli_once(system, user)
             except _RetryableError as exc:
                 last_error = exc
                 if attempt < self._max_retries:
                     time.sleep(BACKOFF_BASE_SECONDS * (2 ** attempt))
-        raise LLMError(f"Anthropic API 重試 {self._max_retries} 次後仍失敗：{last_error}")
+        raise LLMError(f"claude CLI 重試 {self._max_retries} 次後仍失敗：{last_error}")
 
-    def _post_once(self, payload: dict) -> dict:
-        """送出單次請求。可重試的失敗拋 _RetryableError，其餘拋 LLMError。"""
-        request = urllib.request.Request(
-            ANTHROPIC_API_URL,
-            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-            headers={
-                "x-api-key": self._api_key,
-                "anthropic-version": ANTHROPIC_VERSION,
-                "content-type": "application/json",
-            },
-            method="POST",
-        )
+    def _run_cli_once(self, system: str, user: str) -> tuple[str, int, int]:
+        """送出單次 CLI 呼叫。可重試的失敗拋 _RetryableError，其餘拋 LLMError。"""
+        composed_system = self._compose_system(system)
+        argv = [
+            self._cli_path,
+            "-p",
+            "--safe-mode",  # 停用 CLAUDE.md/skills/plugins/hooks/MCP 等客製化，
+            # 否則 --tools "" 只擋得住內建工具，擋不住 cwd 的 CLAUDE.md／專案上下文
+            # 被自動掛載進回應（code-reviewer 實測會把 git status、其他專案的
+            # 全域指示混進 result），對法遵/財務類 demo 是資料外洩風險；
+            # 副作用是把單次呼叫耗時從 9~22 秒降到約 1.4 秒，一併緩解效能疑慮。
+            "--model",
+            self._model,
+            "--system-prompt",
+            composed_system,
+            "--tools",
+            "",  # 停用所有工具，維持純文字補全語意（不讓它意外跑 Bash/Edit）
+            "--output-format",
+            "json",
+        ]
         try:
-            with urllib.request.urlopen(request, timeout=self._timeout) as response:
-                body = response.read().decode("utf-8", errors="replace")
-        except urllib.error.HTTPError as exc:
-            raise self._http_error(exc) from exc
-        except (urllib.error.URLError, TimeoutError, OSError) as exc:
-            raise _RetryableError(f"連線失敗或逾時：{exc}") from exc
+            result = subprocess.run(
+                argv,
+                input=user,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                timeout=self._timeout,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise _RetryableError(f"claude CLI 逾時（{self._timeout}s）：{exc}") from exc
+        except OSError as exc:
+            raise LLMError(f"claude CLI 執行失敗：{exc}") from exc
+
+        if result.returncode != 0:
+            detail = (result.stderr or result.stdout or "").strip()[:300]
+            raise LLMError(f"claude CLI 回傳非 0 exit code（{result.returncode}）：{detail}")
+
         try:
-            return json.loads(body)
+            response = json.loads(result.stdout)
         except json.JSONDecodeError as exc:
-            raise LLMError(f"Anthropic API 回應不是合法 JSON：{body[:200]}") from exc
+            preview = (result.stdout or "")[:300]
+            raise LLMError(f"claude CLI 輸出不是合法 JSON：{preview}") from exc
 
-    @staticmethod
-    def _http_error(exc: urllib.error.HTTPError) -> LLMError:
-        """把 HTTP 錯誤分類成「值得重試」與「重試也沒用」。"""
-        detail = exc.read().decode("utf-8", errors="replace")[:300] if exc.fp else ""
-        message = f"Anthropic API 回傳 HTTP {exc.code}：{detail or exc.reason}"
-        if exc.code in RETRYABLE_STATUS:
-            return _RetryableError(message)
-        return LLMError(message)
+        if response.get("is_error"):
+            preview = json.dumps(response, ensure_ascii=False)[:300]
+            raise LLMError(f"claude CLI 回報執行失敗（is_error=true）：{preview}")
 
-    @staticmethod
-    def _extract_text(response: dict) -> str:
-        """回傳取 resp["content"][0]["text"]，格式不符時明確報錯而非回空字串。"""
         try:
-            return response["content"][0]["text"]
-        except (KeyError, IndexError, TypeError) as exc:
-            preview = json.dumps(response, ensure_ascii=False)[:200]
-            raise LLMError(f"Anthropic API 回應缺少 content[0].text：{preview}") from exc
+            text = response["result"]
+        except KeyError as exc:
+            preview = json.dumps(response, ensure_ascii=False)[:300]
+            raise LLMError(f"claude CLI 回應缺少 result 欄位：{preview}") from exc
+
+        usage = response.get("usage") or {}
+        input_tokens = int(usage.get("input_tokens", 0))
+        output_tokens = int(usage.get("output_tokens", 0))
+        return text, input_tokens, output_tokens
 
     def _record_usage(
         self,
