@@ -39,7 +39,7 @@ sys.path.insert(0, str(MODULE_DIR))
 from _shared.autonomy import AutonomyGate, AutonomyLevel  # noqa: E402
 from _shared.config_loader import load_config  # noqa: E402
 from _shared.diagnostics import Diagnostics  # noqa: E402
-from _shared.llm_client import LLMClient  # noqa: E402
+from _shared.llm_client import LLMClient, LLMError  # noqa: E402
 from _shared.notifier import Notifier  # noqa: E402
 from audit import AuditLog  # noqa: E402
 from revenue_share import (  # noqa: E402
@@ -68,6 +68,11 @@ NOT_PROVIDED = "（原簡報未提供）"
 
 REPORT_PROMPT = "prompts/whitelabel_monthly_report.md"
 SLA_PROMPT = "prompts/reseller_sla_brief.md"
+
+# 摘要列表預覽寬度（字元數）與截斷後綴——與 demo10/demo12 的 _first_line 慣例一致，
+# 讓終端機摘要能看到內容的第一眼，而不是只有「產出了、但看不到寫了什麼」。
+_SUMMARY_PREVIEW_WIDTH = 40
+_TRUNCATION_SUFFIX = "…"
 
 # 第 04 章：CONTEXT_NOTE 可減少約 40% 不相關輸出。
 # 這裡刻意重申租戶邊界——白牌月報最危險的失敗不是寫得爛，是寫到別人的資料。
@@ -594,6 +599,13 @@ def _write_state(path: Path, result: dict) -> bool:
     return True
 
 
+def _first_line(text: str, width: int = _SUMMARY_PREVIEW_WIDTH) -> str:
+    """取內容第一行的前 width 字元，用於摘要列表預覽。"""
+    stripped = (text or "").strip()
+    head = stripped.splitlines()[0] if stripped else ""
+    return head if len(head) <= width else head[:width] + _TRUNCATION_SUFFIX
+
+
 def _summarise(result: dict) -> str:
     """組出給操作者的摘要文字。"""
     gate = result["whitelabel_gate"]
@@ -616,7 +628,13 @@ def _summarise(result: dict) -> str:
             f"  [{reseller['delivery']}] {reseller['brand_display_name']}"
             f"（{reseller['reseller_slug']}）子客戶 {len(reseller['sub_clients'])} 家"
             f"｜提供者應收 {reseller['totals']['provider']}"
+            f"｜SLA 摘要：{_first_line(reseller['sla_brief'])}"
         )
+        for item in reseller["sub_clients"]:
+            lines.append(
+                f"    - {item['display_name']}（{item['namespace']}）"
+                f"月費 {item['monthly_fee']}｜{_first_line(item['report'])}"
+            )
     for item in isolation["details"]:
         if item["outcome"] == "denied":
             lines.append(f"  [擋下] {item['id']} {item['actor']} → {item['target']}")
@@ -774,7 +792,7 @@ def main() -> int:
     args = build_parser().parse_args()
     try:
         result = run(args)
-    except (TenancyError, RevenueShareError) as exc:
+    except (TenancyError, RevenueShareError, LLMError, FileNotFoundError, OSError) as exc:
         print(f"[RED] [{MODULE_LABEL}] {exc}", file=sys.stderr, flush=True)
         return 1
     summary = _summarise(result)

@@ -1,12 +1,17 @@
-"""模組 #30 的三個測試（happy / edge / integration）。
+"""模組 #30 的測試（happy / edge / integration + LLMError regression + 內容預覽）。
 
 integration 是本模組最重要的一個：它同時驗證兩條鐵律——
 「A 經銷商拿不到 B 經銷商的資料」與「分潤拆帳分毫不差且總和為 100%」。
 這兩條只要破一條，白牌商業模式就不成立。
+
+另外補了兩個真實 bug 的 regression 測試：
+1. LLMError（含 FileNotFoundError/OSError）未被 main() 捕捉，會讓 raw traceback 砸給使用者。
+2. `_summarise()` 完全不印報告/簡報內容預覽，操作者看不到 LLM 到底寫了什麼。
 """
 
 from __future__ import annotations
 
+import argparse
 import sys
 from decimal import Decimal
 from pathlib import Path
@@ -19,6 +24,7 @@ sys.path.insert(0, str(MODULE_DIR.parent))
 sys.path.insert(0, str(MODULE_DIR))
 
 import main as demo30  # noqa: E402
+from _shared.llm_client import LLMError  # noqa: E402
 from audit import AuditLog  # noqa: E402
 from revenue_share import SplitPolicy, split_fee  # noqa: E402
 from tenancy import IsolationViolation, TenantStore, parse_namespace  # noqa: E402
@@ -181,3 +187,88 @@ def test_integration_cross_tenant_denied_and_split_exact(tmp_path: Path) -> None
     denials = [item for item in entries if item["event"] == "cross_tenant_denied"]
     assert denials and all(item["severity"] == "red" for item in denials)
     assert result["amber_count"] >= 4
+
+
+def test_main_catches_llm_error(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--live 模式下 CLI 逾時等狀況會拋 LLMError；main() 必須吃下來變成 exit code 1，
+    而不是讓 raw traceback 砸給使用者（bug 修復 regression，比照 demo16 既有慣例）。
+    """
+
+    def _raise_llm_error(args: argparse.Namespace) -> dict:
+        raise LLMError("模擬 CLI 逾時")
+
+    monkeypatch.setattr(demo30, "run", _raise_llm_error)
+    monkeypatch.setattr(sys, "argv", ["main.py"])
+
+    exit_code = demo30.main()
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "[RED]" in captured.err
+    assert "模擬 CLI 逾時" in captured.err
+
+
+def test_main_catches_file_not_found(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """FileNotFoundError（例如設定檔遺失）也必須被 main() 捕捉，回傳 exit code 1。"""
+
+    def _raise_file_not_found(args: argparse.Namespace) -> dict:
+        raise FileNotFoundError("模擬設定檔遺失")
+
+    monkeypatch.setattr(demo30, "run", _raise_file_not_found)
+    monkeypatch.setattr(sys, "argv", ["main.py"])
+
+    exit_code = demo30.main()
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "模擬設定檔遺失" in captured.err
+
+
+def test_summarise_shows_content_preview(tmp_path: Path) -> None:
+    """happy path：`_summarise()` 輸出必須包含每個經銷商的 SLA 摘要預覽，
+    以及每個子客戶月報的內容預覽——而不只是件數與金額（bug 修復前完全看不到內容）。
+    """
+    result = _run(tmp_path)
+    summary = demo30._summarise(result)
+
+    for reseller in result["resellers"]:
+        expected_sla_preview = demo30._first_line(reseller["sla_brief"])
+        assert expected_sla_preview in summary
+        for item in reseller["sub_clients"]:
+            expected_report_preview = demo30._first_line(item["report"])
+            assert expected_report_preview in summary
+            # 確保不是巧合命中（例如空字串），report 內容本身非空
+            assert item["report"].strip() != ""
+
+
+class TestFirstLine:
+    """`_first_line()` 邊界測試：截斷、多行、空值。"""
+
+    def test_truncates_long_string_with_suffix(self) -> None:
+        long_text = "A" * 100
+        result = demo30._first_line(long_text, width=10)
+        assert result == "A" * 10 + "…"
+        assert len(result) == 11
+
+    def test_takes_first_line_only(self) -> None:
+        multiline = "第一行內容\n第二行不應出現\n第三行也不應出現"
+        result = demo30._first_line(multiline, width=40)
+        assert result == "第一行內容"
+        assert "第二行" not in result
+
+    def test_empty_string_returns_empty(self) -> None:
+        assert demo30._first_line("") == ""
+
+    def test_none_input_returns_empty(self) -> None:
+        assert demo30._first_line(None) == ""  # type: ignore[arg-type]
+
+    def test_short_string_returned_as_is(self) -> None:
+        short_text = "簡短內容"
+        assert demo30._first_line(short_text, width=40) == short_text
+
+    def test_whitespace_only_returns_empty(self) -> None:
+        assert demo30._first_line("   \n\n   ") == ""
