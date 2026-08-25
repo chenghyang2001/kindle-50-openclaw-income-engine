@@ -74,7 +74,7 @@ sources:
     rate_limit_seconds: 1
     feeds:
       - "https://feeds.bbci.co.uk/news/business/rss.xml"
-      - "https://rss.cnn.com/rss/money_latest.rss"
+      - "https://feeds.content.dowjones.io/public/rss/mw_topstories"
 
 kpi:
   enabled: true
